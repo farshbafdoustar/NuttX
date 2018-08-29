@@ -254,7 +254,7 @@ static int unionfs_semtake(FAR struct unionfs_inode_s *ui, bool noint)
       ret = nxsem_wait(&ui->ui_exclsem);
       if (ret < 0)
         {
-          DEBUGASSERT(ret == -EINTR);
+          DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
           if (!noint)
             {
               return ret;
@@ -2617,7 +2617,7 @@ errout_with_search:
  *             file system appear a some path below the unionfs mountpoint,
  *   mountpt - The full path to the mountpoint for the union file system
  *
- * Returned value:
+ * Returned Value:
  *   Zero (OK) is returned if the union file system was correctly created and
  *   mounted.  On any failure, a negated error value will be returned to
  *   indicate the nature of the failure.

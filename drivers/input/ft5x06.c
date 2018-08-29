@@ -364,15 +364,9 @@ static void ft5x06_data_worker(FAR void *arg)
     }
 
 #ifdef CONFIG_FT5X06_POLLMODE
-  /* Exit, re-starting the poll (unless there is no longer any task waiting
-   * for touch data).
-   */
+  /* Exit, re-starting the poll. */
 
-  if (priv->nwaiters > 0)
-    {
-      (void)wd_start(priv->polltimer, priv->delay, ft5x06_poll_timeout, 1,
-                     priv);
-    }
+  (void)wd_start(priv->polltimer, priv->delay, ft5x06_poll_timeout, 1, priv);
 
 #else
   /* Exit, re-enabling FT5x06 interrupts */
@@ -398,14 +392,11 @@ static void ft5x06_poll_timeout(int argc, wdparm_t arg1, ...)
    * required to protected the work queue.
    */
 
-  if (priv->nwaiters > 0)
+  DEBUGASSERT(priv->work.worker == NULL);
+  ret = work_queue(HPWORK, &priv->work, ft5x06_data_worker, priv, 0);
+  if (ret != 0)
     {
-      DEBUGASSERT(priv->work.worker == NULL);
-      ret = work_queue(HPWORK, &priv->work, ft5x06_data_worker, priv, 0);
-      if (ret != 0)
-        {
-          ierr("ERROR: Failed to queue work: %d\n", ret);
-        }
+      ierr("ERROR: Failed to queue work: %d\n", ret);
     }
 }
 #endif
@@ -682,25 +673,6 @@ static ssize_t ft5x06_waitsample(FAR struct ft5x06_dev_s *priv,
 
       priv->nwaiters++;
 
-#ifdef CONFIG_FT5X06_POLLMODE
-      /* The poll timer is stopped when there are no waiters.  So we may
-       * need to restart with at the maximum rate.
-       */
-
-      if (priv->nwaiters == 1)
-        {
-          priv->delay = POLL_MINDELAY;
-
-          ret = wd_start(priv->polltimer, priv->delay, ft5x06_poll_timeout,
-                         1, priv);
-          if (ret < 0)
-            {
-              ierr("ERROR: nxsem_wait failed: %d\n", ret);
-              goto errout;
-            }
-        }
-#endif
-
       /* Wait for a change in the FT5x06 state */
 
       ret = nxsem_wait(&priv->waitsem);
@@ -713,7 +685,7 @@ static ssize_t ft5x06_waitsample(FAR struct ft5x06_dev_s *priv,
            */
 
           ierr("ERROR: nxsem_wait failed: %d\n", ret);
-          DEBUGASSERT(ret == -EINTR);
+          DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
           goto errout;
         }
     }
@@ -808,10 +780,6 @@ static void ft5x06_shutdown(FAR struct ft5x06_dev_s *priv)
 
   config->clear(config);
   config->enable(config, false);
-
-  /* Attach the interrupt handler */
-
-  (void)config->attach(config, NULL, NULL);
 #endif
 }
 
@@ -840,7 +808,7 @@ static int ft5x06_open(FAR struct file *filep)
       /* This should only happen if the wait was cancelled by an signal */
 
       ierr("ERROR: nxsem_wait failed: %d\n", ret);
-      DEBUGASSERT(ret == -EINTR);
+      DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
       return ret;
     }
 
@@ -902,7 +870,7 @@ static int ft5x06_close(FAR struct file *filep)
       /* This should only happen if the wait was cancelled by an signal */
 
       ierr("ERROR: nxsem_wait failed: %d\n", ret);
-      DEBUGASSERT(ret == -EINTR);
+      DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
       return ret;
     }
 
@@ -966,7 +934,7 @@ static ssize_t ft5x06_read(FAR struct file *filep, FAR char *buffer,
       /* This should only happen if the wait was cancelled by an signal */
 
       ierr("ERROR: nxsem_wait failed: %d\n", ret);
-      DEBUGASSERT(ret == -EINTR);
+      DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
       return ret;
     }
 
@@ -1005,7 +973,7 @@ errout:
 }
 
 /****************************************************************************
- * Name:ft5x06_ioctl
+ * Name: ft5x06_ioctl
  ****************************************************************************/
 
 static int ft5x06_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
@@ -1029,7 +997,7 @@ static int ft5x06_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
       /* This should only happen if the wait was cancelled by an signal */
 
       ierr("ERROR: nxsem_wait failed: %d\n", ret);
-      DEBUGASSERT(ret == -EINTR);
+      DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
       return ret;
     }
 
@@ -1090,7 +1058,7 @@ static int ft5x06_poll(FAR struct file *filep, FAR struct pollfd *fds,
       /* This should only happen if the wait was cancelled by an signal */
 
       ierr("ERROR: nxsem_wait failed: %d\n", ret);
-      DEBUGASSERT(ret == -EINTR);
+      DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
       return ret;
     }
 

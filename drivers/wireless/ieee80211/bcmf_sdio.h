@@ -1,7 +1,7 @@
 /****************************************************************************
  * drivers/wireless/ieee80211/bcmf_sdio.h
  *
- *   Copyright (C) 2017 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2017-2018 Gregory Nutt. All rights reserved.
  *   Author: Simon Piriou <spiriou31@gmail.com>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -69,6 +69,9 @@ struct bcmf_sdio_chip
 
   uint8_t      *nvram_image;
   unsigned int *nvram_image_size;
+
+  uint8_t      *clm_blob_image;
+  unsigned int *clm_blob_image_size;
 };
 
 /* sdio bus structure extension */
@@ -79,6 +82,7 @@ struct bcmf_sdio_dev_s
   FAR struct sdio_dev_s *sdio_dev; /* The SDIO device bound to this instance */
   int minor;                       /* Device minor number */
 
+  int  cur_chip_id;                /* Chip ID read from the card */
   struct bcmf_sdio_chip *chip;     /* Chip specific configuration */
 
   volatile bool ready;             /* Current device status */
@@ -111,7 +115,7 @@ struct bcmf_sdio_frame
   struct bcmf_frame_s header;
   bool                tx;
   dq_entry_t          list_entry;
-  uint8_t             data[HEADER_SIZE + MAX_NET_DEV_MTU +
+  uint8_t             data[HEADER_SIZE + MAX_NETDEV_PKTSIZE +
                            CONFIG_NET_GUARDSIZE];
 };
 

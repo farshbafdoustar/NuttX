@@ -187,7 +187,7 @@ static int ipv6_decr_ttl(FAR struct ipv6_hdr_s *ipv6)
  *   but this is a point where support for other conversions may be
  *   provided.
  *
- * Returned value:
+ * Returned Value:
  *   PACKET_FORWARDED     - Packet was forwarded
  *   PACKET_NOT_FORWARDED - Packet was not forwarded
  *   < 0                  - And error occurred (and packet not fowarded).
@@ -362,7 +362,7 @@ static int ipv6_dev_forward(FAR struct net_driver_s *dev,
        * MTU.  We provide no support for fragmenting forwarded packets.
        */
 
-      if (NET_LL_HDRLEN(fwddev) + dev->d_len > NET_DEV_MTU(fwddev))
+      if (NET_LL_HDRLEN(fwddev) + dev->d_len > NETDEV_PKTSIZE(fwddev))
         {
           nwarn("WARNING: Packet > MTU... Dropping\n");
           ret = -EFBIG;

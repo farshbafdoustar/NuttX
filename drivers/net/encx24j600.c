@@ -113,10 +113,10 @@
 #  define CONFIG_ENCX24J600_NINTERFACES 1
 #endif
 
-/* CONFIG_NET_ETH_MTU must always be defined */
+/* CONFIG_NET_ETH_PKTSIZE must always be defined */
 
-#if !defined(CONFIG_NET_ETH_MTU) && (CONFIG_NET_ETH_MTU <= MAX_FRAMELEN)
-#  error "CONFIG_NET_ETH_MTU is not valid for the ENCX24J600"
+#if !defined(CONFIG_NET_ETH_PKTSIZE) && (CONFIG_NET_ETH_PKTSIZE <= MAX_FRAMELEN)
+#  error "CONFIG_NET_ETH_PKTSIZE is not valid for the ENCX24J600"
 #endif
 
 /* We need to have the work queue to handle SPI interrupts */
@@ -169,7 +169,7 @@
 
 /* Packet memory layout */
 
-#define PKTMEM_ALIGNED_BUFSIZE ((CONFIG_NET_ETH_MTU + 1) & ~1)
+#define PKTMEM_ALIGNED_BUFSIZE ((CONFIG_NET_ETH_PKTSIZE + 1) & ~1)
 #define PKTMEM_RX_START (PKTMEM_START + PKTMEM_SIZE / 2)   /* Followed by RX buffer */
 #define PKTMEM_RX_SIZE  (PKTMEM_SIZE - PKTMEM_RX_START)
 #define PKTMEM_RX_END   (PKTMEM_START + PKTMEM_SIZE)       /* RX buffer goes to the end of SRAM */
@@ -274,7 +274,7 @@ struct enc_driver_s
 
 /* A single packet buffer is used */
 
-static uint8_t g_pktbuf[MAX_NET_DEV_MTU + CONFIG_NET_GUARDSIZE];
+static uint8_t g_pktbuf[MAX_NETDEV_PKTSIZE + CONFIG_NET_GUARDSIZE];
 
 /* Driver status structure */
 
@@ -378,7 +378,7 @@ static int  enc_reset(FAR struct enc_driver_s *priv);
  * Description:
  *   Select the SPI, locking and  re-configuring if necessary
  *
- * Parameters:
+ * Input Parameters:
  *   spi  - Reference to the SPI driver structure
  *
  * Returned Value:
@@ -412,7 +412,7 @@ static void enc_lock(FAR struct enc_driver_s *priv)
  * Description:
  *   De-select the SPI
  *
- * Parameters:
+ * Input Parameters:
  *   spi  - Reference to the SPI driver structure
  *
  * Returned Value:
@@ -435,7 +435,7 @@ static inline void enc_unlock(FAR struct enc_driver_s *priv)
  * Description:
  *   Execute two byte command.
  *
- * Parameters:
+ * Input Parameters:
  *   priv    - Reference to the driver state structure
  *   cmd     - ENCX24J600 two-byte command
  *   arg     - Two byte argument to the command
@@ -471,7 +471,7 @@ static void enc_cmd(FAR struct enc_driver_s *priv, uint8_t cmd, uint16_t arg)
  * Description:
  *   Issues System Reset by setting ETHRST (ECON2<4>)
  *
- * Parameters:
+ * Input Parameters:
  *   priv   - Reference to the driver state structure
  *
  * Returned Value:
@@ -510,7 +510,7 @@ static inline void enc_setethrst(FAR struct enc_driver_s *priv)
  * Assumption:
  *   The caller has exclusive access to the SPI bus
  *
- * Parameters:
+ * Input Parameters:
  *   priv   - Reference to the driver state structure
  *   bank   - SPI command to select the bank with
  *
@@ -547,7 +547,7 @@ static void enc_setbank(FAR struct enc_driver_s *priv, uint8_t bank)
  * Description:
  *   Read one word from a control register using the RCR command.
  *
- * Parameters:
+ * Input Parameters:
  *   priv    - Reference to the driver state structure
  *   ctrlreg - Bit encoded address of banked register to read
  *
@@ -587,7 +587,7 @@ static uint16_t enc_rdreg(FAR struct enc_driver_s *priv, uint16_t ctrlreg)
  * Description:
  *   Write one word to a control register using the WCR command.
  *
- * Parameters:
+ * Input Parameters:
  *   priv    - Reference to the driver state structure
  *   ctrlreg - Bit encoded address of banked register to write
  *   wrdata  - The data to send
@@ -624,7 +624,7 @@ static void enc_wrreg(FAR struct enc_driver_s *priv, uint16_t ctrlreg,
  *   Wait until banked register bit(s) take a specific value (or a timeout
  *   occurs).
  *
- * Parameters:
+ * Input Parameters:
  *   priv    - Reference to the driver state structure
  *   ctrlreg - Bit encoded address of banked register to check
  *   bits    - The bits to check (a mask)
@@ -640,8 +640,8 @@ static void enc_wrreg(FAR struct enc_driver_s *priv, uint16_t ctrlreg,
 static int enc_waitreg(FAR struct enc_driver_s *priv, uint16_t ctrlreg,
                           uint16_t bits, uint16_t value)
 {
-  systime_t start = clock_systimer();
-  systime_t elapsed;
+  clock_t start = clock_systimer();
+  clock_t elapsed;
   uint16_t rddata;
 
   /* Loop until the exit condition is met */
@@ -664,7 +664,7 @@ static int enc_waitreg(FAR struct enc_driver_s *priv, uint16_t ctrlreg,
  * Description:
  *   Bit Field Set.
  *
- * Parameters:
+ * Input Parameters:
  *   priv    - Reference to the driver state structure
  *   ctrlreg - Bit encoded address of banked register to set bits in
  *   bits    - The bits to set (a mask)
@@ -709,7 +709,7 @@ static void enc_bfs(FAR struct enc_driver_s *priv, uint16_t ctrlreg,
  * Description:
  *   Bit Field Clear.
  *
- * Parameters:
+ * Input Parameters:
  *   priv    - Reference to the driver state structure
  *   ctrlreg - Bit encoded address of banked register to clear bits in
  *   bits    - The bits to clear (a mask)
@@ -754,7 +754,7 @@ static void enc_bfc(FAR struct enc_driver_s *priv, uint16_t ctrlreg,
  * Description:
  *   Dump registers associated with receiving or sending packets.
  *
- * Parameters:
+ * Input Parameters:
  *   priv    - Reference to the driver state structure
  *
  * Returned Value:
@@ -826,7 +826,7 @@ static void enc_txdump(FAR struct enc_driver_s *priv)
  * Description:
  *   Read a buffer of data from RX Data Buffer.
  *
- * Parameters:
+ * Input Parameters:
  *   priv    - Reference to the driver state structure
  *   buffer  - A pointer to the buffer to read into
  *   buflen  - The number of bytes to read
@@ -868,7 +868,7 @@ static void enc_rdbuffer(FAR struct enc_driver_s *priv, FAR uint8_t *buffer,
  * Description:
  *   Write a buffer of data.
  *
- * Parameters:
+ * Input Parameters:
  *   priv    - Reference to the driver state structure
  *   buffer  - A pointer to the buffer to write from
  *   buflen  - The number of bytes to write
@@ -901,7 +901,7 @@ static inline void enc_wrbuffer(FAR struct enc_driver_s *priv,
  * Description:
  *   Read 16-bits of PHY data.
  *
- * Parameters:
+ * Input Parameters:
  *   priv    - Reference to the driver state structure
  *   phyaddr - The PHY register address
  *
@@ -961,7 +961,7 @@ static uint16_t enc_rdphy(FAR struct enc_driver_s *priv, uint8_t phyaddr)
  * Description:
  *   write 16-bits of PHY data.
  *
- * Parameters:
+ * Input Parameters:
  *   priv    - Reference to the driver state structure
  *   phyaddr - The PHY register address
  *   phydata - 16-bit data to write to the PHY
@@ -1013,7 +1013,7 @@ static void enc_wrphy(FAR struct enc_driver_s *priv, uint8_t phyaddr,
  *      by trying to send something, or
  *   -  From watchdog based polling.
  *
- * Parameters:
+ * Input Parameters:
  *   priv - Reference to the driver state structure
  *
  * Returned Value:
@@ -1076,7 +1076,7 @@ static int enc_transmit(FAR struct enc_driver_s *priv)
  *   Write packet from d_buf to the enc's SRAM if a free descriptor is available.
  *   The filled descriptor is enqueued for transmission.
  *
- * Parameters:
+ * Input Parameters:
  *   dev  - Reference to the NuttX driver state structure
  *
  * Returned Value:
@@ -1148,7 +1148,7 @@ static int enc_txenqueue(FAR struct enc_driver_s *priv)
  *   2. When the preceding TX packet send timedout and the interface is reset
  *   3. During normal TX polling
  *
- * Parameters:
+ * Input Parameters:
  *   dev  - Reference to the NuttX driver state structure
  *
  * Returned Value:
@@ -1194,9 +1194,12 @@ static int enc_txpoll(struct net_driver_s *dev)
         }
 #endif /* CONFIG_NET_IPv6 */
 
-      /* Send the packet */
+      if (!devif_loopback(&priv->dev))
+        {
+          /* Send the packet */
 
-      ret = enc_txenqueue(priv);
+          ret = enc_txenqueue(priv);
+        }
     }
 
   /* If zero is returned, the polling will continue until all connections have
@@ -1213,7 +1216,7 @@ static int enc_txpoll(struct net_driver_s *dev)
  *   The current link status can be obtained from the PHSTAT1.LLSTAT or
  *   PHSTAT2.LSTAT.
  *
- * Parameters:
+ * Input Parameters:
  *   priv    - Reference to the driver state structure
  *
  * Returned Value:
@@ -1269,7 +1272,7 @@ static void enc_linkstatus(FAR struct enc_driver_s *priv)
  *   An TXIF interrupt was received indicating that the last TX packet(s) is
  *   done
  *
- * Parameters:
+ * Input Parameters:
  *   priv  - Reference to the driver state structure
  *
  * Returned Value:
@@ -1308,7 +1311,7 @@ static void enc_txif(FAR struct enc_driver_s *priv)
  * Description:
  *   Load packet from the enc's RX buffer to the driver d_buf.
  *
- * Parameters:
+ * Input Parameters:
  *   priv  - Reference to the driver state structure
  *   descr - Reference to the descriptor that should be loaded
  *
@@ -1349,7 +1352,7 @@ static void enc_rxldpkt(FAR struct enc_driver_s *priv,
  *   Check for a free descriptor in the free list. If no free descriptor is
  *   available a pending descriptor will be freed and returned
  *
- * Parameters:
+ * Input Parameters:
  *   priv  - Reference to the driver state structure
  *
  * Returned Value:
@@ -1381,7 +1384,7 @@ static struct enc_descr_s *enc_rxgetdescr(FAR struct enc_driver_s *priv)
  *   Remove packet from the RX queue and free the block of memory in the enc's
  *   SRAM.
  *
- * Parameters:
+ * Input Parameters:
  *   priv  - Reference to the driver state structure
  *   descr - Reference to the descriptor that should be freed
  *
@@ -1439,7 +1442,7 @@ static void enc_rxrmpkt(FAR struct enc_driver_s *priv, FAR struct enc_descr_s *d
  * Description:
  *   Give the newly received packet to the network.
  *
- * Parameters:
+ * Input Parameters:
  *   priv  - Reference to the driver state structure
  *
  * Returned Value:
@@ -1608,7 +1611,7 @@ static void enc_rxdispatch(FAR struct enc_driver_s *priv)
  * Description:
  *   An interrupt was received indicating the availability of a new RX packet
  *
- * Parameters:
+ * Input Parameters:
  *   priv  - Reference to the driver state structure
  *
  * Returned Value:
@@ -1695,7 +1698,7 @@ static void enc_pktif(FAR struct enc_driver_s *priv)
 
       /* Check for a usable packet length (4 added for the CRC) */
 
-      else if (pktlen > (CONFIG_NET_ETH_MTU + 4) || pktlen <= (ETH_HDRLEN + 4))
+      else if (pktlen > (CONFIG_NET_ETH_PKTSIZE + 4) || pktlen <= (ETH_HDRLEN + 4))
         {
           nerr("ERROR: Bad packet size dropped (%d)\n", pktlen);
 
@@ -1734,7 +1737,7 @@ static void enc_pktif(FAR struct enc_driver_s *priv)
  *   filters rejecting a packet. The interrupt should be cleared by software
  *   once it has been serviced."
  *
- * Parameters:
+ * Input Parameters:
  *   priv  - Reference to the driver state structure
  *
  * Returned Value:
@@ -1792,7 +1795,7 @@ static void enc_rxabtif(FAR struct enc_driver_s *priv)
  *   Perform interrupt handling logic outside of the interrupt handler (on
  *   the work queue thread).
  *
- * Parameters:
+ * Input Parameters:
  *   arg     - The reference to the driver structure (case to void*)
  *
  * Returned Value:
@@ -1964,7 +1967,7 @@ static void enc_irqworker(FAR void *arg)
  * Description:
  *   Hardware interrupt handler
  *
- * Parameters:
+ * Input Parameters:
  *   irq     - Number of the IRQ that generated the interrupt
  *   context - Interrupt register state save info (architecture-specific)
  *
@@ -2008,7 +2011,7 @@ static int enc_interrupt(int irq, FAR void *context, FAR void *arg)
  *   Our TX watchdog timed out.  This is the worker thread continuation of
  *   the watchdog timer interrupt.  Reset the hardware and start again.
  *
- * Parameters:
+ * Input Parameters:
  *   arg     - The reference to the driver structure (case to void*)
  *
  * Returned Value:
@@ -2060,7 +2063,7 @@ static void enc_toworker(FAR void *arg)
  *   Our TX watchdog timed out.  Called from the timer interrupt handler.
  *   The last TX never completed.  Perform work on the worker thread.
  *
- * Parameters:
+ * Input Parameters:
  *   argc - The number of available arguments
  *   arg  - The first argument
  *
@@ -2100,7 +2103,7 @@ static void enc_txtimeout(int argc, uint32_t arg, ...)
  * Description:
  *   Periodic timer handler continuation.
  *
- * Parameters:
+ * Input Parameters:
  *   argc - The number of available arguments
  *   arg  - The first argument
  *
@@ -2154,7 +2157,7 @@ static void enc_pollworker(FAR void *arg)
  * Description:
  *   Periodic timer handler.  Called from the timer interrupt handler.
  *
- * Parameters:
+ * Input Parameters:
  *   argc - The number of available arguments
  *   arg  - The first argument
  *
@@ -2195,7 +2198,7 @@ static void enc_polltimer(int argc, uint32_t arg, ...)
  *   NuttX Callback: Bring up the Ethernet interface when an IP address is
  *   provided
  *
- * Parameters:
+ * Input Parameters:
  *   dev  - Reference to the NuttX driver state structure
  *
  * Returned Value:
@@ -2270,7 +2273,7 @@ static int enc_ifup(struct net_driver_s *dev)
  * Description:
  *   NuttX Callback: Stop the interface.
  *
- * Parameters:
+ * Input Parameters:
  *   dev  - Reference to the NuttX driver state structure
  *
  * Returned Value:
@@ -2327,7 +2330,7 @@ static int enc_ifdown(struct net_driver_s *dev)
  *   stimulus perform an out-of-cycle poll and, thereby, reduce the TX
  *   latency.
  *
- * Parameters:
+ * Input Parameters:
  *   dev  - Reference to the NuttX driver state structure
  *
  * Returned Value:
@@ -2381,7 +2384,7 @@ static int enc_txavail(struct net_driver_s *dev)
  *   NuttX Callback: Add the specified MAC address to the hardware multicast
  *   address filtering
  *
- * Parameters:
+ * Input Parameters:
  *   dev  - Reference to the NuttX driver state structure
  *   mac  - The MAC address to be added
  *
@@ -2419,7 +2422,7 @@ static int enc_addmac(struct net_driver_s *dev, FAR const uint8_t *mac)
  *   NuttX Callback: Remove the specified MAC address from the hardware multicast
  *   address filtering
  *
- * Parameters:
+ * Input Parameters:
  *   dev  - Reference to the NuttX driver state structure
  *   mac  - The MAC address to be removed
  *
@@ -2479,7 +2482,7 @@ static int enc_rmmac(struct net_driver_s *dev, FAR const uint8_t *mac)
  *   Instead of providing a powerup function, the job is done by enc_reset.
  *   enc_ifup calls it anyway.
  *
- * Parameters:
+ * Input Parameters:
  *   priv  - Reference to the driver state structure
  *
  * Returned Value:
@@ -2529,7 +2532,7 @@ static void enc_pwrsave(FAR struct enc_driver_s *priv)
  *   Load the MAC address from the ENCX24j600 and write it to the device
  *   structure.
  *
- * Parameters:
+ * Input Parameters:
  *   priv  - Reference to the driver state structure
  *
  * Returned Value:
@@ -2568,7 +2571,7 @@ static void enc_ldmacaddr(FAR struct enc_driver_s *priv)
  *   be down before configuring the MAC addr.
  *   If the MAC address is 0 in all digits, the ENCX24J600's MAC is read out.
  *
- * Parameters:
+ * Input Parameters:
  *   priv  - Reference to the driver state structure
  *
  * Returned Value:
@@ -2610,7 +2613,7 @@ static void enc_setmacaddr(FAR struct enc_driver_s *priv)
  *   Initializes the RX/TX queues and configures the enc's RX/TX buffers.
  *   Called on general reset and on rxabt interrupt.
  *
- * Parameters:
+ * Input Parameters:
  *   priv  - Reference to the driver state structure
  *
  * Returned Value:
@@ -2660,7 +2663,7 @@ static void enc_resetbuffers(FAR struct enc_driver_s *priv)
  *   Stop, reset, re-initialize, and restart the ENCX24J600.  This is done
  *   initially, on ifup, and after a TX timeout.
  *
- * Parameters:
+ * Input Parameters:
  *   priv  - Reference to the driver state structure
  *
  * Returned Value:
@@ -2748,7 +2751,7 @@ static int enc_reset(FAR struct enc_driver_s *priv)
 
   /* Set the maximum packet size which the controller will accept */
 
-  enc_wrreg(priv, ENC_MAMXFL, CONFIG_NET_ETH_MTU + 4);
+  enc_wrreg(priv, ENC_MAMXFL, CONFIG_NET_ETH_PKTSIZE + 4);
 
   ret = enc_waitreg(priv, ENC_ESTAT, ESTAT_PHYLNK, ESTAT_PHYLNK);
 
@@ -2779,7 +2782,7 @@ static int enc_reset(FAR struct enc_driver_s *priv)
  *   Initialize the Ethernet driver.  The ENCX24J600 device is assumed to be
  *   in the post-reset state upon entry to this function.
  *
- * Parameters:
+ * Input Parameters:
  *   spi   - A reference to the platform's SPI driver for the ENCX24J600
  *   lower - The MCU-specific interrupt used to control low-level MCU
  *           functions (i.e., ENCX24J600 GPIO interrupts).
@@ -2815,7 +2818,7 @@ int enc_initialize(FAR struct spi_dev_s *spi,
 #endif
   priv->dev.d_private = priv;         /* Used to recover private state from dev */
 
-  /* Create a watchdog for timing polling for and timing of transmisstions */
+  /* Create a watchdog for timing polling for and timing of transmissions */
 
   priv->txpoll       = wd_create();   /* Create periodic poll timer */
   priv->txtimeout    = wd_create();   /* Create TX timeout timer */

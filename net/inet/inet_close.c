@@ -82,7 +82,7 @@ struct tcp_close_s
   FAR struct socket           *cl_psock;  /* Reference to the TCP socket */
   sem_t                        cl_sem;    /* Signals disconnect completion */
   int                          cl_result; /* The result of the close */
-  systime_t                    cl_start;  /* Time close started (in ticks) */
+  clock_t                      cl_start;  /* Time close started (in ticks) */
 #endif
 };
 #endif
@@ -97,7 +97,7 @@ struct tcp_close_s
  * Description:
  *   Check for a timeout on a lingering close.
  *
- * Parameters:
+ * Input Parameters:
  *   pstate - close state structure
  *
  * Returned Value:
@@ -142,7 +142,7 @@ static inline int tcp_close_timeout(FAR struct tcp_close_s *pstate)
  * Description:
  *   Handle network callback events.
  *
- * Parameters:
+ * Input Parameters:
  *   conn - TCP connection structure
  *
  * Returned Value:
@@ -267,7 +267,7 @@ end_wait:
  *   Notify the appropriate device driver that we are have data ready to
  *   be send (TCP)
  *
- * Parameters:
+ * Input Parameters:
  *   psock - Socket state structure
  *   conn  - The TCP connection structure
  *
@@ -315,7 +315,7 @@ static inline void tcp_close_txnotify(FAR struct socket *psock,
  * Description:
  *   Break any current TCP connection
  *
- * Parameters:
+ * Input Parameters:
  *   conn - TCP connection structure
  *
  * Returned Value:
@@ -345,7 +345,7 @@ static inline int tcp_close_disconnect(FAR struct socket *psock)
 
 #ifdef CONFIG_NET_TCP_WRITE_BUFFERS
   /* If we have a semi-permanent write buffer callback in place, then
-   * is needs to be be nullifed.
+   * is needs to be be nullified.
    *
    * Commit f1ef2c6cdeb032eaa1833cc534a63b50c5058270:
    * "When a socket is closed, it should make sure that any pending write
@@ -357,6 +357,9 @@ static inline int tcp_close_disconnect(FAR struct socket *psock)
    *  data.  However, to be able to actually send any new data, the send
    *  callback must be left.  The callback should be freed later when the
    *  socket is actually destroyed."
+   *
+   * REVISIT:  Where and how exactly is s_sndcb ever freed?  Is there a
+   * memory leak here?
    */
 
   psock->s_sndcb = NULL;
@@ -465,7 +468,7 @@ static inline int tcp_close_disconnect(FAR struct socket *psock)
  * Description:
  *   Performs the close operation on an AF_INET or AF_INET6 socket instance
  *
- * Parameters:
+ * Input Parameters:
  *   psock   Socket instance
  *
  * Returned Value:
@@ -548,7 +551,18 @@ int inet_close(FAR struct socket *psock)
 
           if (conn->crefs <= 1)
             {
-              /* Yes... free the connection structure */
+              /* Yes... */
+
+#ifdef CONFIG_NET_UDP_WRITE_BUFFERS
+              /* Free any semi-permanent write buffer callback in place. */
+
+              if (psock->s_sndcb != NULL)
+                {
+                  udp_callback_free(conn->dev, conn, psock->s_sndcb);
+                  psock->s_sndcb = NULL;
+                }
+#endif
+              /* And free the connection structure */
 
               conn->crefs = 0;
               udp_free(psock->s_conn);

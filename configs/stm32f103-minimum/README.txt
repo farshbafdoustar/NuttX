@@ -29,8 +29,12 @@ STM32F103C8T6 Minimum System Development Boards:
   no name at all. It is based on a STM32F103C8T6 and has a DIP-40 form-
   factor.
 
-  There are two versions of very similar boards:  One is red and one is
-  blue.  See http://www.stm32duino.com/viewtopic.php?f=28&t=117
+  There are four versions of very similar boards: Red, Blue, RoboDyn Black and
+  Black.
+  See: https://wiki.stm32duino.com/index.php?title=Blue_Pill
+  https://wiki.stm32duino.com/index.php?title=Red_Pill
+  https://wiki.stm32duino.com/index.php?title=RobotDyn_Black_Pill
+  https://wiki.stm32duino.com/index.php?title=Black_Pill
 
   The Red Board:
 
@@ -39,6 +43,7 @@ STM32F103C8T6 Minimum System Development Boards:
     - 1.5k pull up resistor on the PA12 pin (USB D+) which you can
       programatically drag down for automated USB reset.
     - large power capacitors and LDO power.
+    - User LED on PC13
 
     Problems with the red board:
 
@@ -53,11 +58,12 @@ STM32F103C8T6 Minimum System Development Boards:
     Good things about the blue board:
 
     - Four soldered anchor point on the USB connector. What you can't tell
-      from this picture is that there is a notch in the pcb board and the USB
+      from this picture is that there is a notch in the PCB board and the USB
       connector sits down inside it some. This provides some lateral stability
       that takes some of the stress off the solder points.
     - It has nice clear readable silkscreen printing.
     - It also a larger reset button.
+    - User LED on PC13
 
     Problems with the blue board:
 
@@ -70,13 +76,17 @@ STM32F103C8T6 Minimum System Development Boards:
     A schematic for the blue board is available here:
     http://www.stm32duino.com/download/file.php?id=276
 
+  The Black Board:
+
+    - User LED is on PB12.
+    - Mounting holes.
+
   Both Boards:
 
     Nice features common to both:
 
     - SWD pins broken out and easily connected (VCC, GND, SWDIO, SWCLK)
     - USB 5V is broken out with easy access.
-    - User LED on PC13
     - Power LED
     - You can probably use more flash (128k) than officially documented for
       the chip (stm32f103c8t6 64k), I was able to load 115k of flash on mine
@@ -84,8 +94,8 @@ STM32F103C8T6 Minimum System Development Boards:
 
     Problems with both boards:
 
-    - No preloaded bootloader * to me this isn't really a problem as the
-      entire 64k of flash is available for use
+    - No preloaded bootloader (this isn't really a problem as the
+      entire 64k of flash is available for use)
     - No user button
 
   This is the board pinout based on its form-factor for the Blue board:
@@ -123,7 +133,7 @@ LEDs
   enabled.
 
   If enabled the LED is simply turned on when the board boots
-  succesfully, and is blinking on panic / assertion failed.
+  successfully, and is blinking on panic / assertion failed.
 
 UARTs
 =====
@@ -282,7 +292,7 @@ Nintendo Wii Nunchuck:
 Quadrature Encoder:
 ===================
 
-  The nsh configuration has been used to test the Quadrture Encoder
+  The nsh configuration has been used to test the Quadrature Encoder
   (QEncoder, QE) with the following modifications to the configuration
   file:
 
@@ -443,7 +453,7 @@ Nokia 5110 LCD Display support:
   Device Drivers  --->
       LCD Driver Support  --->
           [*] Graphic LCD Driver Support  --->
-              [*]   Nokia 5110 LCD Display (Philips PCD8544)
+              [*]   Nokia 5110 LCD Display (Phillips PCD8544)
               (1)     Number of PCD8544 Devices
               (84)    PCD8544 X Resolution
               (48)    PCD8544 Y Resolution
@@ -561,7 +571,7 @@ STM32F103 Minimum - specific Configuration Options
     CONFIG_ARCH_BOARD - Identifies the configs subdirectory and
        hence, the board that supports the particular chip or SoC.
 
-       CONFIG_ARCH_BOARD=stm32f103-minium
+       CONFIG_ARCH_BOARD=stm32f103-minimum
 
     CONFIG_ARCH_BOARD_name - For use in C code
 
@@ -590,13 +600,6 @@ STM32F103 Minimum - specific Configuration Options
       used during interrupt handling.
 
     CONFIG_ARCH_STACKDUMP - Do stack dumps after assertions
-
-    CONFIG_ARCH_CALIBRATION - Enables some build in instrumentation that
-       cause a 100 second delay during boot-up.  This 100 second delay
-       serves no purpose other than it allows you to calibratre
-       CONFIG_ARCH_LOOPSPERMSEC.  You simply use a stop watch to measure
-       the 100 second delay then adjust CONFIG_ARCH_LOOPSPERMSEC until
-       the delay actually is 100 seconds.
 
   Individual subsystems can be enabled:
 
@@ -681,10 +684,14 @@ STM32F103 Minimum - specific Configuration Options
       Default: 4
     CONFIG_CAN_LOOPBACK - A CAN driver may or may not support a loopback
       mode for testing. The STM32 CAN driver does support loopback mode.
-    CONFIG_CAN1_BAUD - CAN1 BAUD rate.  Required if CONFIG_STM32_CAN1 is defined.
-    CONFIG_CAN2_BAUD - CAN1 BAUD rate.  Required if CONFIG_STM32_CAN2 is defined.
-    CONFIG_CAN_TSEG1 - The number of CAN time quanta in segment 1. Default: 6
-    CONFIG_CAN_TSEG2 - the number of CAN time quanta in segment 2. Default: 7
+    CONFIG_STM32_CAN1_BAUD - CAN1 BAUD rate.  Required if CONFIG_STM32_CAN1
+      is defined.
+    CONFIG_STM32_CAN2_BAUD - CAN1 BAUD rate.  Required if CONFIG_STM32_CAN2
+      is defined.
+    CONFIG_STM32_CAN_TSEG1 - The number of CAN time quanta in segment 1.
+      Default: 6
+    CONFIG_STM32_CAN_TSEG2 - the number of CAN time quanta in segment 2.
+      Default: 7
     CONFIG_STM32_CAN_REGDEBUG - If CONFIG_DEBUG_FEATURES is set, this will generate an
       dump of all CAN registers.
 
@@ -704,9 +711,7 @@ Configurations
   Each STM32F103 Minimum configuration is maintained in a sub-directory and
   can be selected as follow:
 
-    cd tools
-    ./configure.sh STM32F103 Minimum/<subdir>
-    cd -
+    tools/configure.sh STM32F103 Minimum/<subdir>
 
   Where <subdir> is one of the following:
 
@@ -770,7 +775,7 @@ Configurations
     4. Enabling USB monitor SYSLOG output.  If tracing is enabled, the USB
        device will save encoded trace output in in-memory buffer; if the
        USB monitor is enabled, that trace buffer will be periodically
-       emptied and dumped to the system loggin device (UART2 in this
+       emptied and dumped to the system logging device (UART2 in this
        configuraion):
 
        CONFIG_USBDEV_TRACE=y                   : Enable USB trace feature

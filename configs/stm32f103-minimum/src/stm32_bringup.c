@@ -53,8 +53,6 @@
 #  include <nuttx/usb/usbmonitor.h>
 #endif
 
-#include <nuttx/binfmt/elf.h>
-
 #include "stm32.h"
 
 #ifdef CONFIG_STM32_OTGFS
@@ -167,11 +165,31 @@ int stm32_bringup(void)
     }
 #endif
 
+#ifdef CONFIG_SENSORS_ZEROCROSS
+  /* Configure the zero-crossing driver */
+
+  ret = stm32_zerocross_initialize();
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "Failed to initialize Zero-Cross, error %d\n", ret);
+      return ret;
+    }
+#endif
+
 #ifdef CONFIG_MMCSD
   ret = stm32_mmcsd_initialize(MMCSD_MINOR);
   if (ret < 0)
     {
       syslog(LOG_ERR, "Failed to initialize SD slot %d: %d\n", ret);
+      return ret;
+    }
+#endif
+
+#ifdef CONFIG_SENSORS_BMP180
+  ret = stm32_bmp180initialize("/dev/press0");
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "Failed to initialize BMP180, error %d\n", ret);
       return ret;
     }
 #endif
@@ -256,6 +274,14 @@ int stm32_bringup(void)
   if (ret < 0)
     {
       syslog(LOG_ERR, "ERROR: stm32_hcsr04_initialize() failed: %d\n", ret);
+    }
+#endif
+
+#ifdef CONFIG_SENSORS_MAX6675
+  ret = stm32_max6675initialize("/dev/temp0");
+  if (ret < 0)
+    {
+      serr("ERROR:  stm32_max6675initialize failed: %d\n", ret);
     }
 #endif
 

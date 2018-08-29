@@ -60,7 +60,7 @@
  * Description:
  *   Deallocate a message queue descriptor but returning it to the free list
  *
- * Inputs:
+ * Input Parameters:
  *   mqdes - message queue descriptor to free
  *
  ****************************************************************************/
@@ -78,11 +78,11 @@
  *   This function performs the portion of the mq_close operation related
  *   to freeing resource used by the message queue descriptor itself.
  *
- * Parameters:
+ * Input Parameters:
  *   mqdes - Message queue descriptor.
  *   group - Group that has the open descriptor.
  *
- * Return Value:
+ * Returned Value:
  *   None.
  *
  * Assumptions:

@@ -68,11 +68,11 @@
  *   after a key has been deleted with pthread_key_delete()
  *   is undefined.
  *
- * Parameters:
+ * Input Parameters:
  *   key = The data key to get or set
  *   value = The value to bind to the key.
  *
- * Return Value:
+ * Returned Value:
  *   If successful, pthread_setspecific() will return zero (OK).
  *   Otherwise, an error number will be returned:
  *

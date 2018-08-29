@@ -273,6 +273,10 @@ configs/flipnclick-sam3x
   Arduino DUE, this board features the Atmel ATSAM3X8E MCU running at 84
   MHz.
 
+configs/freedom-k28f
+  This port uses the NXP/FreeScale FREEDOM-K28F development board. This
+  board uses the Kinetis K28F MK28FN2M0VMI15 Cortex-M4 MCU.
+
 configs/freedom-k64f
   This port uses the NXP/FreeScale FREEDOM-K64F development board. This board
   uses the Kinetis K64 MK64FN1M0VLL12 Cortex-M4 MCU.
@@ -288,15 +292,6 @@ configs/freedom-kl26z
 configs/hymini-stm32v
   A configuration for the HY-Mini STM32v board.  This board is based on the
   STM32F103VCT chip.
-
-configs/indium-f7
-  This subdirectory holds board support for the RAF Research Indium-F7 board
-  and using STMicro Nucleo-144 boards for interim support.  The Indium-F7
-  board is a special purpose board created by RAF Research LLC.  It is
-  possible to develop basic Indium-F7 software using STMicro Nucleo-144
-  development boards. This board support directory provides support for
-  developing software on both native Indium-F7 hardware and for three
-  STM32F7 Nucleo-144 development boards.
 
 configs/kwikstik-k40.
   Kinetis K40 Cortex-M4 MCU.  This port uses the NXP/FreeScale KwikStik-K40
@@ -370,9 +365,18 @@ configs/mbed
 configs/mcb1700
   Board support for the Keil MCB1700
 
+configs/metro-m4
+  Th configurations in this directory are part of the port of NuttX to the
+  Adafruit Metro M4.  The Metro M4 uses a Arduino form factor and and pinout.
+  It's powered with an ATSAMD51J19
+
 configs/mikroe-stm32f4
   This is the port of NuttX to the MikroElektronika Mikromedia for STM32F4
   development board.  Contributed by Ken Petit.
+
+configs/misoc
+  This directory holds the port to NuttX running on a Qemu LM32 system.
+  You can find the Qemu setup at https://bitbucket.org/key2/qemu
 
 configs/mcu123-lpc214x
   This port is for the NXP LPC2148 as provided on the mcu123.com
@@ -401,6 +405,10 @@ configs/ne64badge
   MC9S12NE64 hcs12 cpu.  This port uses the m9s12x GCC toolchain.
   STATUS:  Under development.  The port is code-complete but has
   not yet been fully tested.
+
+configs/nrf52-pca10040
+  NuttX port to the NRF PCA10040 board from Nordic Semiconductor
+  featuring the NRF52832 MCU.
 
 configs/ntosd-dm320
   This port uses the Neuros OSD v1.0 Dev Board with a GNU arm-nuttx-elf
@@ -493,13 +501,16 @@ configs/olimex-stm32-p407
 configs/olimexino-stm32
   This port uses the Olimexino STM32 board (STM32F103RBT6) and a GNU arm-nuttx-elf
   toolchain* under Linux or Cygwin. See the http://www.olimex.com for further\
-  information.  Contribued by David Sidrane.
+  information.  Contributed by David Sidrane.
 
 configs/olimex-strp711
   This port uses the Olimex STR-P711 board and a GNU arm-nuttx-elf toolchain* under
   Linux or Cygwin. See the http://www.olimex.com/dev/str-p711.html" for
   further information.  STATUS: Configurations for the basic OS test and NSH
   are complete and verified.
+
+configs/or1k
+  Generic OpenRISC board.
 
 configs/pcblogic-pic32mx
   This is the port of NuttX to the PIC32MX board from PCB Logic Design Co.
@@ -660,10 +671,6 @@ configs/shenzhou
   This is the port of NuttX to the Shenzhou development board from
   www.armjishu.com. This board features the STMicro STM32F107VCT MCU.
 
-configs/spark
-  Board support for the Spark Core from Spark Devices http://www.sparkdevices.com).
-  This board features the STM32103CBT6 MCU from STMicro.
-
 configs/skp16c26
   Renesas M16C processor on the Renesas SKP16C26 StarterKit.  This port
   uses the GNU m32c toolchain.  STATUS:  The port is complete but untested
@@ -780,6 +787,10 @@ configs/tm4c1294-launchpad
   Tiva® TM4C123G LaunchPad Evaluation Board is a low-cost evaluation
   platform for ARM® Cortex™-M4F-based microcontrollers from Texas
   Instruments.
+
+configs/tms570ls31x-usb-kit
+  TI Hercules TMS570LS31xx Evaluation Kit (TMDS570ls31xx USB Kit)
+  featuring the Hercules TMS570LS3137ZWT chip.
 
 configs/twr-k60n512
   Kinetis K60 Cortex-M4 MCU.  This port uses the FreeScale TWR-K60N512

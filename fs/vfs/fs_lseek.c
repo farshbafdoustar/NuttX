@@ -60,12 +60,12 @@
  *   This is the internal implementation of lseek.  See the comments in
  *   lseek() for further information.
  *
- * Parameters:
+ * Input Parameters:
  *   file     File structure instance
  *   offset   Defines the offset to position to
  *   whence   Defines how to use offset
  *
- * Return:
+ * Returned Value:
  *   The resulting offset on success.  A negated errno value is returned on
  *   any failure (see lseek comments).
  *
@@ -97,7 +97,9 @@ off_t file_seek(FAR struct file *filep, off_t offset, int whence)
         {
           case SEEK_CUR:
             offset += filep->f_pos;
+
             /* FALLTHROUGH */
+
           case SEEK_SET:
             if (offset >= 0)
               {
@@ -141,12 +143,12 @@ off_t file_seek(FAR struct file *filep, off_t offset, int whence)
  *  at this point, subsequent reads of the data in the gap (a "hole") return null
  *  bytes ('\0') until data is actually written into the gap.
  *
- * Parameters:
+ * Input Parameters:
  *   fd       File descriptor of device
  *   offset   Defines the offset to position to
  *   whence   Defines how to use offset
  *
- * Return:
+ * Returned Value:
  *   The resulting offset on success.  -1 on failure withi errno set properly:
  *
  *   EBADF      fd is not an open file descriptor.

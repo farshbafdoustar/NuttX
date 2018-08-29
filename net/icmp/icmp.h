@@ -125,11 +125,11 @@ struct pollfd;    /* Forward reference */
  * Description:
  *   Handle incoming ICMP input
  *
- * Parameters:
+ * Input Parameters:
  *   dev - The device driver structure containing the received ICMP
  *         packet
  *
- * Return:
+ * Returned Value:
  *   None
  *
  * Assumptions:
@@ -223,7 +223,8 @@ FAR struct icmp_conn_s *icmp_nextconn(FAR struct icmp_conn_s *conn);
  ****************************************************************************/
 
 #ifdef CONFIG_NET_ICMP_SOCKET
-FAR struct icmp_conn_s *icmp_findconn(FAR struct net_driver_s *dev, uint8_t id);
+FAR struct icmp_conn_s *icmp_findconn(FAR struct net_driver_s *dev,
+                                      uint16_t id);
 #endif
 
 /****************************************************************************
@@ -232,10 +233,10 @@ FAR struct icmp_conn_s *icmp_findconn(FAR struct net_driver_s *dev, uint8_t id);
  * Description:
  *   Poll a device "connection" structure for availability of ICMP TX data
  *
- * Parameters:
+ * Input Parameters:
  *   dev - The device driver structure to use in the send operation
  *
- * Return:
+ * Returned Value:
  *   None
  *
  * Assumptions:
@@ -273,8 +274,9 @@ void icmp_poll(FAR struct net_driver_s *dev);
  ****************************************************************************/
 
 #ifdef CONFIG_NET_ICMP_SOCKET
-ssize_t icmp_sendto(FAR struct socket *psock, FAR const void *buf, size_t len,
-                    int flags, FAR const struct sockaddr *to, socklen_t tolen);
+ssize_t icmp_sendto(FAR struct socket *psock, FAR const void *buf,
+                    size_t len, int flags, FAR const struct sockaddr *to,
+                    socklen_t tolen);
 #endif
 
 /****************************************************************************

@@ -216,7 +216,7 @@ struct tiva_driver_s
 
 /* A single packet buffer is used */
 
-static uint8_t g_pktbuf[MAX_NET_DEV_MTU + CONFIG_NET_GUARDSIZE];
+static uint8_t g_pktbuf[MAX_NETDEV_PKTSIZE + CONFIG_NET_GUARDSIZE];
 
 /* Ethernet peripheral state */
 
@@ -285,7 +285,7 @@ static int  tiva_rmmac(struct net_driver_s *dev, const uint8_t *mac);
  * Description:
  *   Read a register from the Ethernet module
  *
- * Parameters:
+ * Input Parameters:
  *   priv   - Reference to the driver state structure
  *   offset - Byte offset of the register from the ethernet base address
  *
@@ -312,7 +312,7 @@ static inline uint32_t tiva_ethin(struct tiva_driver_s *priv, int offset)
  * Description:
  *   Write a register to the Ethernet module
  *
- * Parameters:
+ * Input Parameters:
  *   priv   - Reference to the driver state structure
  *   offset - Byte offset of the register from the ethernet base address
  *   value  - The value to write the Ethernet register
@@ -340,7 +340,7 @@ static inline void tiva_ethout(struct tiva_driver_s *priv, int offset, uint32_t 
  * Description:
  *   Configure and reset the Ethernet module, leaving it in a disabled state.
  *
- * Parameters:
+ * Input Parameters:
  *   priv   - Reference to the driver state structure
  *
  * Returned Value:
@@ -415,7 +415,7 @@ static void tiva_ethreset(struct tiva_driver_s *priv)
  * Description:
  *   Write a 16-bit word to a PHY register
  *
- * Parameters:
+ * Input Parameters:
  *   priv    - Reference to the driver state structure
  *   regaddr - Address of the PHY register to write
  *   value   - The value to write to the register
@@ -455,7 +455,7 @@ static void tiva_phywrite(struct tiva_driver_s *priv, int regaddr, uint16_t valu
  * Description:
  *   Write a 16-bit word to a PHY register
  *
- * Parameters:
+ * Input Parameters:
  *   priv    - Reference to the driver state structure
  *   regaddr - Address of the PHY register to write
  *   value   - The value to write to the register
@@ -493,7 +493,7 @@ static uint16_t tiva_phyread(struct tiva_driver_s *priv, int regaddr)
  *   Start hardware transmission.  Called either from the txdone interrupt
  *   handling or from watchdog based polling.
  *
- * Parameters:
+ * Input Parameters:
  *   priv  - Reference to the driver state structure
  *
  * Returned Value:
@@ -598,7 +598,7 @@ static int tiva_transmit(struct tiva_driver_s *priv)
  *   2. When the preceding TX packet send timesout and the interface is reset
  *   3. During normal TX polling
  *
- * Parameters:
+ * Input Parameters:
  *   dev  - Reference to the NuttX driver state structure
  *
  * Returned Value:
@@ -644,11 +644,14 @@ static int tiva_txpoll(struct net_driver_s *dev)
         }
 #endif /* CONFIG_NET_IPv6 */
 
-      /* Send the packet.  tiva_transmit() will return zero if the
-       * packet was successfully handled.
-       */
+      if (!devif_loopback(&priv->ld_dev))
+        {
+          /* Send the packet.  tiva_transmit() will return zero if the
+           * packet was successfully handled.
+           */
 
-      ret = tiva_transmit(priv);
+          ret = tiva_transmit(priv);
+        }
     }
 
   /* If zero is returned, the polling will continue until all connections have
@@ -664,7 +667,7 @@ static int tiva_txpoll(struct net_driver_s *dev)
  * Description:
  *   An interrupt was received indicating the availability of a new RX packet
  *
- * Parameters:
+ * Input Parameters:
  *   priv  - Reference to the driver state structure
  *
  * Returned Value:
@@ -713,7 +716,7 @@ static void tiva_receive(struct tiva_driver_s *priv)
        * and 4 byte FCS that are not copied into the network packet.
        */
 
-      if (pktlen > (CONFIG_NET_ETH_MTU + 6) || pktlen <= (ETH_HDRLEN + 6))
+      if (pktlen > (CONFIG_NET_ETH_PKTSIZE + 6) || pktlen <= (ETH_HDRLEN + 6))
         {
           int wordlen;
 
@@ -913,7 +916,7 @@ static void tiva_receive(struct tiva_driver_s *priv)
  * Description:
  *   An interrupt was received indicating that the last TX packet(s) is done
  *
- * Parameters:
+ * Input Parameters:
  *   priv  - Reference to the driver state structure
  *
  * Returned Value:
@@ -950,7 +953,7 @@ static void tiva_txdone(struct tiva_driver_s *priv)
  * Description:
  *   Perform interrupt related work from the worker thread
  *
- * Parameters:
+ * Input Parameters:
  *   arg - The argument passed when work_queue() was called.
  *
  * Returned Value:
@@ -1042,7 +1045,7 @@ static void tiva_interrupt_work(void *arg)
  * Description:
  *   Hardware interrupt handler
  *
- * Parameters:
+ * Input Parameters:
  *   irq     - Number of the IRQ that generated the interrupt
  *   context - Interrupt register state save info (architecture-specific)
  *
@@ -1106,7 +1109,7 @@ static int tiva_interrupt(int irq, void *context, FAR void *arg)
  * Description:
  *   Perform TX timeout related work from the worker thread
  *
- * Parameters:
+ * Input Parameters:
  *   arg - The argument passed when work_queue() as called.
  *
  * Returned Value:
@@ -1146,7 +1149,7 @@ static void tiva_txtimeout_work(void *arg)
  *   Our TX watchdog timed out.  Called from the timer interrupt handler.
  *   The last TX never completed.  Reset the hardware and start again.
  *
- * Parameters:
+ * Input Parameters:
  *   argc - The number of available arguments
  *   arg  - The first argument
  *
@@ -1184,7 +1187,7 @@ static void tiva_txtimeout_expiry(int argc, wdparm_t arg, ...)
  * Description:
  *   Perform periodic polling from the worker thread
  *
- * Parameters:
+ * Input Parameters:
  *   arg - The argument passed when work_queue() as called.
  *
  * Returned Value:
@@ -1231,7 +1234,7 @@ static void tiva_poll_work(void *arg)
  * Description:
  *   Periodic timer handler.  Called from the timer interrupt handler.
  *
- * Parameters:
+ * Input Parameters:
  *   argc - The number of available arguments
  *   arg  - The first argument
  *
@@ -1259,7 +1262,7 @@ static void tiva_poll_expiry(int argc, wdparm_t arg, ...)
  *   NuttX Callback: Bring up the Ethernet interface when an IP address is
  *   provided
  *
- * Parameters:
+ * Input Parameters:
  *   dev  - Reference to the NuttX driver state structure
  *
  * Returned Value:
@@ -1416,7 +1419,7 @@ static int tiva_ifup(struct net_driver_s *dev)
  *   NuttX Callback: Stop the interface.  The only way to restore normal
  *   behavior is to call tiva_ifup().
  *
- * Parameters:
+ * Input Parameters:
  *   dev  - Reference to the NuttX driver state structure
  *
  * Returned Value:
@@ -1498,7 +1501,7 @@ static int tiva_ifdown(struct net_driver_s *dev)
  * Description:
  *   Perform an out-of-cycle poll on the worker thread.
  *
- * Parameters:
+ * Input Parameters:
  *   arg - Reference to the NuttX driver state structure (cast to void*)
  *
  * Returned Value:
@@ -1542,7 +1545,7 @@ static void tiva_txavail_work(void *arg)
  *   stimulus perform an out-of-cycle poll and, thereby, reduce the TX
  *   latency.
  *
- * Parameters:
+ * Input Parameters:
  *   dev - Reference to the NuttX driver state structure
  *
  * Returned Value:
@@ -1579,7 +1582,7 @@ static int tiva_txavail(struct net_driver_s *dev)
  *   NuttX Callback: Add the specified MAC address to the hardware multicast
  *   address filtering
  *
- * Parameters:
+ * Input Parameters:
  *   dev  - Reference to the NuttX driver state structure
  *   mac  - The MAC address to be added
  *
@@ -1609,7 +1612,7 @@ static int tiva_addmac(struct net_driver_s *dev, const uint8_t *mac)
  *   NuttX Callback: Remove the specified MAC address from the hardware multicast
  *   address filtering
  *
- * Parameters:
+ * Input Parameters:
  *   dev  - Reference to the NuttX driver state structure
  *   mac  - The MAC address to be removed
  *
@@ -1642,7 +1645,7 @@ static int tiva_rmmac(struct net_driver_s *dev, const uint8_t *mac)
  * Description:
  *   Initialize the Ethernet driver for one interface
  *
- * Parameters:
+ * Input Parameters:
  *   None
  *
  * Returned Value:

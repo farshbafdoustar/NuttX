@@ -2,7 +2,7 @@
  * net/udp/udp_input.c
  * Handling incoming UDP input
  *
- *   Copyright (C) 2007-2009, 2011 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2007-2009, 2011, 2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Adapted for NuttX from logic in uIP which also has a BSD-like license:
@@ -66,12 +66,12 @@
  * Description:
  *   Handle incoming UDP input
  *
- * Parameters:
+ * Input Parameters:
  *   dev   - The device driver structure containing the received UDP packet
  *   udp   - A pointer to the UDP header in the packet
  *   iplen - Length of the IP and UDP headers
  *
- * Return:
+ * Returned Value:
  *   OK    - The packet has been processed  and can be deleted
  *   ERROR - Hold the packet and try again later.  There is a listening
  *           socket but no receive in place to catch the packet yet.  The
@@ -238,10 +238,10 @@ static int udp_input(FAR struct net_driver_s *dev, unsigned int iplen)
  * Description:
  *   Handle incoming UDP input in an IPv4 packet
  *
- * Parameters:
+ * Input Parameters:
  *   dev - The device driver structure containing the received UDP packet
  *
- * Return:
+ * Returned Value:
  *   OK  The packet has been processed  and can be deleted
  *   ERROR Hold the packet and try again later. There is a listening socket
  *         but no receive in place to catch the packet yet.
@@ -270,10 +270,10 @@ int udp_ipv4_input(FAR struct net_driver_s *dev)
  * Description:
  *   Handle incoming UDP input in an IPv6 packet
  *
- * Parameters:
+ * Input Parameters:
  *   dev - The device driver structure containing the received UDP packet
  *
- * Return:
+ * Returned Value:
  *   OK  The packet has been processed  and can be deleted
  *   ERROR Hold the packet and try again later. There is a listening socket
  *         but no receive in place to catch the packet yet.

@@ -1,7 +1,7 @@
 /****************************************************************************
  * config/stm32f4discovery/src/stm32_bringup.c
  *
- *   Copyright (C) 2012, 2014-2017 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2012, 2014-2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,8 +48,6 @@
 #ifdef CONFIG_USBMONITOR
 #  include <nuttx/usb/usbmonitor.h>
 #endif
-
-#include <nuttx/binfmt/elf.h>
 
 #include "stm32.h"
 #include "stm32_romfs.h"
@@ -107,14 +105,30 @@ int stm32_bringup(void)
 #endif
   int ret = OK;
 
+#ifdef CONFIG_SENSORS_BMP180
+  stm32_bmp180initialize("/dev/press0");
+#endif
+
 #ifdef CONFIG_SENSORS_BH1750FVI
-  stm32_bh1750initialize("/dev/light0");
+  ret = stm32_bh1750initialize("/dev/light0");
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: stm32_bh1750initialize() failed: %d\n", ret);
+    }
 #endif
 
 #ifdef CONFIG_SENSORS_ZEROCROSS
   /* Configure the zero-crossing driver */
 
   stm32_zerocross_initialize();
+#endif
+
+#ifdef CONFIG_LEDS_MAX7219
+  ret = stm32_max7219init("/dev/numdisp0");
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: max7219_leds_register failed: %d\n", ret);
+    }
 #endif
 
 #ifdef CONFIG_RGBLED
@@ -275,18 +289,10 @@ int stm32_bringup(void)
     }
 #endif
 
-#ifdef HAVE_ELF
-  /* Initialize the ELF binary loader */
-
-  ret = elf_initialize();
-  if (ret < 0)
-    {
-      serr("ERROR: Initialization of the ELF loader failed: %d\n", ret);
-    }
-#endif
-
 #ifdef CONFIG_SENSORS_MAX31855
-  ret = stm32_max31855initialize("/dev/temp0");
+  /* Register device 0 on spi channel 2 */
+
+  ret = stm32_max31855initialize("/dev/temp0", 2, 0);
   if (ret < 0)
     {
       serr("ERROR:  stm32_max31855initialize failed: %d\n", ret);
@@ -336,6 +342,14 @@ int stm32_bringup(void)
   if (ret < 0)
     {
       serr("ERROR: Failed to initialize LIS3DSH driver: %d\n", ret);
+    }
+#endif
+
+#ifdef HAVE_HCIUART
+  ret = hciuart_dev_initialize();
+  if (ret < 0)
+    {
+      serr("ERROR: Failed to initialize HCI UART driver: %d\n", ret);
     }
 #endif
 

@@ -223,8 +223,7 @@ Networking Support
   Networking Support
     CONFIG_NET=y                        : Enable Neworking
     CONFIG_NET_SOCKOPTS=y               : Enable socket operations
-    CONFIG_NET_ETH_MTU=562              : Maximum packet size (MTU) 1518 is more standard
-    CONFIG_NET_ETH_TCP_RECVWNDO=536     : Should be the same as CONFIG_NET_ETH_MTU
+    CONFIG_NET_ETH_PKTSIZE=562          : Maximum packet size 1518 is more standard
     CONFIG_NET_TCP=y                    : Enable TCP/IP networking
     CONFIG_NET_TCPBACKLOG=y             : Support TCP/IP backlog
     CONFIG_NET_TCP_READAHEAD_BUFSIZE=536  Read-ahead buffer size
@@ -581,8 +580,7 @@ USB Full-Speed Device
      directories that can be used for reference.
 
   2. Linux supports the CDC/ACM driver out of the box.  Windows, on the other
-     than requires that you first install a serial driver (a .inf file).  There
-     are example .inf files for NuttX in the nuttx/configs/spark directories.
+     than requires that you first install a serial driver (a .inf file).
 
   3. There is hand-shaking to pace incoming serial data.  As a result, you may
      experience data loss due to RX overrun errors.  The overrun errors occur
@@ -929,13 +927,6 @@ SAM4E-EK-specific Configuration Options
 
     CONFIG_ARCH_LEDS -  Use LEDs to show state. Unique to board architecture.
 
-    CONFIG_ARCH_CALIBRATION - Enables some build in instrumentation that
-       cause a 100 second delay during boot-up.  This 100 second delay
-       serves no purpose other than it allows you to calibratre
-       CONFIG_ARCH_LOOPSPERMSEC.  You simply use a stop watch to measure
-       the 100 second delay then adjust CONFIG_ARCH_LOOPSPERMSEC until
-       the delay actually is 100 seconds.
-
   Individual subsystems can be enabled:
 
     CONFIG_SAM34_SPI0          - Serial Peripheral Interface 0 (SPI0)
@@ -1037,9 +1028,7 @@ Configurations
   Each SAM4E-EK configuration is maintained in a sub-directory and
   can be selected as follow:
 
-    cd tools
-    ./configure.sh sam4e-ek/<subdir>
-    cd -
+    tools/configure.sh sam4e-ek/<subdir>
 
   Before building, make sure the PATH environment variable includes the
   correct path to the directory than holds your toolchain binaries.
@@ -1094,7 +1083,7 @@ Configurations
      This re-configuration should be done before making NuttX or else the
      subsequent 'make' will fail.  If you have already attempted building
      NuttX then you will have to 1) 'make distclean' to remove the old
-     configuration, 2) 'cd tools; ./configure.sh sam4e-ek/ksnh' to start
+     configuration, 2) 'tools/configure.sh sam4e-ek/ksnh' to start
      with a fresh configuration, and 3) perform the configuration changes
      above.
 
@@ -1380,8 +1369,7 @@ Configurations
     5. By default, this configuration uses the CDC/ACM serial device to
        provide the USB console.  This works out-of-the-box for Linux.
        Windows, on the other hand, will require a CDC/ACM device driver
-       (.inf file).  There is a sample .inf file in the nuttx/configs/spark
-       directories.
+       (.inf file).
 
     5. Using the Prolifics PL2303 Emulation
 
@@ -1425,14 +1413,11 @@ Configurations
 
     1. Install the nxwm configuration
 
-       $ cd ~/nuttx-git/nuttx/tools
-       $ ./configure.sh sam4e-ek/nxwm
+       $ tools/configure.sh sam4e-ek/nxwm
 
     2. Make the build context (only)
 
-       $ cd ..
        $ make context
-       ...
 
     3. Install the nxwm unit test
 

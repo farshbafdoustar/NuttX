@@ -1,7 +1,7 @@
 /************************************************************************************
  * configs/stm32f103-minimum/src/stm32f103_minimum.h
  *
- *   Copyright (C) 2016 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2016, 2018 Gregory Nutt. All rights reserved.
  *   Author: Laurent Latil <laurent@latil.nom.fr>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,6 +44,12 @@
 #include <nuttx/compiler.h>
 #include <stdint.h>
 
+#include <arch/chip/chip.h>
+
+/************************************************************************************
+ * Pre-processor Definitions
+ ************************************************************************************/
+
 #define HAVE_AT24 1
 
 /* AT24 Serial EEPROM */
@@ -77,10 +83,6 @@
 #  undef HAVE_AT24
 #endif
 
-/************************************************************************************
- * Pre-processor Definitions
- ************************************************************************************/
-
 /* How many SPI modules does this chip support? The LM3S6918 supports 2 SPI
  * modules (others may support more -- in such case, the following must be
  * expanded).
@@ -96,8 +98,18 @@
 /* GPIOs **************************************************************/
 /* LEDs */
 
-#define GPIO_LED1         (GPIO_OUTPUT|GPIO_CNF_OUTPP|GPIO_MODE_50MHz|\
-                           GPIO_OUTPUT_CLEAR|GPIO_PORTC|GPIO_PIN13)
+/* The Blue/Red pills have a different pinout to the Black pill,
+ * which includes the board's user LED.
+ */
+
+#ifdef CONFIG_STM32F103MINIMUM_BLACKPILL
+#  define GPIO_LED1         (GPIO_OUTPUT|GPIO_CNF_OUTPP|GPIO_MODE_50MHz|\
+                            GPIO_OUTPUT_CLEAR|GPIO_PORTB|GPIO_PIN12)
+#else
+#  define GPIO_LED1         (GPIO_OUTPUT|GPIO_CNF_OUTPP|GPIO_MODE_50MHz|\
+                             GPIO_OUTPUT_CLEAR|GPIO_PORTC|GPIO_PIN13)
+#endif
+
 /* BUTTONs */
 
 #define GPIO_BTN_USER1    (GPIO_INPUT|GPIO_CNF_INFLOAT|GPIO_MODE_INPUT|\
@@ -109,6 +121,10 @@
 #define MIN_IRQBUTTON     BUTTON_USER1
 #define MAX_IRQBUTTON     BUTTON_USER2
 #define NUM_IRQBUTTONS    (BUTTON_USER1 - BUTTON_USER2 + 1)
+
+/* ZERO CROSS pin definition */
+
+#define GPIO_ZEROCROSS    (GPIO_INPUT|GPIO_CNF_INFLOAT|GPIO_PORTA|GPIO_PIN0)
 
 /* Pins config to use with HC-SR04 sensor */
 
@@ -129,6 +145,9 @@
                            GPIO_OUTPUT_SET|GPIO_PORTA|GPIO_PIN4)
 
 #define STM32_LCD_CS      (GPIO_OUTPUT|GPIO_CNF_OUTPP|GPIO_MODE_50MHz|\
+                           GPIO_OUTPUT_SET|GPIO_PORTA|GPIO_PIN4)
+
+#define GPIO_MAX6675_CS   (GPIO_OUTPUT|GPIO_CNF_OUTPP|GPIO_MODE_50MHz|\
                            GPIO_OUTPUT_SET|GPIO_PORTA|GPIO_PIN4)
 
 #define GPIO_MCP2515_CS   (GPIO_OUTPUT|GPIO_CNF_OUTPP|GPIO_MODE_50MHz|\
@@ -205,7 +224,7 @@
  *   CONFIG_LIB_BOARDCTL=y:
  *     If CONFIG_NSH_ARCHINITIALIZE=y:
  *       Called from the NSH library (or other application)
- *     Otherse, assumed to be called from some other application.
+ *     Otherwise, assumed to be called from some other application.
  *
  *   Otherwise CONFIG_BOARD_INITIALIZE=y:
  *     Called from board_initialize().
@@ -226,6 +245,18 @@ int stm32_bringup(void);
 
 #ifdef CONFIG_DEV_GPIO
 int stm32_gpio_initialize(void);
+#endif
+
+/****************************************************************************
+ * Name: stm32_zerocross_initialize
+ *
+ * Description:
+ *   Initialize and register the zero cross driver
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SENSORS_ZEROCROSS
+int stm32_zerocross_initialize(void);
 #endif
 
 /************************************************************************************
@@ -250,6 +281,19 @@ int stm32_adc_setup(void);
 
 #ifdef CONFIG_SENSORS_APDS9960
 int stm32_apds9960initialize(FAR const char *devpath);
+#endif
+
+/****************************************************************************
+ * Name: stm32_bmp180initialize
+ *
+ * Description:
+ *   Called to configure an I2C and to register BMP180 for the stm32f4discovery
+ *   board.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SENSORS_BMP180
+int stm32_bmp180initialize(FAR const char *devpath);
 #endif
 
 /************************************************************************************
@@ -309,6 +353,18 @@ int stm32_lm75initialize(FAR const char *devpath);
 #endif
 
 /************************************************************************************
+ * Name: stm32_max6675initialize
+ *
+ * Description:
+ *   Called to initialize MAX6675 temperature sensor
+ *
+ ************************************************************************************/
+
+#ifdef CONFIG_SENSORS_MAX6675
+int stm32_max6675initialize(FAR const char *devpath);
+#endif
+
+/************************************************************************************
  * Name: stm32_w25initialize
  *
  * Description:
@@ -331,7 +387,7 @@ int stm32_qencoder_initialize(FAR const char *devpath, int timer);
 #endif
 
 /****************************************************************************
- * Name stm32_rgbled_setup
+ * Name: stm32_rgbled_setup
  *
  * Description:
  *   This function is called by board initialization logic to configure the
@@ -402,7 +458,7 @@ int stm32_pwm_setup(void);
  * Description:
  *   Initialize the NRF24L01 wireless module
  *
- * Input Parmeters:
+ * Input Parameters:
  *   None
  *
  * Returned Value:

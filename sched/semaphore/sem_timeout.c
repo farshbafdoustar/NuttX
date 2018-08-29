@@ -59,11 +59,11 @@
  *   This function is called if the timeout elapses before before a
  *   semaphore is acquired.
  *
- * Parameters:
+ * Input Parameters:
  *   argc - The number of arguments (should be 1)
  *   pid  - The task ID of the task to wakeup
  *
- * Return Value:
+ * Returned Value:
  *   None
  *
  * Assumptions:

@@ -109,7 +109,8 @@
 
 #  if defined(CONFIG_SPI_DMAPRIO)
 #    define SPI_DMA_PRIO  CONFIG_SPI_DMAPRIO
-#  elif defined(CONFIG_STM32_STM32F10XX) || defined(CONFIG_STM32_STM32L15XX)
+#  elif defined(CONFIG_STM32_STM32F10XX) || defined(CONFIG_STM32_STM32L15XX) || \
+        defined(CONFIG_STM32_STM32F30XX)
 #    define SPI_DMA_PRIO  DMA_CCR_PRIMED
 #  elif defined(CONFIG_STM32_STM32F20XX) || defined(CONFIG_STM32_STM32F4XXX)
 #    define SPI_DMA_PRIO  DMA_SCR_PRIMED
@@ -117,7 +118,8 @@
 #    error "Unknown STM32 DMA"
 #  endif
 
-#  if defined(CONFIG_STM32_STM32F10XX) || defined(CONFIG_STM32_STM32L15XX)
+#  if defined(CONFIG_STM32_STM32F10XX) || defined(CONFIG_STM32_STM32L15XX) || \
+      defined(CONFIG_STM32_STM32F30XX)
 #    if (SPI_DMA_PRIO & ~DMA_CCR_PL_MASK) != 0
 #      error "Illegal value for CONFIG_SPI_DMAPRIO"
 #    endif
@@ -1122,13 +1124,6 @@ static uint32_t spi_setfrequency(FAR struct spi_dev_s *dev, uint32_t frequency)
   uint16_t setbits;
   uint32_t actual;
 
-  /* Limit to max possible (if STM32_SPI_CLK_MAX is defined in board.h) */
-
-  if (frequency > STM32_SPI_CLK_MAX)
-    {
-      frequency = STM32_SPI_CLK_MAX;
-    }
-
   /* Has the frequency changed? */
 
   if (frequency != priv->frequency)
@@ -1677,7 +1672,7 @@ static void spi_recvblock(FAR struct spi_dev_s *dev, FAR void *rxbuffer, size_t 
  * Description:
  *   Initialize the selected SPI bus in its default state (Master, 8-bit, mode 0, etc.)
  *
- * Input Parameter:
+ * Input Parameters:
  *   priv   - private SPI device structure
  *
  * Returned Value:
@@ -1695,7 +1690,7 @@ static void spi_bus_initialize(FAR struct stm32_spidev_s *priv)
    *   Mode 0:                        CR1.CPHA=0 and CR1.CPOL=0
    *   Master:                        CR1.MSTR=1
    *   8-bit:                         CR2.DS=7
-   *   MSB tranmitted first:          CR1.LSBFIRST=0
+   *   MSB transmitted first:         CR1.LSBFIRST=0
    *   Replace NSS with SSI & SSI=1:  CR1.SSI=1 CR1.SSM=1 (prevents MODF error)
    *   Two lines full duplex:         CR1.BIDIMODE=0 CR1.BIDIOIE=(Don't care) and CR1.RXONLY=0
    */
@@ -1713,7 +1708,7 @@ static void spi_bus_initialize(FAR struct stm32_spidev_s *priv)
    *   Mode 0:                        CPHA=0 and CPOL=0
    *   Master:                        MSTR=1
    *   8-bit:                         DFF=0
-   *   MSB tranmitted first:          LSBFIRST=0
+   *   MSB transmitted first:         LSBFIRST=0
    *   Replace NSS with SSI & SSI=1:  SSI=1 SSM=1 (prevents MODF error)
    *   Two lines full duplex:         BIDIMODE=0 BIDIOIE=(Don't care) and RXONLY=0
    */
@@ -1782,7 +1777,7 @@ static void spi_bus_initialize(FAR struct stm32_spidev_s *priv)
  * Description:
  *   Initialize the selected SPI bus
  *
- * Input Parameter:
+ * Input Parameters:
  *   Port number (for hardware that has mutiple SPI interfaces)
  *
  * Returned Value:

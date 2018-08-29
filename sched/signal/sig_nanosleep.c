@@ -73,7 +73,7 @@
  *   The use of the nxsig_nanosleep() function has no effect on the action
  *   or blockage of any signal.
  *
- * Parameters:
+ * Input Parameters:
  *   rqtp - The amount of time to be suspended from execution.
  *   rmtp - If the rmtp argument is non-NULL, the timespec structure
  *          referenced by it is updated to contain the amount of time
@@ -107,7 +107,7 @@ int nxsig_nanosleep(FAR const struct timespec *rqtp,
                     FAR struct timespec *rmtp)
 {
   irqstate_t flags;
-  systime_t starttick;
+  clock_t starttick;
   sigset_t set;
   int ret;
 
@@ -158,9 +158,9 @@ int nxsig_nanosleep(FAR const struct timespec *rqtp,
 
   if (rmtp)
     {
-      systime_t elapsed;
-      systime_t remaining;
-      ssystime_t ticks;
+      clock_t elapsed;
+      clock_t remaining;
+      sclock_t ticks;
 
       /* REVISIT: The conversion from time to ticks and back could
        * be avoided.  clock_timespec_subtract() would be used instead
@@ -182,16 +182,16 @@ int nxsig_nanosleep(FAR const struct timespec *rqtp,
        * amount of time that we failed to wait.
        */
 
-      if (elapsed >= (systime_t)ticks)
+      if (elapsed >= (clock_t)ticks)
         {
           remaining = 0;
         }
       else
         {
-          remaining = (systime_t)ticks - elapsed;
+          remaining = (clock_t)ticks - elapsed;
         }
 
-      (void)clock_ticks2time((ssystime_t)remaining, rmtp);
+      (void)clock_ticks2time((sclock_t)remaining, rmtp);
     }
 
   leave_critical_section(flags);
@@ -239,7 +239,7 @@ int nxsig_nanosleep(FAR const struct timespec *rqtp,
  *   to the CPU-time clock of the calling thread. It is unspecified whether
  *   clock_id values of other CPU-time clocks are allowed.
  *
- * Parameters:
+ * Input Parameters:
  *   clockid - The clock to use to interpret the absolute time
  *   flags   - Open flags.  TIMER_ABSTIME  is the only supported flag.
  *   rqtp    - The amount of time to be suspended from execution.

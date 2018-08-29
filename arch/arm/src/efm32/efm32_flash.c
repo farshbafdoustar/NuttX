@@ -258,7 +258,7 @@ int __ramfunc__ msc_load_verify_address(uint32_t *address)
 }
 
 /****************************************************************************
- * Name:msc_load_data
+ * Name: msc_load_data
  *
  * Description:
  *   Perform data phase of FLASH write cycle.
@@ -575,6 +575,11 @@ size_t up_progmem_pagesize(size_t page)
     }
 
   return 0;
+}
+
+size_t up_progmem_erasesize(size_t page)
+{
+  return up_progmem_pagesize(page);
 }
 
 ssize_t up_progmem_getpage(size_t addr)

@@ -1,7 +1,8 @@
 /****************************************************************************
  * net/udp/udp_netpoll.c
  *
- *   Copyright (C) 2008-2009, 2011-2015 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2008-2009, 2011-2015, 2018 Gregory Nutt. All rights
+ *     reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -47,6 +48,7 @@
 #include <nuttx/net/net.h>
 
 #include <devif/devif.h>
+#include <socket/socket.h>
 #include "udp/udp.h"
 
 #ifdef HAVE_UDP_POLL
@@ -75,7 +77,7 @@ struct udp_poll_s
  *   This function is called to perform the actual UDP receive operation
  *   via the device interface layer.
  *
- * Parameters:
+ * Input Parameters:
  *   dev      The structure of the network driver that caused the event
  *   conn     The connection structure associated with the socket
  *   flags    Set of events describing why the callback was invoked
@@ -111,7 +113,11 @@ static uint16_t udp_poll_eventhandler(FAR struct net_driver_s *dev,
           eventset |= (POLLIN & info->fds->events);
         }
 
-      /*  poll is a sign that we are free to send data. */
+      /* A poll is a sign that we are free to send data.
+       * REVISIT: This is bogus:  If CONFIG_UDP_WRITE_BUFFERS=y then
+       * we never have to wait to send; otherwise, we always have to
+       * wait to send.  Receiving a poll is irrelevant.
+       */
 
       if ((flags & UDP_POLL) != 0)
         {
@@ -191,14 +197,6 @@ int udp_pollsetup(FAR struct socket *psock, FAR struct pollfd *fds)
    */
 
   info->dev = udp_find_laddr_device(conn);
-
-  /* Setup the UDP remote connection */
-
-  ret = udp_connect(conn, NULL);
-  if (ret)
-    {
-      goto errout_with_lock;
-    }
 
   /* Allocate a UDP callback structure */
 

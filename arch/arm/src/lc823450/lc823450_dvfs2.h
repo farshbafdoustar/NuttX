@@ -1,7 +1,7 @@
 /****************************************************************************
  * arch/arm/src/lc823450/lc823450_dvfs2.h
  *
- *   Copyright (C) 2015-2017 Sony Corporation. All rights reserved.
+ *   Copyright 2015,2016,2017,2018 Sony Video & Sound Products Inc.
  *   Author: Masayuki Ishikawa <Masayuki.Ishikawa@jp.sony.com>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -59,11 +59,14 @@ extern "C"
  * Public Functions
  ****************************************************************************/
 
+void lc823450_dvfs_get_idletime(uint64_t idaletime[]);
+
 void lc823450_dvfs_set_min(uint8_t id, uint16_t mhz);
 void lc823450_dvfs_enter_idle(void);
 void lc823450_dvfs_exit_idle(int irq);
 int  lc823450_dvfs_set_freq(int freq);
 void lc823450_dvfs_tick_callback(void);
+int lc823450_dvfs_oneshot(int irq, uint32_t *regs, FAR void *arg);
 
 int  dvfs_procfs_register(void);
 

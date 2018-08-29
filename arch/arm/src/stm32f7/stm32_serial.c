@@ -1,7 +1,7 @@
 /****************************************************************************
  * arch/arm/src/stm32f7/stm32_serial.c
  *
- *   Copyright (C) 2015-2017 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2015-2018 Gregory Nutt. All rights reserved.
  *   Authors: Gregory Nutt <gnutt@nuttx.org>
  *            David Sidrane <david_s5@nscdg.com>
  *
@@ -209,8 +209,8 @@
 
 /* Power management definitions */
 
-#if defined(CONFIG_PM) && !defined(CONFIG_PM_SERIAL_ACTIVITY)
-#  define CONFIG_PM_SERIAL_ACTIVITY 10
+#if defined(CONFIG_PM) && !defined(CONFIG_STM32F7_PM_SERIAL_ACTIVITY)
+#  define CONFIG_STM32F7_PM_SERIAL_ACTIVITY 10
 #endif
 #if defined(CONFIG_PM)
 #  define PM_IDLE_DOMAIN             0 /* Revisit */
@@ -294,9 +294,9 @@
 
 struct up_dev_s
 {
-  struct uart_dev_s dev;       /* Generic UART device */
-  uint16_t          ie;        /* Saved interrupt mask bits value */
-  uint16_t          sr;        /* Saved status bits */
+  struct uart_dev_s dev;        /* Generic UART device */
+  uint16_t          ie;         /* Saved interrupt mask bits value */
+  uint16_t          sr;         /* Saved status bits */
 
   /* Has been initialized and HW is setup. */
 
@@ -307,39 +307,39 @@ struct up_dev_s
    */
 
 #ifdef CONFIG_SERIAL_TERMIOS
-  uint8_t           parity;    /* 0=none, 1=odd, 2=even */
-  uint8_t           bits;      /* Number of bits (7 or 8) */
-  bool              stopbits2; /* True: Configure with 2 stop bits instead of 1 */
+  uint8_t           parity;     /* 0=none, 1=odd, 2=even */
+  uint8_t           bits;       /* Number of bits (7 or 8) */
+  bool              stopbits2;  /* True: Configure with 2 stop bits instead of 1 */
 #ifdef CONFIG_SERIAL_IFLOWCONTROL
-  bool              iflow;     /* input flow control (RTS) enabled */
+  bool              iflow;      /* input flow control (RTS) enabled */
 #endif
 #ifdef CONFIG_SERIAL_OFLOWCONTROL
-  bool              oflow;     /* output flow control (CTS) enabled */
+  bool              oflow;      /* output flow control (CTS) enabled */
 #endif
-  uint32_t          baud;      /* Configured baud */
+  uint32_t          baud;       /* Configured baud */
 #else
-  const uint8_t     parity;    /* 0=none, 1=odd, 2=even */
-  const uint8_t     bits;      /* Number of bits (7 or 8) */
-  const bool        stopbits2; /* True: Configure with 2 stop bits instead of 1 */
+  const uint8_t     parity;     /* 0=none, 1=odd, 2=even */
+  const uint8_t     bits;       /* Number of bits (7 or 8) */
+  const bool        stopbits2;  /* True: Configure with 2 stop bits instead of 1 */
 #ifdef CONFIG_SERIAL_IFLOWCONTROL
-  const bool        iflow;     /* input flow control (RTS) enabled */
+  const bool        iflow;      /* input flow control (RTS) enabled */
 #endif
 #ifdef CONFIG_SERIAL_OFLOWCONTROL
-  const bool        oflow;     /* output flow control (CTS) enabled */
+  const bool        oflow;      /* output flow control (CTS) enabled */
 #endif
-  const uint32_t    baud;      /* Configured baud */
+  const uint32_t    baud;       /* Configured baud */
 #endif
 
-  const uint8_t     irq;       /* IRQ associated with this USART */
-  const uint32_t    apbclock;  /* PCLK 1 or 2 frequency */
-  const uint32_t    usartbase; /* Base address of USART registers */
-  const uint32_t    tx_gpio;   /* U[S]ART TX GPIO pin configuration */
-  const uint32_t    rx_gpio;   /* U[S]ART RX GPIO pin configuration */
+  const uint8_t     irq;        /* IRQ associated with this USART */
+  const uint32_t    apbclock;   /* PCLK 1 or 2 frequency */
+  const uint32_t    usartbase;  /* Base address of USART registers */
+  const uint32_t    tx_gpio;    /* U[S]ART TX GPIO pin configuration */
+  const uint32_t    rx_gpio;    /* U[S]ART RX GPIO pin configuration */
 #ifdef CONFIG_SERIAL_IFLOWCONTROL
-  const uint32_t    rts_gpio;  /* U[S]ART RTS GPIO pin configuration */
+  const uint32_t    rts_gpio;   /* U[S]ART RTS GPIO pin configuration */
 #endif
 #ifdef CONFIG_SERIAL_OFLOWCONTROL
-  const uint32_t    cts_gpio;  /* U[S]ART CTS GPIO pin configuration */
+  const uint32_t    cts_gpio;   /* U[S]ART CTS GPIO pin configuration */
 #endif
 
 #ifdef SERIAL_HAVE_DMA
@@ -349,15 +349,21 @@ struct up_dev_s
   /* RX DMA state */
 
 #ifdef SERIAL_HAVE_DMA
-  DMA_HANDLE        rxdma;     /* currently-open receive DMA stream */
-  bool              rxenable;  /* DMA-based reception en/disable */
-  uint32_t          rxdmanext; /* Next byte in the DMA buffer to be read */
-  char      *const  rxfifo;    /* Receive DMA buffer */
+  DMA_HANDLE        rxdma;      /* currently-open receive DMA stream */
+  bool              rxenable;   /* DMA-based reception en/disable */
+  uint32_t          rxdmanext;  /* Next byte in the DMA buffer to be read */
+#ifdef CONFIG_ARMV7M_DCACHE
+  uint32_t          rxdmaavail; /* Number of bytes available without need to
+                                 * to invalidate the data cache */
+#endif
+  char      *const  rxfifo;     /* Receive DMA buffer */
 #endif
 
 #ifdef HAVE_RS485
-  const uint32_t    rs485_dir_gpio; /* U[S]ART RS-485 DIR GPIO pin configuration */
-  const bool        rs485_dir_polarity; /* U[S]ART RS-485 DIR pin state for TX enabled */
+  const uint32_t    rs485_dir_gpio;     /* U[S]ART RS-485 DIR GPIO pin
+                                         * configuration */
+  const bool        rs485_dir_polarity; /* U[S]ART RS-485 DIR pin state for
+                                         * TX enabled */
 #endif
 };
 
@@ -1039,7 +1045,7 @@ static struct up_dev_s g_uart8priv =
 
 /* This table lets us iterate over the configured USARTs */
 
-static struct up_dev_s * const uart_devs[STM32_NSERIAL] =
+static struct up_dev_s * const g_uart_devs[STM32_NSERIAL] =
 {
 #ifdef CONFIG_STM32F7_USART1
   [0] = &g_usart1priv,
@@ -1369,7 +1375,7 @@ static void up_set_format(struct uart_dev_s *dev)
  * Description:
  *   Enable or disable APB clock for the USART peripheral
  *
- * Input parameters:
+ * Input Parameters:
  *   dev - A reference to the UART driver state structure
  *   on  - Enable clock if 'on' is 'true' and disable if 'false'
  *
@@ -1601,11 +1607,14 @@ static int up_dma_setup(struct uart_dev_s *dev)
                    RXDMA_BUFFER_SIZE,
                    SERIAL_DMA_CONTROL_WORD);
 
-  /* Reset our DMA shadow pointer to match the address just
-   * programmed above.
+  /* Reset our DMA shadow pointer and Rx data availability count to match
+   * the address just programmed above.
    */
 
   priv->rxdmanext = 0;
+#ifdef CONFIG_ARMV7M_DCACHE
+  priv->rxdmaavail = 0;
+#endif
 
   /* Enable receive DMA for the UART */
 
@@ -1791,8 +1800,8 @@ static int up_interrupt(int irq, void *context, FAR void *arg)
 
   /* Report serial activity to the power management logic */
 
-#if defined(CONFIG_PM) && CONFIG_PM_SERIAL_ACTIVITY > 0
-  pm_activity(PM_IDLE_DOMAIN, CONFIG_PM_SERIAL_ACTIVITY);
+#if defined(CONFIG_PM) && CONFIG_STM32F7_PM_SERIAL_ACTIVITY > 0
+  pm_activity(PM_IDLE_DOMAIN, CONFIG_STM32F7_PM_SERIAL_ACTIVITY);
 #endif
 
   /* Loop until there are no characters to be transferred or,
@@ -1926,6 +1935,22 @@ static int up_ioctl(struct file *filep, int cmd, unsigned long arg)
 #ifdef CONFIG_STM32F7_USART_SINGLEWIRE
     case TIOCSSINGLEWIRE:
       {
+        uint32_t cr1;
+        uint32_t cr1_ue;
+        irqstate_t flags;
+
+        flags = enter_critical_section();
+
+        /* Get the original state of UE */
+
+        cr1  = up_serialin(priv, STM32_USART_CR1_OFFSET);
+        cr1_ue = cr1 & USART_CR1_UE;
+        cr1 &= ~USART_CR1_UE;
+
+        /* Disable UE, HDSEL can only be written when UE=0 */
+
+        up_serialout(priv, STM32_USART_CR1_OFFSET, cr1);
+
         /* Change the TX port to be open-drain/push-pull and enable/disable
          * half-duplex mode.
          */
@@ -1944,6 +1969,11 @@ static int up_ioctl(struct file *filep, int cmd, unsigned long arg)
           }
 
         up_serialout(priv, STM32_USART_CR3_OFFSET, cr);
+
+        /* Re-enable UE if appropriate */
+
+        up_serialout(priv, STM32_USART_CR1_OFFSET, cr1 | cr1_ue);
+        leave_critical_section(flags);
       }
      break;
 #endif
@@ -2235,7 +2265,7 @@ static bool up_rxavailable(struct uart_dev_s *dev)
  *   Return true if UART activated RX flow control to block more incoming
  *   data
  *
- * Input parameters:
+ * Input Parameters:
  *   dev       - UART device instance
  *   nbuffered - the number of characters currently buffered
  *               (if CONFIG_SERIAL_IFLOWCONTROL_WATERMARKS is
@@ -2336,18 +2366,55 @@ static bool up_rxflowcontrol(struct uart_dev_s *dev,
 static int up_dma_receive(struct uart_dev_s *dev, unsigned int *status)
 {
   struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
+  uint32_t nextrx = up_dma_nextrx(priv);
   int c = 0;
 
-  /* If additional bytes have been added to the DMA buffer, then we will need
-   * to invalidate the DMA buffer before reading the byte.
-   */
+  /* Check if more data is available */
 
-  if (up_dma_nextrx(priv) != priv->rxdmanext)
+  if (nextrx != priv->rxdmanext)
     {
-      /* Invalidate the DMA buffer */
+#ifdef CONFIG_ARMV7M_DCACHE
+      /* If the data cache is enabled, then we will also need to manage
+       * cache coherency.  Are any bytes available in the currently coherent
+       * region of the data cache?
+       */
 
-      arch_invalidate_dcache((uintptr_t)priv->rxfifo,
-                             (uintptr_t)priv->rxfifo + RXDMA_BUFFER_SIZE - 1);
+      if (priv->rxdmaavail == 0)
+        {
+          uint32_t rxdmaavail;
+          uintptr_t addr;
+
+          /* No.. then we will have to invalidate additional space in the Rx
+           * DMA buffer.
+           */
+
+          if (nextrx > priv->rxdmanext)
+            {
+              /* Number of available bytes */
+
+              rxdmaavail = nextrx - priv->rxdmanext;
+            }
+          else
+            {
+              /* Number of available bytes up to the end of RXDMA buffer */
+
+              rxdmaavail = RXDMA_BUFFER_SIZE - priv->rxdmanext;
+            }
+
+          /* Invalidate the DMA buffer range */
+
+          addr = (uintptr_t)&priv->rxfifo[priv->rxdmanext];
+          arch_invalidate_dcache(addr, addr + rxdmaavail);
+
+          /* We don't need to invalidate the data cache for the next
+           * rxdmaavail number of next bytes.
+           */
+
+          priv->rxdmaavail = rxdmaavail;
+        }
+
+      priv->rxdmaavail--;
+#endif
 
       /* Now read from the DMA buffer */
 
@@ -2359,6 +2426,12 @@ static int up_dma_receive(struct uart_dev_s *dev, unsigned int *status)
           priv->rxdmanext = 0;
         }
     }
+
+  /* NOTE:  If no data is available, then we would return NULL which is,
+   * of course, valid binary data.  The protocol is that the upper half
+   * driver must call up_dma_rxavailable prior to calling this function to
+   * assure that this never happens.
+   */
 
   return c;
 }
@@ -2377,7 +2450,7 @@ static void up_dma_rxint(struct uart_dev_s *dev, bool enable)
 {
   struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
 
-  /* En/disable DMA reception.
+  /* Enable/disable DMA reception.
    *
    * Note that it is not safe to check for available bytes and immediately
    * pass them to uart_recvchars as that could potentially recurse back
@@ -2660,17 +2733,17 @@ FAR uart_dev_t *stm32_serial_get_uart(int uart_num)
 {
   int uart_idx = uart_num - 1;
 
-  if (uart_idx < 0 || uart_idx >= STM32_NSERIAL || !uart_devs[uart_idx])
+  if (uart_idx < 0 || uart_idx >= STM32_NSERIAL || !g_uart_devs[uart_idx])
     {
       return NULL;
     }
 
-  if (!uart_devs[uart_idx]->initialized)
+  if (!g_uart_devs[uart_idx]->initialized)
     {
       return NULL;
     }
 
-  return &uart_devs[uart_idx]->dev;
+  return &g_uart_devs[uart_idx]->dev;
 }
 
 /****************************************************************************
@@ -2693,16 +2766,16 @@ void up_earlyserialinit(void)
 
   for (i = 0; i < STM32_NSERIAL; i++)
     {
-      if (uart_devs[i])
+      if (g_uart_devs[i])
         {
-          up_disableusartint(uart_devs[i], NULL);
+          up_disableusartint(g_uart_devs[i], NULL);
         }
     }
 
   /* Configure whichever one is the console */
 
 #if CONSOLE_UART > 0
-  up_setup(&uart_devs[CONSOLE_UART - 1]->dev);
+  up_setup(&g_uart_devs[CONSOLE_UART - 1]->dev);
 #endif
 #endif /* HAVE UART */
 }
@@ -2738,21 +2811,21 @@ void up_serialinit(void)
   /* Register the console */
 
 #if CONSOLE_UART > 0
-  (void)uart_register("/dev/console", &uart_devs[CONSOLE_UART - 1]->dev);
+  (void)uart_register("/dev/console", &g_uart_devs[CONSOLE_UART - 1]->dev);
 
-#ifndef CONFIG_SERIAL_DISABLE_REORDERING
+#ifndef CONFIG_STM32F7_SERIAL_DISABLE_REORDERING
   /* If not disabled, register the console UART to ttyS0 and exclude
    * it from initializing it further down
    */
 
-  (void)uart_register("/dev/ttyS0", &uart_devs[CONSOLE_UART - 1]->dev);
+  (void)uart_register("/dev/ttyS0", &g_uart_devs[CONSOLE_UART - 1]->dev);
   minor = 1;
 #endif
 
 #ifdef SERIAL_HAVE_CONSOLE_DMA
   /* If we need to re-initialise the console to enable DMA do that here. */
 
-  up_dma_setup(&uart_devs[CONSOLE_UART - 1]->dev);
+  up_dma_setup(&g_uart_devs[CONSOLE_UART - 1]->dev);
 #endif
 #endif /* CONSOLE_UART > 0 */
 
@@ -2764,15 +2837,15 @@ void up_serialinit(void)
     {
       /* Don't create a device for non-configured ports. */
 
-      if (uart_devs[i] == 0)
+      if (g_uart_devs[i] == 0)
         {
           continue;
         }
 
-#ifndef CONFIG_SERIAL_DISABLE_REORDERING
+#ifndef CONFIG_STM32F7_SERIAL_DISABLE_REORDERING
       /* Don't create a device for the console - we did that above */
 
-      if (uart_devs[i]->dev.isconsole)
+      if (g_uart_devs[i]->dev.isconsole)
         {
           continue;
         }
@@ -2781,7 +2854,7 @@ void up_serialinit(void)
       /* Register USARTs as devices in increasing order */
 
       devname[9] = '0' + minor++;
-      (void)uart_register(devname, &uart_devs[i]->dev);
+      (void)uart_register(devname, &g_uart_devs[i]->dev);
     }
 #endif /* HAVE UART */
 }
@@ -2875,7 +2948,7 @@ void stm32_serial_dma_poll(void)
 int up_putc(int ch)
 {
 #if CONSOLE_UART > 0
-  struct up_dev_s *priv = uart_devs[CONSOLE_UART - 1];
+  struct up_dev_s *priv = g_uart_devs[CONSOLE_UART - 1];
   uint16_t ie;
 
   up_disableusartint(priv, &ie);

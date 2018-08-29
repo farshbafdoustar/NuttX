@@ -76,7 +76,7 @@ struct tcp_poll_s
  *   This function is called to perform the actual TCP receive operation via
  *   the device interface layer.
  *
- * Parameters:
+ * Input Parameters:
  *   dev      The structure of the network driver that caused the event
  *   conn     The connection structure associated with the socket
  *   flags    Set of events describing why the callback was invoked
@@ -112,7 +112,11 @@ static uint16_t tcp_poll_eventhandler(FAR struct net_driver_s *dev,
           eventset |= POLLIN & info->fds->events;
         }
 
-      /* A poll is a sign that we are free to send data. */
+      /* A poll is a sign that we are free to send data.
+       * REVISIT: This is bogus:  If CONFIG_TCP_WRITE_BUFFERS=y then
+       * we never have to wait to send; otherwise, we always have to
+       * wait to send.  Receiving a poll is irrelevant.
+       */
 
       if ((flags & TCP_POLL) != 0)
         {

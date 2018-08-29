@@ -76,6 +76,7 @@
 #define STM32_FLASH_ITCM     0x00200000     /* 0x00200000-0x003fffff: FLASH memory (ITCM) */
 #define STM32_LOADER_BASE    0x01000000     /* 0x01000000-            Bootloader */
 #define STM32_FLASH_AXIM     0x08000000     /* 0x08000000-0x081fffff: FLASH memory (AXIM) */
+#define STM32_FLASH_BASE     STM32_FLASH_AXIM
 #define STM32_OPTIONS_BASE   0x1fff0000     /* 0x1ff00000-0x1fff001f: OTP (AXIM) */
 
 /* Information Addresses ************************************************************/
@@ -113,7 +114,6 @@
 #define STM32_TIM14_BASE     0x40002000     /* 0x40002000-0x400023ff: TIM14 */
 #define STM32_LPTIM1_BASE    0x40002400     /* 0x40002400-0x400027ff: LPTIM1 */
 #define STM32_RTC_BASE       0x40002800     /* 0x40002800-0x40002bff: RTC & BKP Registers */
-#define STM32_BKP_BASE       0x40002800     /* 0x40002800-0x40002bff: RTC & BKP Registers */
 #define STM32_WWDG_BASE      0x40002c00     /* 0x40002c00-0x40002fff: WWDG */
 #define STM32_IWDG_BASE      0x40003000     /* 0x40003000-0x400033ff: IWDG */
 #define STM32_CAN3_BASE      0x40003400     /* 0x40003400-0x400037ff: CAN3 */

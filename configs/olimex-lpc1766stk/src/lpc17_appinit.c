@@ -1,7 +1,7 @@
 /****************************************************************************
  * config/olimex-lpc1766stk/src/lpc17_appinit.c
  *
- *   Copyright (C) 2010, 2013-2016 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2010, 2013-2016, 2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,6 +45,7 @@
 #include <syslog.h>
 #include <errno.h>
 
+#include <nuttx/kthread.h>
 #include <nuttx/board.h>
 #include <nuttx/spi/spi.h>
 #include <nuttx/mmcsd.h>
@@ -301,9 +302,9 @@ static int nsh_usbhostinitialize(void)
 
       syslog(LOG_ERR, "ERROR: Start nsh_waiter\n");
 
-      pid = task_create("usbhost", CONFIG_LPC1766STK_USBHOST_PRIO,
-                        CONFIG_LPC1766STK_USBHOST_STACKSIZE,
-                        (main_t)nsh_waiter, (FAR char * const *)NULL);
+      pid = kthread_create("usbhost", CONFIG_LPC1766STK_USBHOST_PRIO,
+                           CONFIG_LPC1766STK_USBHOST_STACKSIZE,
+                           (main_t)nsh_waiter, (FAR char * const *)NULL);
       return pid < 0 ? -ENOEXEC : OK;
     }
 
@@ -329,7 +330,7 @@ static int nsh_usbhostinitialize(void)
  *   arg - The boardctl() argument is passed to the board_app_initialize()
  *         implementation without modification.  The argument has no
  *         meaning to NuttX; the meaning of the argument is a contract
- *         between the board-specific initalization logic and the
+ *         between the board-specific initialization logic and the
  *         matching application logic.  The value cold be such things as a
  *         mode enumeration value, a set of DIP switch switch settings, a
  *         pointer to configuration data read from a file or serial FLASH,
@@ -351,7 +352,9 @@ int board_app_initialize(uintptr_t arg)
   ret = nsh_sdinitialize();
   if (ret < 0)
     {
-      syslog(LOG_ERR, "ERROR: Failed to initialize SPI-based SD card: %d\n", ret);
+      syslog(LOG_ERR,
+             "ERROR: Failed to initialize SPI-based SD card: %d\n",
+             ret);
     }
 
   /* Initialize USB host */
@@ -361,6 +364,16 @@ int board_app_initialize(uintptr_t arg)
     {
       syslog(LOG_ERR, "ERROR: Failed to initialize USB host: %d\n", ret);
     }
+
+#ifdef CONFIG_USBHOST_HIDMOUSE
+  /* Initialize the HID Mouse class */
+
+  ret = lpc1766stk_hidmouse_setup(0);
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: lpc1766stk_hidmouse_setup failed: %d\n", ret);
+    }
+#endif
 
 #ifdef CONFIG_CAN
   /* Initialize CAN and register the CAN driver. */

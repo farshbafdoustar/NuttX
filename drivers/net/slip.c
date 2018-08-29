@@ -57,6 +57,7 @@
 #include <nuttx/irq.h>
 #include <nuttx/clock.h>
 #include <nuttx/signal.h>
+#include <nuttx/kthread.h>
 #include <nuttx/semaphore.h>
 #include <nuttx/net/net.h>
 #include <nuttx/net/netdev.h>
@@ -87,7 +88,7 @@
 
 /* The Linux slip module hard-codes its MTU size to 296 (40 bytes for the
  * IP+TPC headers plus 256 bytes of data).  So you might as well set
- * CONFIG_NET_SLIP_MTU to 296 as well.
+ * CONFIG_NET_SLIP_PKTSIZE to 296 as well.
  *
  * There may be an issue with this setting, however.  I see that Linux uses
  * a MTU of 296 and window of 256, but actually only sends 168 bytes of data:
@@ -96,10 +97,8 @@
  * transfers to 128 bytes (possibly by modifying the tcp_mss() macro).
  */
 
-#if CONFIG_NET_SLIP_MTU < 296
-#  error "CONFIG_NET_SLIP_MTU >= 296 is required"
-#elif CONFIG_NET_SLIP_MTU > 296
-#  warning "CONFIG_NET_SLIP_MTU == 296 is optimal"
+#if CONFIG_NET_SLIP_PKTSIZE < 296
+#  error "CONFIG_NET_SLIP_PKTSIZE >= 296 is required"
 #endif
 
 /* CONFIG_NET_SLIP_NINTERFACES determines the number of physical interfaces
@@ -145,8 +144,8 @@ struct slip_driver_s
   /* This holds the information visible to the NuttX network */
 
   struct net_driver_s dev;  /* Interface understood by the network */
-  uint8_t rxbuf[CONFIG_NET_SLIP_MTU + 2];
-  uint8_t txbuf[CONFIG_NET_SLIP_MTU + 2];
+  uint8_t rxbuf[CONFIG_NET_SLIP_PKTSIZE + 2];
+  uint8_t txbuf[CONFIG_NET_SLIP_PKTSIZE + 2];
 };
 
 /****************************************************************************
@@ -404,7 +403,10 @@ static int slip_txpoll(FAR struct net_driver_s *dev)
 
   if (priv->dev.d_len > 0)
     {
-      slip_transmit(priv);
+      if (!devif_loopback(&priv->dev))
+        {
+          slip_transmit(priv);
+        }
     }
 
   /* If zero is returned, the polling will continue until all connections have
@@ -432,8 +434,8 @@ static void slip_txtask(int argc, FAR char *argv[])
 {
   FAR struct slip_driver_s *priv;
   unsigned int index = *(argv[1]) - '0';
-  systime_t start_ticks;
-  systime_t now_ticks;
+  clock_t start_ticks;
+  clock_t now_ticks;
   unsigned int hsec;
 
   nerr("index: %d\n", index);
@@ -625,7 +627,7 @@ static inline void slip_receive(FAR struct slip_driver_s *priv)
 
         default:
           {
-            if (priv->rxlen < CONFIG_NET_SLIP_MTU+2)
+            if (priv->rxlen < CONFIG_NET_SLIP_PKTSIZE+2)
               {
                 priv->rxbuf[priv->rxlen++] = ch;
               }
@@ -971,15 +973,15 @@ int slip_initialize(int intf, FAR const char *devname)
 
   slip_ifdown(&priv->dev);
 
-  /* Start the SLIP receiver task */
+  /* Start the SLIP receiver kernel thread */
 
   snprintf(buffer, 8, "%d", intf);
   argv[0] = buffer;
   argv[1] = NULL;
 
-  priv->rxpid = task_create("rxslip", CONFIG_NET_SLIP_DEFPRIO,
-                            CONFIG_NET_SLIP_STACKSIZE, (main_t)slip_rxtask,
-                            (FAR char * const *)argv);
+  priv->rxpid = kthread_create("rxslip", CONFIG_NET_SLIP_DEFPRIO,
+                               CONFIG_NET_SLIP_STACKSIZE, (main_t)slip_rxtask,
+                               (FAR char * const *)argv);
   if (priv->rxpid < 0)
     {
       nerr("ERROR: Failed to start receiver task\n");
@@ -990,11 +992,11 @@ int slip_initialize(int intf, FAR const char *devname)
 
   slip_semtake(priv);
 
-  /* Start the SLIP transmitter task */
+  /* Start the SLIP transmitter kernel thread */
 
-  priv->txpid = task_create("txslip", CONFIG_NET_SLIP_DEFPRIO,
-                            CONFIG_NET_SLIP_STACKSIZE, (main_t)slip_txtask,
-                            (FAR char * const *)argv);
+  priv->txpid = kthread_create("txslip", CONFIG_NET_SLIP_DEFPRIO,
+                               CONFIG_NET_SLIP_STACKSIZE, (main_t)slip_txtask,
+                               (FAR char * const *)argv);
   if (priv->txpid < 0)
     {
       nerr("ERROR: Failed to start receiver task\n");

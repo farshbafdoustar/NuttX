@@ -116,6 +116,7 @@ enum mac802154_operation_e
   MAC802154_OP_POLL,
   MAC802154_OP_SCAN,
   MAC802154_OP_AUTOEXTRACT,
+  MAC802154_OP_RXENABLE,
 };
 
 /* The privmac structure holds the internal state of the MAC and is the
@@ -533,9 +534,9 @@ static inline int mac802154_takesem(sem_t *sem, bool allowinterrupt)
       ret = nxsem_wait(sem);
       if (ret < 0)
         {
-          /* EINTR is the only error that we expect */
+          /* EINTR and ECANCELED are the only errors that we expect */
 
-          DEBUGASSERT(ret == -EINTR);
+          DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
 
           if (allowinterrupt)
             {
@@ -701,7 +702,6 @@ static inline void mac802154_rxdisable(FAR struct ieee802154_privmac_s *priv)
   if (priv->nrxusers == 0)
     {
       wlinfo("Receiver disabled\n");
-      priv->radio->rxenable(priv->radio, true);
       priv->radio->rxenable(priv->radio, false);
     }
 }

@@ -67,7 +67,7 @@
  *   message queue remains usable until it is closed by a successful call to
  *   mq_close().
  *
- * Parameters:
+ * Input Parameters:
  *   mq_name - Name of the queue to open
  *   oflags - open flags
  *   Optional parameters.  When the O_CREAT flag is specified, two optional
@@ -79,7 +79,7 @@
  *        created to determine the maximum number of
  *        messages that may be placed in the message queue.
  *
- * Return Value:
+ * Returned Value:
  *   A message queue descriptor or (mqd_t)-1 (ERROR)
  *
  * Assumptions:

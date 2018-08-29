@@ -1,7 +1,7 @@
 /****************************************************************************
  * drivers/wireless/ieee80211/bcmf_driver.c
  *
- *   Copyright (C) 2017 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2017-2018 Gregory Nutt. All rights reserved.
  *   Author: Simon Piriou <spiriou31@gmail.com>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -69,14 +69,42 @@
 #define BCMF_AUTH_TIMEOUT_MS   10000
 #define BCMF_SCAN_RESULT_SIZE  1024
 
+/* clm file is cut into pieces of MAX_CHUNK_LEN.
+ * It is relatively small because dongles (FW) have a small maximum size input
+ * payload restriction for ioctl's ... something like 1900'ish bytes. So chunk
+ * len should not exceed 1400 bytes
+ */
+
+#define MAX_CHUNK_LEN (CONFIG_NET_ETH_PKTSIZE > 1500 ? 1400 : CONFIG_NET_ETH_PKTSIZE - 100)
+
 /* Helper to get iw_event size */
 
 #define BCMF_IW_EVENT_SIZE(field) \
-  (offsetof(struct iw_event, u)+sizeof(((union iwreq_data*)0)->field))
+  (offsetof(struct iw_event, u) + sizeof(((union iwreq_data *)0)->field))
+
+/* Clm blob marcos */
+
+#define DLOAD_HANDLER_VER     1       /* Downloader version */
+#define DLOAD_FLAG_VER_MASK   0xf000  /* Downloader version mask */
+#define DLOAD_FLAG_VER_SHIFT  12      /* Downloader version shift */
+
+#define DL_CRC_NOT_INUSE      0x0001
+#define DL_BEGIN              0x0002
+#define DL_END                0x0004
 
 /****************************************************************************
  * Private Types
  ****************************************************************************/
+
+/* clm blob download head */
+
+struct wl_dload_data
+{
+  uint16_t flag;
+  uint16_t dload_type;
+  uint32_t len;
+  uint32_t crc;
+};
 
 /* AP scan state machine status */
 
@@ -88,6 +116,14 @@ enum
   BCMF_SCAN_DONE
 };
 
+/* Generic download types & flags */
+
+enum
+{
+  DL_TYPE_UCODE = 1,
+  DL_TYPE_CLM = 2
+};
+
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
@@ -97,7 +133,9 @@ static void bcmf_free_device(FAR struct bcmf_dev_s *priv);
 
 static int bcmf_driver_initialize(FAR struct bcmf_dev_s *priv);
 
-// FIXME only for debug purpose
+static int bcmf_driver_download_clm(FAR struct bcmf_dev_s *priv);
+
+/* FIXME only for debug purpose */
 
 static void bcmf_wl_default_event_handler(FAR struct bcmf_dev_s *priv,
                             struct bcmf_event_s *event, unsigned int len);
@@ -213,6 +251,73 @@ int bcmf_wl_set_mac_address(FAR struct bcmf_dev_s *priv, struct ifreq *req)
   return OK;
 }
 
+int bcmf_driver_download_clm(FAR struct bcmf_dev_s *priv)
+{
+  FAR struct bcmf_sdio_dev_s *sbus = (FAR struct bcmf_sdio_dev_s *)priv->bus;
+  FAR uint8_t *srcbuff = sbus->chip->clm_blob_image;
+  FAR uint8_t *downloadbuff;
+  unsigned int datalen = *sbus->chip->clm_blob_image_size;
+  uint16_t dl_flag;
+  int ret = 0;
+
+  if (srcbuff == NULL || datalen <= 0)
+    {
+      wlinfo("Skip clm blob...\n");
+      return 0;
+    }
+  else
+    {
+      wlinfo("Download %d bytes @ 0x%08x\n", datalen, srcbuff);
+    }
+
+  /* Divide clm blob into chunks */
+
+  downloadbuff = kmm_malloc(sizeof(struct wl_dload_data) + MAX_CHUNK_LEN);
+  if (!downloadbuff)
+    {
+      wlerr("No memory for clm data\n");
+      return -ENOMEM;
+    }
+
+  dl_flag = DL_BEGIN;
+  do
+    {
+      FAR struct wl_dload_data *dlhead;
+      unsigned int chunk_len = datalen >= MAX_CHUNK_LEN ? MAX_CHUNK_LEN : datalen;
+      uint32_t out_len;
+
+      memcpy(downloadbuff + sizeof(struct wl_dload_data), srcbuff, chunk_len);
+      datalen -= chunk_len;
+      srcbuff += chunk_len;
+
+      if (datalen <= 0)
+        {
+          dl_flag |= DL_END;
+        }
+
+      /* clm header */
+
+      dlhead             = (struct wl_dload_data *)downloadbuff;
+      dlhead->flag       = (DLOAD_HANDLER_VER << DLOAD_FLAG_VER_SHIFT) | dl_flag;
+      dlhead->dload_type = DL_TYPE_CLM;
+      dlhead->len        = chunk_len;
+      dlhead->crc        = 0;
+
+      out_len            = chunk_len + sizeof(struct wl_dload_data);
+      out_len            = (out_len + 7) & ~0x7U;
+
+      ret = bcmf_cdc_iovar_request(priv, CHIP_STA_INTERFACE, true,
+                                   IOVAR_STR_CLMLOAD, downloadbuff,
+                                   &out_len);
+
+      dl_flag &= (uint16_t)~DL_BEGIN;
+    }
+  while ((datalen > 0) && (ret == OK));
+
+  kmm_free(downloadbuff);
+  return ret;
+}
+
 int bcmf_driver_initialize(FAR struct bcmf_dev_s *priv)
 {
   int ret;
@@ -221,11 +326,19 @@ int bcmf_driver_initialize(FAR struct bcmf_dev_s *priv)
   uint8_t tmp_buf[64];
   int interface = CHIP_STA_INTERFACE;
 
+  /* Download clm blob if needed */
+
+  ret = bcmf_driver_download_clm(priv);
+  if (ret != OK)
+    {
+      return -EIO;
+    }
+
   /* Disable TX Gloming feature */
 
   out_len = 4;
-  *(uint32_t *)tmp_buf = 0;
-  ret = bcmf_cdc_iovar_request(priv, interface, false,
+  *(FAR uint32_t *)tmp_buf = 0;
+  ret = bcmf_cdc_iovar_request(priv, interface, true,
                                IOVAR_STR_TX_GLOM, tmp_buf,
                                &out_len);
   if (ret != OK)
@@ -236,9 +349,9 @@ int bcmf_driver_initialize(FAR struct bcmf_dev_s *priv)
   /* FIXME disable power save mode */
 
   out_len = 4;
-  value = 0;
-  ret = bcmf_cdc_ioctl(priv, interface, true, WLC_SET_PM,
-                       (uint8_t *)&value, &out_len);
+  value   = 0;
+  ret     = bcmf_cdc_ioctl(priv, interface, true, WLC_SET_PM,
+                           (uint8_t *)&value, &out_len);
   if (ret != OK)
     {
       return ret;
@@ -258,16 +371,17 @@ int bcmf_driver_initialize(FAR struct bcmf_dev_s *priv)
   /* TODO configure roaming if needed. Disable for now */
 
   out_len = 4;
-  value = 1;
-  ret = bcmf_cdc_iovar_request(priv, interface, true, IOVAR_STR_ROAM_OFF,
-                               (uint8_t *)&value,
-                               &out_len);
+  value   = 1;
+  ret     = bcmf_cdc_iovar_request(priv, interface, true,
+                                   IOVAR_STR_ROAM_OFF,
+                                   (FAR uint8_t *)&value,
+                                   &out_len);
 
   /* TODO configure EAPOL version to default */
 
   out_len = 8;
-  ((uint32_t *)tmp_buf)[0] = interface;
-  ((uint32_t *)tmp_buf)[1] = (uint32_t)-1;
+  ((FAR uint32_t *)tmp_buf)[0] = interface;
+  ((FAR uint32_t *)tmp_buf)[1] = (uint32_t)-1;
 
   if (bcmf_cdc_iovar_request(priv, interface, true,
                              "bsscfg:"IOVAR_STR_SUP_WPA2_EAPVER, tmp_buf,
@@ -279,9 +393,9 @@ int bcmf_driver_initialize(FAR struct bcmf_dev_s *priv)
   /* Query firmware version string */
 
   out_len = sizeof(tmp_buf);
-  ret = bcmf_cdc_iovar_request(priv, interface, false,
-                                 IOVAR_STR_VERSION, tmp_buf,
-                                 &out_len);
+  ret     = bcmf_cdc_iovar_request(priv, interface, false,
+                                   IOVAR_STR_VERSION, tmp_buf,
+                                   &out_len);
   if (ret != OK)
     {
       return -EIO;
@@ -347,8 +461,6 @@ void bcmf_wl_default_event_handler(FAR struct bcmf_dev_s *priv,
 void bcmf_wl_radio_event_handler(FAR struct bcmf_dev_s *priv,
                                  struct bcmf_event_s *event, unsigned int len)
 {
-  // wlinfo("Got radio event %d from <%s>\n", bcmf_getle32(&event->type),
-  //                                          event->src_name);
 }
 
 void bcmf_wl_auth_event_handler(FAR struct bcmf_dev_s *priv,
@@ -464,7 +576,7 @@ void bcmf_wl_scan_event_handler(FAR struct bcmf_dev_s *priv,
       while (priv->scan_result_size - check_offset
                                      >= offsetof(struct iw_event, u))
         {
-          iwe = (struct iw_event*)&priv->scan_result[check_offset];
+          iwe = (struct iw_event *)&priv->scan_result[check_offset];
 
           if (iwe->cmd == SIOCGIWAP)
             {
@@ -490,7 +602,7 @@ void bcmf_wl_scan_event_handler(FAR struct bcmf_dev_s *priv,
           goto scan_result_full;
         }
 
-      iwe = (struct iw_event*)&priv->scan_result[priv->scan_result_size];
+      iwe = (struct iw_event *)&priv->scan_result[priv->scan_result_size];
       iwe->len = BCMF_IW_EVENT_SIZE(ap_addr);
       iwe->cmd = SIOCGIWAP;
       memcpy(&iwe->u.ap_addr.sa_data, bss->BSSID.ether_addr_octet,
@@ -502,7 +614,7 @@ void bcmf_wl_scan_event_handler(FAR struct bcmf_dev_s *priv,
 
       /* Copy ESSID */
 
-      essid_len = min(strlen((const char*)bss->SSID), 32);
+      essid_len = min(strlen((const char *)bss->SSID), 32);
       essid_len_aligned = (essid_len + 3) & -4;
 
       if (result_size < BCMF_IW_EVENT_SIZE(essid)+essid_len_aligned)
@@ -510,7 +622,7 @@ void bcmf_wl_scan_event_handler(FAR struct bcmf_dev_s *priv,
           goto scan_result_full;
         }
 
-      iwe = (struct iw_event*)&priv->scan_result[priv->scan_result_size];
+      iwe = (struct iw_event *)&priv->scan_result[priv->scan_result_size];
       iwe->len = BCMF_IW_EVENT_SIZE(essid)+essid_len_aligned;
       iwe->cmd = SIOCGIWESSID;
       iwe->u.essid.flags = 0;
@@ -518,7 +630,7 @@ void bcmf_wl_scan_event_handler(FAR struct bcmf_dev_s *priv,
 
       /* Special processing for iw_point, set offset in pointer field */
 
-      iwe->u.essid.pointer = (FAR void*)sizeof(iwe->u.essid);
+      iwe->u.essid.pointer = (FAR void *)sizeof(iwe->u.essid);
       memcpy(&iwe->u.essid+1, bss->SSID, essid_len);
 
       priv->scan_result_size += BCMF_IW_EVENT_SIZE(essid)+essid_len_aligned;
@@ -531,7 +643,7 @@ void bcmf_wl_scan_event_handler(FAR struct bcmf_dev_s *priv,
           goto scan_result_full;
         }
 
-      iwe = (struct iw_event*)&priv->scan_result[priv->scan_result_size];
+      iwe = (struct iw_event *)&priv->scan_result[priv->scan_result_size];
       iwe->len = BCMF_IW_EVENT_SIZE(qual);
       iwe->cmd = IWEVQUAL;
       iwe->u.qual.qual = bss->SNR;
@@ -550,7 +662,7 @@ void bcmf_wl_scan_event_handler(FAR struct bcmf_dev_s *priv,
           goto scan_result_full;
         }
 
-      iwe = (struct iw_event*)&priv->scan_result[priv->scan_result_size];
+      iwe = (struct iw_event *)&priv->scan_result[priv->scan_result_size];
       iwe->len = BCMF_IW_EVENT_SIZE(mode);
       iwe->cmd = SIOCGIWMODE;
       if (bss->capability & DOT11_CAP_ESS)
@@ -576,7 +688,7 @@ void bcmf_wl_scan_event_handler(FAR struct bcmf_dev_s *priv,
           goto scan_result_full;
         }
 
-      iwe = (struct iw_event*)&priv->scan_result[priv->scan_result_size];
+      iwe = (struct iw_event *)&priv->scan_result[priv->scan_result_size];
       iwe->len = BCMF_IW_EVENT_SIZE(data);
       iwe->cmd = SIOCGIWENCODE;
       iwe->u.data.flags = bss->capability & DOT11_CAP_PRIVACY ?
@@ -597,7 +709,7 @@ void bcmf_wl_scan_event_handler(FAR struct bcmf_dev_s *priv,
         }
 
       ie_offset = 0;
-      ie_buffer = (uint8_t*)bss + bss->ie_offset;
+      ie_buffer = (uint8_t *)bss + bss->ie_offset;
 
       while (1)
         {
@@ -606,6 +718,7 @@ void bcmf_wl_scan_event_handler(FAR struct bcmf_dev_s *priv,
           if (bss->ie_length - ie_offset < 2)
             {
               /* Minimum Information element size is 2 bytes */
+
               break;
             }
 
@@ -614,6 +727,7 @@ void bcmf_wl_scan_event_handler(FAR struct bcmf_dev_s *priv,
           if (ie_frame_size > bss->ie_length - ie_offset)
             {
               /* Entry too big */
+
               break;
             }
 
@@ -621,29 +735,29 @@ void bcmf_wl_scan_event_handler(FAR struct bcmf_dev_s *priv,
             {
               case IEEE80211_ELEMID_RSN:
                 {
-                size_t ie_frame_size_aligned;
-                ie_frame_size_aligned = (ie_frame_size + 3) & -4;
-                wlinfo("found RSN\n");
-                if (result_size < BCMF_IW_EVENT_SIZE(data) + ie_frame_size_aligned)
-                  {
-                    break;
-                  }
+                  size_t ie_frame_size_aligned;
+                  ie_frame_size_aligned = (ie_frame_size + 3) & -4;
 
-                iwe = (struct iw_event*)&priv->scan_result[priv->scan_result_size];
-                iwe->len = BCMF_IW_EVENT_SIZE(data)+ie_frame_size_aligned;
-                iwe->cmd = IWEVGENIE;
-                iwe->u.data.flags = 0;
-                iwe->u.data.length = ie_frame_size;
-                iwe->u.data.pointer = (FAR void*)sizeof(iwe->u.data);
-                memcpy(&iwe->u.data+1, &ie_buffer[ie_offset], ie_frame_size);
+                  wlinfo("found RSN\n");
+                  if (result_size < BCMF_IW_EVENT_SIZE(data) + ie_frame_size_aligned)
+                    {
+                      break;
+                    }
 
-                priv->scan_result_size += BCMF_IW_EVENT_SIZE(essid)+ie_frame_size_aligned;
-                result_size -= BCMF_IW_EVENT_SIZE(essid)+ie_frame_size_aligned;
-                break;
+                  iwe = (struct iw_event *)&priv->scan_result[priv->scan_result_size];
+                  iwe->len = BCMF_IW_EVENT_SIZE(data)+ie_frame_size_aligned;
+                  iwe->cmd = IWEVGENIE;
+                  iwe->u.data.flags = 0;
+                  iwe->u.data.length = ie_frame_size;
+                  iwe->u.data.pointer = (FAR void *)sizeof(iwe->u.data);
+                  memcpy(&iwe->u.data+1, &ie_buffer[ie_offset], ie_frame_size);
+
+                  priv->scan_result_size += BCMF_IW_EVENT_SIZE(essid)+ie_frame_size_aligned;
+                  result_size -= BCMF_IW_EVENT_SIZE(essid)+ie_frame_size_aligned;
+                  break;
                 }
+
               default:
-                // wlinfo("unhandled IE entry %d %d\n", ie_buffer[ie_offset],
-                //                                      ie_buffer[ie_offset+1]);
                 break;
             }
 
@@ -703,6 +817,7 @@ void bcmf_wl_scan_timeout(int argc, wdparm_t arg1, ...)
   if (priv->scan_status < BCMF_SCAN_RUN)
     {
         /* Fatal error, invalid scan status */
+
         wlerr("Unexpected scan timeout\n");
         return;
     }
@@ -715,7 +830,8 @@ void bcmf_wl_scan_timeout(int argc, wdparm_t arg1, ...)
 
 int bcmf_wl_get_interface(FAR struct bcmf_dev_s *priv, struct iwreq *iwr)
 {
-  // TODO resolve interface using iwr->ifr_name
+  /* TODO resolve interface using iwr->ifr_name */
+
   return CHIP_STA_INTERFACE;
 }
 
@@ -766,6 +882,8 @@ int bcmf_wl_enable(FAR struct bcmf_dev_s *priv, bool enable)
                          enable ? WLC_UP : WLC_DOWN, NULL, &out_len);
 
   /* TODO wait for WLC_E_RADIO event */
+
+  usleep(3000);
 
   if (ret == OK)
     {
@@ -886,8 +1004,8 @@ int bcmf_wl_start_scan(FAR struct bcmf_dev_s *priv, struct iwreq *iwr)
 
   /*  Start scan_timeout timer */
 
-  wd_start(priv->scan_timeout, BCMF_SCAN_TIMEOUT_TICK,
-           bcmf_wl_scan_timeout, (wdparm_t)priv);
+  (void)wd_start(priv->scan_timeout, BCMF_SCAN_TIMEOUT_TICK,
+                 bcmf_wl_scan_timeout, (wdparm_t)priv);
 
   return OK;
 

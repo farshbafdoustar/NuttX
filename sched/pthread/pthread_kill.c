@@ -64,13 +64,13 @@
  *   thread.  See nxsig_kill() for further information as this is just a
  *   simple wrapper around the nxsig_kill() function.
  *
- * Parameters:
+ * Input Parameters:
  *   thread - The id of the thread to receive the signal. Only positive,
  *     non-zero values of 'thread' are supported.
  *   signo - The signal number to send.  If 'signo' is zero, no signal is
  *    sent, but all error checking is performed.
  *
- * Return Value:
+ * Returned Value:
  *    On success the signal was send and zero is returned. On error one
  *    of the following error numbers is returned.
  *

@@ -2,7 +2,7 @@
  * sched/paging/pg_worker.c
  * Page fill worker thread implementation.
  *
- *   Copyright (C) 2010-2011, 2017 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2010-2011, 2017-2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,6 +48,7 @@
 #include <errno.h>
 #include <debug.h>
 
+#include <nuttx/sched.h>
 #include <nuttx/arch.h>
 #include <nuttx/signal.h>
 #include <nuttx/page.h>
@@ -108,7 +109,7 @@ static int g_fillresult;
  */
 
 #ifdef CONFIG_PAGING_TIMEOUT_TICKS
-static systime_t g_starttime;
+static clock_t g_starttime;
 #endif
 #endif
 
@@ -140,7 +141,7 @@ static systime_t g_starttime;
  *   task that is waiting for a fill.
  * - Signal the page fill worker thread.
  *
- * Input parameters:
+ * Input Parameters:
  *   tcb    - The TCB of the task that just received the fill.
  *   result - The result of the page fill operation.
  *
@@ -185,7 +186,7 @@ static void pg_callback(FAR struct tcb_s *tcb, int result)
         {
           pginfo("New worker priority. %d->%d\n",
                  wtcb->sched_priority, priority);
-          sched_setpriority(wtcb, priority);
+          (void)nxsched_setpriority(wtcb, priority);
         }
 
       /* Save the page fill result (don't permit the value -EBUSY) */
@@ -222,7 +223,7 @@ static void pg_callback(FAR struct tcb_s *tcb, int result)
  *   The result (NULL or a TCB pointer) will be returned in the global
  *   variable, g_pftcb.
  *
- * Input parameters:
+ * Input Parameters:
  *   None
  *
  * Returned Value:
@@ -296,7 +297,7 @@ static inline bool pg_dequeue(void)
 
                   pginfo("New worker priority. %d->%d\n",
                          wtcb->sched_priority, priority);
-                  sched_setpriority(wtcb, priority);
+                  (void)nxsched_setpriority(wtcb, priority);
                 }
 
               /* Return with g_pftcb holding the pointer to
@@ -333,7 +334,7 @@ static inline bool pg_dequeue(void)
  *   prioritized list, or (2) when a page fill completes and there are more
  *   pages to be filled in g_waitingforfill list.
  *
- * Input parameters:
+ * Input Parameters:
  *   None
  *
  * Returned Value:
@@ -355,7 +356,7 @@ static inline bool pg_startfill(void)
 
   /* Remove the TCB at the head of the g_waitfor fill list and check if there
    * is any task waiting for a page fill. pg_dequeue will handle this (plus
-   * some cornercases) and will true if the next page TCB was successfully
+   * some corner cases) and will true if the next page TCB was successfully
    * dequeued.
    */
 
@@ -435,12 +436,12 @@ static inline bool pg_startfill(void)
  *   Called by the page fill worker thread when all pending page fill
  *   operations have been completed and the g_waitingforfill list is empty.
  *
- *   This functin will perform the following operations:
+ *   This function will perform the following operations:
  *
  *   - Set g_pftcb to NULL.
  *   - Restore the default priority of the page fill worker thread.
  *
- * Input parameters:
+ * Input Parameters:
  *   None.
  *
  * Returned Value:
@@ -458,7 +459,7 @@ static inline void pg_alldone(void)
   g_pftcb = NULL;
   pginfo("New worker priority. %d->%d\n",
          wtcb->sched_priority, CONFIG_PAGING_DEFPRIO);
-  sched_setpriority(wtcb, CONFIG_PAGING_DEFPRIO);
+  (void)nxsched_setpriority(wtcb, CONFIG_PAGING_DEFPRIO);
 }
 
 /****************************************************************************
@@ -468,13 +469,13 @@ static inline void pg_alldone(void)
  *   Called by the page fill worker thread when a page fill completes.
  *   Either (1) in the non-blocking up_fillpage(), after the architecture-
  *   specific driver call the pg_callback() to wake up the page fill worker
- *   thread, or (2) after the blocking up_fillpage() returens (when
+ *   thread, or (2) after the blocking up_fillpage() returns (when
  *   CONFIG_PAGING_BLOCKINGFILL is defined).
  *
  *   This function is just a dumb wrapper around up_unblocktask().  This
  *   function simply makes the task that just received the fill ready-to-run.
  *
- * Input parameters:
+ * Input Parameters:
  *   None.
  *
  * Returned Value:
@@ -499,6 +500,7 @@ static inline void pg_fillcomplete(void)
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+
 /****************************************************************************
  * Name: pg_worker
  *
@@ -509,12 +511,12 @@ static inline void pg_fillcomplete(void)
  *
  *   The page fill worker thread will be awakened on one of three conditions:
  *   - When signaled by pg_miss(), the page fill worker thread will be
- *     awakenend, or
+ *     awakened, or
  *   - if CONFIG_PAGING_BLOCKINGFILL is not defined, from pg_callback()
  *     after completing a page fill.
  *   - A configurable timeout with no activity.
  *
- * Input parameters:
+ * Input Parameters:
  *   argc, argv (not used)
  *
  * Returned Value:
@@ -540,7 +542,8 @@ int pg_worker(int argc, char *argv[])
     {
       /* Wait awhile.  We will wait here until either the configurable timeout
        * elapses or until we are awakened by a signal (which terminates the
-       * nxsig_usleep with an EINTR error).  Note that interrupts will be re- * enabled while this task sleeps.
+       * nxsig_usleep with an EINTR error).  Note that interrupts will be re-
+       * enabled while this task sleeps.
        *
        * The timeout is a failsafe that will handle any cases where a single
        * is lost (that would really be a bug and shouldn't happen!) and also
@@ -551,7 +554,8 @@ int pg_worker(int argc, char *argv[])
 
       /* The page fill worker thread will be awakened on one of three conditions:
        *
-       *   - When signaled by pg_miss(), the page fill worker thread will be awakenend,
+       *   - When signaled by pg_miss(), the page fill worker thread will be
+       *     awakened,
        *   - if CONFIG_PAGING_BLOCKINGFILL is not defined, from pg_callback()
        *     after completing a page fill, or
        *   - On a configurable timeout expires with no activity.
@@ -575,7 +579,7 @@ int pg_worker(int argc, char *argv[])
             {
               /* Any value other than OK, brings the system down */
 
-              ASSERT(g_fillresult == OK);
+              DEBUGASSERT(g_fillresult == OK);
 
               /* Handle the successful page fill complete event by restarting the
                * task that was blocked waiting for this page fill.
@@ -610,7 +614,7 @@ int pg_worker(int argc, char *argv[])
           else
             {
               pgerr("ERROR: Timeout!\n");
-              ASSERT(clock_systimer() - g_starttime < CONFIG_PAGING_TIMEOUT_TICKS);
+              DEBUGASSERT(clock_systimer() - g_starttime < CONFIG_PAGING_TIMEOUT_TICKS);
             }
 #endif
         }
@@ -639,7 +643,7 @@ int pg_worker(int argc, char *argv[])
         {
           /* Yes .. Start the fill and block until the fill completes.
            * Check the return value to see a fill was actually performed.
-           * (false means that no fill was perforemd).
+           * (false means that no fill was performed).
            */
 
           pginfo("Calling pg_startfill\n");

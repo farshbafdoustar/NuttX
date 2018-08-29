@@ -61,7 +61,7 @@ config ARCH_BOARD_C5471EVM
 		This port is complete and verified.
 
 config ARCH_BOARD_CLICKER2_STM32
-	bool "Mikrow Clicker2 STM32"
+	bool "Mikroe Clicker2 STM32"
 	depends on ARCH_CHIP_STM32F407VG
 	select ARCH_HAVE_LEDS
 	select ARCH_HAVE_BUTTONS
@@ -220,12 +220,25 @@ config ARCH_BOARD_FLIPNCLICK_SAM3X
 		Like the Arduino DUE, this board features the Atmel ATSAM3X8E MCU
 		running at 84 MHz.
 
+config ARCH_BOARD_FREEDOM_K28F
+	bool "NXP Freedom-k28f development board"
+	depends on ARCH_CHIP_MK28FN2M0VMI15
+	select ARCH_HAVE_LEDS if !RGBLED
+	select ARCH_HAVE_BUTTONS
+	select ARCH_HAVE_IRQBUTTONS
+	select KINETIS_SDHC_PULLUP if KINETIS_SDHC # REVISIT
+	---help---
+		development board.
+		This port uses the NXP/FreeScale FREEDOM-K28F development board. This
+		board uses the Kinetis K28F MK28FN2M0VMI15 Cortex-M4 MCU.
+
 config ARCH_BOARD_FREEDOM_K64F
 	bool "NXP Freedom-k64f development board"
 	depends on ARCH_CHIP_MK64FN1M0VLL12
 	select ARCH_HAVE_LEDS
 	select ARCH_HAVE_BUTTONS
 	select ARCH_HAVE_IRQBUTTONS
+	select KINETIS_SDHC_PULLUP if KINETIS_SDHC
 	---help---
 		development board.
 		This port uses the NXP/FreeScale FREEDOM-K64F development board. This
@@ -237,6 +250,7 @@ config ARCH_BOARD_FREEDOM_K66F
 	select ARCH_HAVE_LEDS
 	select ARCH_HAVE_BUTTONS
 	select ARCH_HAVE_IRQBUTTONS
+	select KINETIS_SDHC_PULLUP if KINETIS_SDHC
 	---help---
 		development board.
 		This port uses the NXP/FreeScale FREEDOM-K66F development board. This
@@ -268,20 +282,15 @@ config ARCH_BOARD_HYMINI_STM32V
 		A configuration for the HY-Mini STM32v board.  This board is based on the
 		STM32F103VCT6 chip.
 
-config ARCH_BOARD_INDIUM_F7
-	bool "Indium-F7"
-	depends on ARCH_CHIP_STM32F722RE || ARCH_CHIP_STM32F722ZE || ARCH_CHIP_STM32F746ZG || ARCH_CHIP_STM32F767ZI
+config ARCH_BOARD_IMXRT1050_EVK
+	bool "NXP i.MX RT 1050 EVK"
+	depends on ARCH_CHIP_MIMXRT1052DVL6A
 	select ARCH_HAVE_LEDS
 	select ARCH_HAVE_BUTTONS
 	select ARCH_HAVE_IRQBUTTONS
 	---help---
-		Enables board support for the RAF Research Indium-F7 board and using
-		STMicro Nucleo-144 boards for interim support.  The Indium-F7 board
-		is a special purpose board created by RAF Research LLC.  It is
-		possible to develop basic Indium-F7 software using STMicro Nucleo-144
-		development boards. This board support directory provides support for
-		developing software on both native Indium-F7 hardware and for three
-		STM32F7 Nucleo-144 development boards.
+		This is the board configuration for the port of NuttX to the NXP i.MXRT
+		evaluation kit, MIMXRT1050-EVKB.  This board features the MIMXRT1052DVL6A MCU.
 
 config ARCH_BOARD_LC823450_XGEVK
 	bool "ON Semiconductor LC823450-XGEVK development board"
@@ -445,6 +454,16 @@ config ARCH_BOARD_MCU123_LPC214X
 		lpc214x development board. This OS is also built with the arm-nuttx-elf
 		toolchain*.  The port supports serial, timer0, spi, and usb.
 
+config ARCH_BOARD_METRO_M4
+	bool "Adafruit M4 Metro"
+	depends on ARCH_CHIP_SAMD51J19
+	select ARCH_HAVE_LEDS
+	---help---
+	---help---
+		This configuration is the port of NuttX to the Adafruit Metro M4.
+		The Metro M4 uses a Arduino form factor and and pinout.  It's powered
+		with an ATSAMD51J19
+
 config ARCH_BOARD_MICROPENDOUS3
 	bool "Opendous Micropendous 3 board"
 	depends on ARCH_CHIP_AT90USB646 || ARCH_CHIP_AT90USB647 || ARCH_CHIP_AT90USB1286 || ARCH_CHIP_AT90USB1287
@@ -452,6 +471,13 @@ config ARCH_BOARD_MICROPENDOUS3
 		This is a port to the Opendous Micropendous 3 board. This board may
 		be populated with either an AVR AT90USB646, 647, 1286, or 1287 MCU.
 		Support is configured for the AT90USB647.
+
+config ARCH_BOARD_MISOC
+	bool "Qemu LM32 demo"
+	depends on ARCH_CHIP_LM32
+	---help---
+		This configuration is port to NuttX running on a Qemu LM32 system.
+		You can find the Qemu setup at https://bitbucket.org/key2/qemu
 
 config ARCH_BOARD_MOTEINO_MEGA
 	bool "LowPowerLab MoteinoMEGA"
@@ -491,6 +517,14 @@ config ARCH_BOARD_NTOSD_DM320
 		NuttX operates on the ARM9EJS of this dual core processor.
 		STATUS: This port is code complete, verified, and included in the
 		NuttX 0.2.1 release.
+
+config ARCH_BOARD_NRF52_PCA10040
+	bool "NRF52 PCA10040 eval board"
+	depends on ARCH_CHIP_NRF52
+	select ARCH_HAVE_LEDS
+	select ARCH_HAVE_BUTTONS
+	---help---
+		PCA10040 Evaluation board
 
 config ARCH_BOARD_LPC1766STK
 	bool "Olimex LPC1766-STK board"
@@ -645,7 +679,7 @@ config ARCH_BOARD_OLIMEXINO_STM32
 		This port uses the Olimexino STM32 board and a GNU arm-nuttx-elf
 		toolchain under Linux or Cygwin. See the http://www.olimex.com for
 		further information. This board features the STMicro STM32F103RBT6 MCU.
-		Contribued by David Sidrane.
+		Contributed by David Sidrane.
 
 config ARCH_BOARD_OPEN1788
 	bool "Wave Share Open1788"
@@ -657,6 +691,13 @@ config ARCH_BOARD_OPEN1788
 		This port uses the Wave Share Open1788 board. See the
 		http://wvshare.com/product/Open1788-Standard.htm for further
 		information. This board features the NXP LPC1788 MCU
+
+config ARCH_BOARD_OR1K
+	bool "OpenRISC generic board"
+	depends on ARCH_CHIP_MOR1KX
+	select ARCH_HAVE_LEDS
+	---help---
+		Generic OpenRISC board.
 
 config ARCH_BOARD_P112
 	bool "P112 Z180-based platform"
@@ -874,6 +915,15 @@ config ARCH_BOARD_NUCLEO_F411RE
 	---help---
 		This is a minimal configuration that supports low-level test of the
 		Nucleo F411RE in the NuttX source tree.
+
+config ARCH_BOARD_NUCLEO_H743ZI
+	bool "STM32H743 Nucleo H743ZI"
+	depends on ARCH_CHIP_STM32H743ZI
+	select ARCH_HAVE_LEDS
+	select ARCH_HAVE_BUTTONS
+# TODO:	select ARCH_HAVE_IRQBUTTONS
+	---help---
+		STMicro Nucleo H743ZI board based on the STMicro STM32H743ZI MCU.
 
 config ARCH_BOARD_NUCLEO_L432KC
 	bool "STM32L432 Nucleo-32 L432KC"
@@ -1103,17 +1153,6 @@ config ARCH_BOARD_SKP16C26
 		uses the GNU m32c toolchain.  STATUS:  The port is complete but untested
 		due to issues with compiler internal errors.
 
-config ARCH_BOARD_SPARK
-	bool "Spark Core"
-	depends on ARCH_CHIP_STM32F103CB
-	select ARCH_HAVE_LEDS
-	select ARCH_HAVE_BUTTONS
-	select ARCH_HAVE_IRQBUTTONS
-	---help---
-		A configuration for the Spark Core from Spark Devices
-		(http://www.spark.io).  This board features the STM32103CBT6
-		MCU from STMicro.
-
 config ARCH_BOARD_PHOTON
 	bool "Photon wifi board"
 	depends on ARCH_CHIP_STM32F205RG
@@ -1298,6 +1337,17 @@ config ARCH_BOARD_STM32L476VG_DISCO
 		MCU. The STM32L476VG  is a Cortex-M4 optimised for low-power operation
 		at up to 80MHz operation with 1024Kb Flash memory and 96+32Kb SRAM.
 
+config ARCH_BOARD_STM32L4R9AI_DISCO
+	bool "STMicro STM32L4R9AI -Discovery board"
+	depends on ARCH_CHIP_STM32L4R9AI
+	select ARCH_HAVE_LEDS
+	select ARCH_HAVE_BUTTONS
+	select ARCH_HAVE_IRQBUTTONS
+	---help---
+		STMicro STM32L4R9AI_DISCO development board featuring the STM32L4R9AI
+		MCU. The STM32L4R9AI is a Cortex-M4 optimised for low-power operation
+		at up to 120MHz operation with 2048Kb Flash memory and 192+64+384Kb SRAM.
+
 config ARCH_BOARD_STM32L476_MDK
 	bool "Motorola Mods Development Kit (MDK)"
 	depends on ARCH_CHIP_STM32L476RG
@@ -1315,9 +1365,9 @@ config ARCH_BOARD_STM32L_DISCOVERY
 	select ARCH_HAVE_LEDS
 	select ARCH_HAVE_BUTTONS
 	select ARCH_HAVE_IRQBUTTONS
-
-	---help---	
-		STMicro STM32L-Discovery board based on the STMicro STM32L152RB MCU.
+	---help---
+		STMicro STM32L-Discovery board based on the STMicro STM32L152RBT6 or
+		STM32L1 MCUs.
 
 config ARCH_BOARD_STM32VL_DISCOVERY
 	bool "STMicro STM32VL-Discovery board"
@@ -1405,15 +1455,15 @@ config ARCH_BOARD_TM4C1294_LAUNCHPAD
 	---help---
 		Tiva EK-TM4C1294XL LaunchPad.
 
-config ARCH_BOARD_CC3200_LAUNCHPAD
-	bool "Tiva CC3200 Launchpad"
-	depends on ARCH_CHIP_CC3200
+config ARCH_BOARD_TMS570LS31X_USB_KIT
+	bool "TI TMS570LS31X_USB_KIT"
+	depends on ARCH_CHIP_TMS570LS3137ZWT
 	select ARCH_HAVE_LEDS
 	select ARCH_HAVE_BUTTONS
 	select ARCH_HAVE_IRQBUTTONS
-	select TIVA_BOARD_EARLYINIT
 	---help---
-		Tiva CC3200 Launchpad.
+		TI Hercules TMS570LS31xx Evaluation Kit (TMDS570ls31xx USB Kit)
+		featuring the Hercules TMS570LS3137ZWT chip.
 
 config ARCH_BOARD_TWR_K60N512
 	bool "FreeScale TWR-K60N512 development board"
@@ -1490,7 +1540,7 @@ config ARCH_BOARD_Z16F2800100ZCOG
 	depends on ARCH_CHIP_Z16F2811
 	select ARCH_HAVE_LEDS
 	---help---
-		z16f Microcontroller.  This port use the ZiLIG z16f2800100zcog
+		z16f Microcontroller.  This port uses the ZiLOG z16f2800100zcog
 		development kit and the Zilog ZDS-II Windows command line tools.  The
 		development environment is Cygwin under WinXP.
 
@@ -1636,12 +1686,13 @@ config ARCH_BOARD
 	default "fire-stm32v2"             if ARCH_BOARD_FIRE_STM32
 	default "flipnclick-pic32mz"       if ARCH_BOARD_FLIPNCLICK_PIC32MZ
 	default "flipnclick-sam3x"         if ARCH_BOARD_FLIPNCLICK_SAM3X
+	default "freedom-k28f"             if ARCH_BOARD_FREEDOM_K28F
 	default "freedom-k64f"             if ARCH_BOARD_FREEDOM_K64F
 	default "freedom-k66f"             if ARCH_BOARD_FREEDOM_K66F
 	default "freedom-kl25z"            if ARCH_BOARD_FREEDOM_KL25Z
 	default "freedom-kl26z"            if ARCH_BOARD_FREEDOM_KL26Z
 	default "hymini-stm32v"            if ARCH_BOARD_HYMINI_STM32V
-	default "indium-f7"                if ARCH_BOARD_INDIUM_F7
+	default "imxrt1050-evk"            if ARCH_BOARD_IMXRT1050_EVK
 	default "kwikstik-k40"             if ARCH_BOARD_KWIKSTIK_K40
 	default "launchxl-tms57004"        if ARCH_BOARD_LAUNCHXL_TMS57004
 	default "lc823450-xgevk"           if ARCH_BOARD_LC823450_XGEVK
@@ -1661,10 +1712,13 @@ config ARCH_BOARD
 	default "mbed"                     if ARCH_BOARD_MBED
 	default "mcb1700"                  if ARCH_BOARD_MCB1700
 	default "mcu123-lpc214x"           if ARCH_BOARD_MCU123_LPC214X
+	default "metro-m4"                 if ARCH_BOARD_METRO_M4
 	default "micropendous3"            if ARCH_BOARD_MICROPENDOUS3
 	default "mirtoo"                   if ARCH_BOARD_MIRTOO
+	default "misoc"                    if ARCH_BOARD_MISOC
 	default "moteino-mega"             if ARCH_BOARD_MOTEINO_MEGA
 	default "ne64badge"                if ARCH_BOARD_NE64BADGE
+	default "nrf52-pca10040"           if ARCH_BOARD_NRF52_PCA10040
 	default "ntosd-dm320"              if ARCH_BOARD_NTOSD_DM320
 	default "nucleo-144"               if ARCH_BOARD_NUCLEO_144
 	default "nucleo-f072rb"            if ARCH_BOARD_NUCLEO_F072RB
@@ -1673,6 +1727,7 @@ config ARCH_BOARD
 	default "nucleo-f334r8"            if ARCH_BOARD_NUCLEO_F334R8
 	default "nucleo-f4x1re"            if ARCH_BOARD_NUCLEO_F401RE || ARCH_BOARD_NUCLEO_F411RE
 	default "nucleo-f410rb"            if ARCH_BOARD_NUCLEO_F410RB
+	default "nucleo-h743zi"            if ARCH_BOARD_NUCLEO_H743ZI
 	default "nucleo-l432kc"            if ARCH_BOARD_NUCLEO_L432KC
 	default "nucleo-l452re"            if ARCH_BOARD_NUCLEO_L452RE
 	default "nucleo-l476rg"            if ARCH_BOARD_NUCLEO_L476RG
@@ -1692,6 +1747,7 @@ config ARCH_BOARD
 	default "olimex-strp711"           if ARCH_BOARD_OLIMEX_STRP711
 	default "olimexino-stm32"          if ARCH_BOARD_OLIMEXINO_STM32
 	default "open1788"                 if ARCH_BOARD_OPEN1788
+	default "or1k"                     if ARCH_BOARD_OR1K
 	default "p112"                     if ARCH_BOARD_P112
 	default "pcblogic-pic32mx"         if ARCH_BOARD_PCBLOGICPIC32MX
 	default "pcduino-a10"              if ARCH_BOARD_PCDUINO_A10
@@ -1718,7 +1774,6 @@ config ARCH_BOARD
 	default "samv71-xult"              if ARCH_BOARD_SAMV71_XULT
 	default "shenzhou"                 if ARCH_BOARD_SHENZHOU
 	default "skp16c26"                 if ARCH_BOARD_SKP16C26
-	default "spark"                    if ARCH_BOARD_SPARK
 	default "photon"                   if ARCH_BOARD_PHOTON
 	default "stm32butterfly2"          if ARCH_BOARD_STM32_BUTTERFLY2
 	default "stm32_tiny"               if ARCH_BOARD_STM32_TINY
@@ -1739,6 +1794,7 @@ config ARCH_BOARD
 	default "b-l475e-iot01a"           if ARCH_BOARD_B_L475E_IOT01A
 	default "stm32l476vg-disco"        if ARCH_BOARD_STM32L476VG_DISCO
 	default "stm32l476-mdk"            if ARCH_BOARD_STM32L476_MDK
+	default "stm32l4r9ai-disco"        if ARCH_BOARD_STM32L4R9AI_DISCO
 	default "stm32ldiscovery"          if ARCH_BOARD_STM32L_DISCOVERY
 	default "stm32vldiscovery"         if ARCH_BOARD_STM32VL_DISCOVERY
 	default "mikroe-stm32f4"           if ARCH_BOARD_MIKROE_STM32F4
@@ -1748,7 +1804,7 @@ config ARCH_BOARD
 	default "teensy-lc"                if ARCH_BOARD_TEENSY_LC
 	default "tm4c123g-launchpad"       if ARCH_BOARD_TM4C123G_LAUNCHPAD
 	default "tm4c1294-launchpad"       if ARCH_BOARD_TM4C1294_LAUNCHPAD
-	default "cc3200-launchpad"         if ARCH_BOARD_CC3200_LAUNCHPAD
+	default "tms570ls31x-usb-kit"      if ARCH_BOARD_TMS570LS31X_USB_KIT
 	default "twr-k60n512"              if ARCH_BOARD_TWR_K60N512
 	default "twr-k64f120m"             if ARCH_BOARD_TWR_K64F120M
 	default "u-blox-c027"              if ARCH_BOARD_U_BLOX_C027
@@ -1866,6 +1922,9 @@ endif
 if ARCH_BOARD_FLIPNCLICK_SAM3X
 source "configs/flipnclick-sam3x/Kconfig"
 endif
+if ARCH_BOARD_FREEDOM_K28F
+source "configs/freedom-k28f/Kconfig"
+endif
 if ARCH_BOARD_FREEDOM_K64F
 source "configs/freedom-k64f/Kconfig"
 endif
@@ -1881,8 +1940,8 @@ endif
 if ARCH_BOARD_HYMINI_STM32V
 source "configs/hymini-stm32v/Kconfig"
 endif
-if ARCH_BOARD_INDIUM_F7
-source "configs/indium-f7/Kconfig"
+if ARCH_BOARD_IMXRT1050_EVK
+source "configs/imxrt1050-evk/Kconfig"
 endif
 if ARCH_BOARD_KWIKSTIK_K40
 source "configs/kwikstik-k40/Kconfig"
@@ -1938,6 +1997,9 @@ endif
 if ARCH_BOARD_MCU123_LPC214X
 source "configs/mcu123-lpc214x/Kconfig"
 endif
+if ARCH_BOARD_METRO_M4
+source "configs/metro-m4/Kconfig"
+endif
 if ARCH_BOARD_MICROPENDOUS3
 source "configs/micropendous3/Kconfig"
 endif
@@ -1947,6 +2009,9 @@ endif
 if ARCH_BOARD_MIRTOO
 source "configs/mirtoo/Kconfig"
 endif
+if ARCH_BOARD_MISOC
+source "configs/misoc/Kconfig"
+endif
 if ARCH_BOARD_MOTEINO_MEGA
 source "configs/moteino-mega/Kconfig"
 endif
@@ -1955,6 +2020,9 @@ source "configs/moxa/Kconfig"
 endif
 if ARCH_BOARD_NE64BADGE
 source "configs/ne64badge/Kconfig"
+endif
+if ARCH_BOARD_NRF52_PCA10040
+source "configs/nrf52-pca10040/Kconfig"
 endif
 if ARCH_BOARD_NTOSD_DM320
 source "configs/ntosd-dm320/Kconfig"
@@ -1979,6 +2047,9 @@ source "configs/nucleo-f4x1re/Kconfig"
 endif
 if ARCH_BOARD_NUCLEO_F410RB
 source "configs/nucleo-f410rb/Kconfig"
+endif
+if ARCH_BOARD_NUCLEO_H743ZI
+source "configs/nucleo-h743zi/Kconfig"
 endif
 if ARCH_BOARD_NUCLEO_L432KC
 source "configs/nucleo-l432kc/Kconfig"
@@ -2033,6 +2104,9 @@ source "configs/olimexino-stm32/Kconfig"
 endif
 if ARCH_BOARD_OPEN1788
 source "configs/open1788/Kconfig"
+endif
+if ARCH_BOARD_OR1K
+source "configs/or1k/Kconfig"
 endif
 if ARCH_BOARD_PCBLOGICPIC32MX
 source "configs/pcblogic-pic32mx/Kconfig"
@@ -2108,9 +2182,6 @@ source "configs/shenzhou/Kconfig"
 endif
 if ARCH_BOARD_SKP16C26
 source "configs/skp16c26/Kconfig"
-endif
-if ARCH_BOARD_SPARK
-source "configs/spark/Kconfig"
 endif
 if ARCH_BOARD_PHOTON
 source "configs/photon/Kconfig"
@@ -2193,8 +2264,8 @@ endif
 if ARCH_BOARD_TM4C1294_LAUNCHPAD
 source "configs/tm4c1294-launchpad/Kconfig"
 endif
-if ARCH_BOARD_CC3200_LAUNCHPAD
-source "configs/cc3200-launchpad/Kconfig"
+if ARCH_BOARD_TMS570LS31X_USB_KIT
+source "configs/tms570ls31x-usb-kit/Kconfig"
 endif
 if ARCH_BOARD_TWR_K60N512
 source "configs/twr-k60n512/Kconfig"
@@ -2259,14 +2330,6 @@ config BOARD_CRASHDUMP
 		"machine state" in a place where on the next reset can write it
 		to more sophisticated storage in a sane operating environment.
 
-config BOARD_RESET_ON_CRASH
-	bool "Enable Board Reset after the crashdump is saved"
-	default n
-	depends on BOARD_CRASHDUMP
-	---help---
-		If selected the board_crashdump should reset the machine after
-		saveing the state of the machine
-
 config BOARD_ENTROPY_POOL
 	bool "Enable Board level storing of entropy pool structure"
 	default n
@@ -2297,6 +2360,14 @@ config LIB_BOARDCTL
 
 if LIB_BOARDCTL
 
+config BOARDCTL_FINALINIT
+	bool "Enable board app final init"
+	default n
+	---help---
+		Enables support for the BOARDIOC_FINALINIT boardctl() command.
+		Architecture specific logic must provide board_app_finalinitialize()
+		interface.
+
 config BOARDCTL_POWEROFF
 	bool "Enable power off interfaces"
 	default n
@@ -2314,6 +2385,17 @@ config BOARDCTL_RESET
 		Enables support for the BOARDIOC_RESET boardctl() command.
 		Architecture specific logic must provide the board_reset()
 		interface.
+
+config BOARD_RESET_ON_ASSERT
+	int "Enable Board Reset after assert"
+	default 0
+	depends on BOARDCTL_RESET
+	---help---
+		== 0 up_assert never reset the machine
+		>= 1 up_assert from interrupt handler or IDLE thread will reset the
+		     machine
+		>= 2 up_assert from user or kernel thread will reset the machine.
+		     The default behavior is just to kill the asserting thread.
 
 config BOARDCTL_UNIQUEID
 	bool "Return board unique ID"
@@ -2334,7 +2416,6 @@ config BOARDCTL_UNIQUEID_SIZE
 config BOARDCTL_APP_SYMTAB
 	bool "Enable application symbol table interfaces"
 	default n
-	depends on EXECFUNCS_HAVE_SYMTAB
 	---help---
 		Enables support for the BOARDIOC_APP_SYMTAB boardctl() command.
 
@@ -2351,15 +2432,6 @@ config BOARDCTL_USBDEVCTRL
 	depends on USBDEV
 	---help---
 		Enables support for the BOARDIOC_USBDEV_CONTROL boardctl() command.
-
-config BOARDCTL_TSCTEST
-	bool "Enable touchscreen test interfaces"
-	default n
-	---help---
-		Enables support for the BOARDIOC_TSCTEST_SETUP and
-		BOARDIOC_TSCTEST_TEARDOWN boardctl() commands.  Architecture
-		specific logic must provide board_tsc_setup() and
-		board_tsc_teardown() interfaces.
 
 config BOARDCTL_IOCTL
 	bool "Board-specific boardctl() commands"

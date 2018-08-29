@@ -117,9 +117,9 @@ static uint16_t arp_send_eventhandler(FAR struct net_driver_s *dev,
         }
 
       /* Check if the outgoing packet is available. It may have been claimed
-       * by a send interrupt serving a different thread -OR- if the output
-       * buffer currently contains unprocessed incoming data. In these cases
-       * we will just have to wait for the next polling cycle.
+       * by a send event handler serving a different thread -OR- if the
+       * output buffer currently contains unprocessed incoming data. In
+       * these cases we will just have to wait for the next polling cycle.
        */
 
       if (dev->d_sndlen > 0 || (flags & PKT_NEWDATA) != 0)
@@ -171,7 +171,7 @@ static uint16_t arp_send_eventhandler(FAR struct net_driver_s *dev,
  *   address mapping is now in the ARP table, or (2) a configurable number
  *   of timeouts occur without receiving the ARP replay.
  *
- * Parameters:
+ * Input Parameters:
  *   ipaddr   The IP address to be queried (in network order).
  *
  * Returned Value:
@@ -292,10 +292,6 @@ int arp_send(in_addr_t ipaddr)
       goto errout_with_lock;
     }
 
-  /* Initialize the state structure. This is done with interrupts
-   * disabled
-   */
-
   /* This semaphore is used for signaling and, hence, should not have
    * priority inheritance enabled.
    */
@@ -308,9 +304,11 @@ int arp_send(in_addr_t ipaddr)
 
   /* Remember the routing device name */
 
-  strncpy((FAR char *)state.snd_ifname, (FAR const char *)dev->d_ifname, IFNAMSIZ);
+  strncpy((FAR char *)state.snd_ifname, (FAR const char *)dev->d_ifname,
+          IFNAMSIZ);
 
-  /* Now loop, testing if the address mapping is in the ARP table and re-sending the ARP request if it is not.
+  /* Now loop, testing if the address mapping is in the ARP table and re-
+   * sending the ARP request if it is not.
    */
 
   ret = -ETIMEDOUT; /* Assume a timeout failure */
@@ -324,7 +322,7 @@ int arp_send(in_addr_t ipaddr)
        * issue.
        */
 
-      if (arp_find(ipaddr))
+      if (arp_find(ipaddr, NULL) >= 0)
         {
           /* We have it!  Break out with success */
 
@@ -355,10 +353,8 @@ int arp_send(in_addr_t ipaddr)
           dev->d_txavail(dev);
         }
 
-      /* Wait for the send to complete or an error to occur: NOTES: (1)
-       * net_lockedwait will also terminate if a signal is received, (2)
-       * interrupts may be disabled! They will be re-enabled while the
-       * task sleeps and automatically re-enabled when the task restarts.
+      /* Wait for the send to complete or an error to occur.
+       * net_lockedwait will also terminate if a signal is received.
        */
 
       do

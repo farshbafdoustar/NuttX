@@ -174,7 +174,7 @@ arch/arm - ARM-based micro-controllers
       arch/arm/include/nuc1xx and arch/arm/src/nuc1xx
       arch/arm/include/sam34 and arch/arm/src/sam34
       arch/arm/include/sama45 and arch/arm/src/sama5
-      arch/arm/include/samdl and arch/arm/src/samdl
+      arch/arm/include/samd2l2 and arch/arm/src/samd2l2
       arch/arm/include/samv7 and arch/arm/src/samv7
       arch/arm/include/stm32 and arch/arm/src/stm32
       arch/arm/include/stm32f7 and arch/arm/src/stm32f7
@@ -220,6 +220,11 @@ arch/renesas - Support for Renesas and legacy Hitachi microcontrollers.
     MCU support
       arch/renesas/include/m16c and arch/renesas/src/m16c
       arch/renesas/include/sh1 and arch/renesas/src/sh1
+
+arch/or1k
+    This directory is dedicated to ports to OpenRISC architectures.
+
+    arch/or1k/include/mor1k and arch/or1k/src/mor1k
 
 arch/risc-v
     This directory is dedicated to ports to the RISC-V family.

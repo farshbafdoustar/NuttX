@@ -190,7 +190,7 @@ void smartfs_wrle32(uint8_t *dest, uint32_t val)
 /****************************************************************************
  * Name: smartfs_mount
  *
- * Desciption: This function is called only when the mountpoint is first
+ * Description: This function is called only when the mountpoint is first
  *   established.  It initializes the mountpoint structure and verifies
  *   that a valid SMART filesystem is provided by the block driver.
  *
@@ -334,7 +334,7 @@ errout:
 /****************************************************************************
  * Name: smartfs_unmount
  *
- * Desciption: This function is called only when the mountpoint is being
+ * Description: This function is called only when the mountpoint is being
  *   unbound.  If we are serving multiple directories, then we have to
  *   remove ourselves from the mount linked list, and potentially free
  *   the shared buffers.
@@ -1823,8 +1823,9 @@ int smartfs_shrinkfile(FAR struct smartfs_mountpt_s *fs,
 
       if (length == 0)
         {
-          dest       = (FAR uint8_t *)&sf->buffer;
+          dest       = (FAR uint8_t *)sf->buffer;
           destsize   = fs->fs_llformat.availbytes;
+        }
       else
         {
           offset     = sizeof(struct smartfs_chain_header_s) + length;
@@ -2072,7 +2073,7 @@ int smartfs_extendfile(FAR struct smartfs_mountpt_s *fs,
   ret = OK;
 
 errout_with_buffer:
-#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
+#ifndef CONFIG_SMARTFS_USE_SECTOR_BUFFER
   /* Release the allocated buffer */
 
   kmm_free(buffer);

@@ -140,7 +140,7 @@ static ssize_t adxl345_read(FAR struct file *filep, FAR char *buffer, size_t len
 
   if (len < sizeof(struct adxl345_sample_s))
     {
-      /* We could provide logic to break up a touch report into segments and
+      /* We could provide logic to break up a sample into segments and
        * handle smaller reads... but why?
        */
 
@@ -154,7 +154,7 @@ static ssize_t adxl345_read(FAR struct file *filep, FAR char *buffer, size_t len
     {
       /* This should only happen if the wait was canceled by an signal */
 
-      DEBUGASSERT(ret == -EINTR);
+      DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
       return ret;
     }
 
@@ -182,7 +182,7 @@ static ssize_t adxl345_read(FAR struct file *filep, FAR char *buffer, size_t len
  * Name: adxl345_register
  *
  * Description:
- *  This function will register the touchscreen driver as /dev/accelN where N
+ *  This function will register the accelerometer driver as /dev/accelN where N
  *  is the minor device number
  *
  * Input Parameters:
@@ -210,7 +210,7 @@ int adxl345_register(ADXL345_HANDLE handle, int minor)
   if (ret < 0)
     {
       snerr("ERROR: nxsem_wait failed: %d\n", ret);
-      DEBUGASSERT(ret == -EINTR);
+      DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
       return ret;
     }
 

@@ -391,7 +391,7 @@ static void lpc54_i2c_xfrsetup(struct lpc54_i2cdev_s *priv)
 
   /* Select the initial state */
 
-  if ((msg->flags & I2C_M_NORESTART) != 0)
+  if ((msg->flags & I2C_M_NOSTART) != 0)
     {
       /* Start condition will be ommited.  Begin the tranfer in the data
        * phase.
@@ -662,7 +662,7 @@ static bool lpc54_i2c_statemachine(struct lpc54_i2cdev_s *priv)
                */
 
               nextmsg = msg + 1;
-              dostop  = ((nextmsg->flags & I2C_M_NORESTART) != 0);
+              dostop  = ((nextmsg->flags & I2C_M_NOSTART) != 0);
             }
 
           if (dostop)
@@ -765,10 +765,9 @@ static int lpc54_i2c_transfer(FAR struct i2c_master_s *dev,
   priv->result = OK;
 
   /* Set up the transfer timeout */
-  /* wd_start(priv->timeout ...);  */
 
-  wd_start(priv->timeout, priv->nmsgs * I2C_WDOG_TIMEOUT, lpc54_i2c_timeout,
-           1, (uint32_t)priv);
+  (void)wd_start(priv->timeout, priv->nmsgs * I2C_WDOG_TIMEOUT,
+                 lpc54_i2c_timeout, 1, (uint32_t)priv);
 
   /* Initiate the transfer */
 

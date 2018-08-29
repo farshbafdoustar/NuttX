@@ -57,11 +57,11 @@
  *   Release pthread resources from the task group with the group
  *   terminated.
  *
- * Parameters:
+ * Input Parameters:
  *   group = The task group containing the pthread resources to be
  *           released.
  *
- * Return Value:
+ * Returned Value:
  *   None
  *
  * Assumptions:

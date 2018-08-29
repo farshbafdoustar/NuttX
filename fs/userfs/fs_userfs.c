@@ -46,7 +46,6 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
 #include <semaphore.h>
@@ -944,7 +943,7 @@ static int userfs_truncate(FAR struct file *filep, off_t length)
   /* Construct and send the request to the server */
 
   req           = (FAR struct userfs_truncate_request_s *)priv->iobuffer;
-  req->req      = USERFS_REQ_FSTAT;
+  req->req      = USERFS_REQ_TRUNCATE;
   req->openinfo = filep->f_priv;
   req->length   = length;
 
@@ -986,7 +985,6 @@ static int userfs_truncate(FAR struct file *filep, off_t length)
 
   /* Return the result of truncate operation */
 
-  DEBUGASSERT(buf != NULL);
   return resp->ret;
 }
 
@@ -1367,7 +1365,7 @@ static int userfs_bind(FAR struct inode *blkdriver, FAR const void *data,
   ret = psock_socket(PF_INET, SOCK_DGRAM, 0, &priv->psock);
   if (ret < 0)
     {
-      printf("client: ERROR socket failure %d\n", ret);
+      ferr("ERROR: socket() failed: %d\n", ret);
       goto errout_with_alloc;
     }
 

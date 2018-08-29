@@ -113,7 +113,6 @@ tcp_data_event(FAR struct net_driver_s *dev, FAR struct tcp_conn_s *conn,
          ninfo("Dropped %d bytes\n", dev->d_len);
 
 #ifdef CONFIG_NET_STATISTICS
-          g_netstats.tcp.syndrop++;
           g_netstats.tcp.drop++;
 #endif
           /* Clear the TCP_SNDACK bit so that no ACK will be sent */
@@ -218,7 +217,7 @@ uint16_t tcp_callback(FAR struct net_driver_s *dev,
  *     buffers
  *   buflen - The number of bytes to copy to the read-ahead buffer.
  *
- * Returned value:
+ * Returned Value:
  *   The number of bytes actually buffered is returned.  This will be either
  *   zero or equal to buflen; partial packets are not buffered.
  *

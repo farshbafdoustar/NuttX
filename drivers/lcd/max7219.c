@@ -344,7 +344,7 @@ static inline FAR const char *max7219_powerstring(uint8_t power)
  * Description:
  *   Select the SPI, locking and  re-configuring if necessary
  *
- * Parameters:
+ * Input Parameters:
  *   spi - Reference to the SPI driver structure
  *
  * Returned Value:
@@ -377,7 +377,7 @@ static void max7219_select(FAR struct spi_dev_s *spi)
  * Description:
  *   De-select the SPI
  *
- * Parameters:
+ * Input Parameters:
  *   spi  - Reference to the SPI driver structure
  *
  * Returned Value:
@@ -841,7 +841,7 @@ static inline void up_clear(FAR struct max7219_dev_s  *priv)
  *   spi   - An instance of the SPI interface to use to communicate
  *           with the MAX7219.
  *   devno - Device number to identify current display.
- *   
+ *
  * Returned Value:
  *   Zero (OK) on success; a negated errno value on failure.
  *

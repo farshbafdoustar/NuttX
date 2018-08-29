@@ -210,13 +210,6 @@ SAM4S Xplained-specific Configuration Options
 
   CONFIG_ARCH_LEDS -  Use LEDs to show state. Unique to board architecture.
 
-  CONFIG_ARCH_CALIBRATION - Enables some build in instrumentation that
-  cause a 100 second delay during boot-up.  This 100 second delay
-  serves no purpose other than it allows you to calibratre
-  CONFIG_ARCH_LOOPSPERMSEC.  You simply use a stop watch to measure
-  the 100 second delay then adjust CONFIG_ARCH_LOOPSPERMSEC until
-  the delay actually is 100 seconds.
-
   Individual subsystems can be enabled:
 
     CONFIG_SAM34_RTC         - Real Time Clock
@@ -275,9 +268,7 @@ Configurations
   Each SAM4S Xplained configuration is maintained in a sub-directory and
   can be selected as follow:
 
-    cd tools
-    ./configure.shsam4s-xplained/<subdir>
-    cd -
+    tools/configure.shsam4s-xplained/<subdir>
 
   Before building, make sure the PATH environment variable includes the
   correct path to the directory than holds your toolchain binaries.
@@ -348,7 +339,7 @@ Configurations
      This re-configuration should be done before making NuttX or else the
      subsequent 'make' will fail.  If you have already attempted building
      NuttX then you will have to 1) 'make distclean' to remove the old
-     configuration, 2) 'cd tools; ./configure.sh sam3u-ek/ksnh' to start
+     configuration, 2) 'tools/configure.sh sam3u-ek/ksnh' to start
      with a fresh configuration, and 3) perform the configuration changes
      above.
 

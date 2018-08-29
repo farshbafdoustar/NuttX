@@ -71,12 +71,12 @@
  *   This is an internal OS interface.  It is functionally equivalent to
  *   sigqueue() except that it does not modify the errno value.
  *
- * Parameters:
+ * Input Parameters:
  *   pid - Process ID of task to receive signal
  *   signo - Signal number
  *   value - Value to pass to task with signal
  *
- * Return Value:
+ * Returned Value:
  *   This is an internal OS interface and should not be used by applications.
  *   It follows the NuttX internal error return policy:  Zero (OK) is
  *   returned on success.  A negated errno value is returned on failure.
@@ -152,12 +152,12 @@ int nxsig_queue(int pid, int signo, void *sival_ptr)
  *   implementation defined as to whether the signal is delivered more than
  *   once."
  *
- * Parameters:
+ * Input Parameters:
  *   pid - Process ID of task to receive signal
  *   signo - Signal number
  *   value - Value to pass to task with signal
  *
- * Return Value:
+ * Returned Value:
  *    On  success (at least one signal was sent), zero (OK) is returned.  On
  *    any failure, -1 (ERROR) is returned and errno varaible is set
  *    appropriately:

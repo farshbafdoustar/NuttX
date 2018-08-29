@@ -62,10 +62,10 @@
  *   name does exist, then the value of name in the environment is changed to
  *   value.
  *
- * Parameters:
+ * Input Parameters:
  *   name=value string describing the environment setting to add/modify
  *
- * Return Value:
+ * Returned Value:
  *   Zero on sucess
  *
  * Assumptions:

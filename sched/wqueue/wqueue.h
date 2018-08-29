@@ -1,7 +1,7 @@
 /****************************************************************************
  * sched/wqueue/wqueue.h
  *
- *   Copyright (C) 2014, 2016 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2014, 2016, 2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -74,7 +74,6 @@ struct kworker_s
 
 struct kwork_wqueue_s
 {
-  systime_t         delay;     /* Delay between polling cycles (ticks) */
   struct dq_queue_s q;         /* The queue of pending work */
   struct kworker_s  worker[1]; /* Describes a worker thread */
 };
@@ -86,20 +85,21 @@ struct kwork_wqueue_s
 #ifdef CONFIG_SCHED_HPWORK
 struct hp_wqueue_s
 {
-  systime_t         delay;     /* Delay between polling cycles (ticks) */
   struct dq_queue_s q;         /* The queue of pending work */
-  struct kworker_s  worker[1]; /* Describes the single high priority worker */
+
+  /* Describes each thread in the high priority queue's thread pool */
+
+  struct kworker_s  worker[CONFIG_SCHED_HPNTHREADS];
 };
 #endif
 
-/* This structure defines the state of one high-priority work queue.  This
+/* This structure defines the state of one low-priority work queue.  This
  * structure must be cast compatible with kwork_wqueue_s
  */
 
 #ifdef CONFIG_SCHED_LPWORK
 struct lp_wqueue_s
 {
-  systime_t         delay;  /* Delay between polling cycles (ticks) */
   struct dq_queue_s q;      /* The queue of pending work */
 
   /* Describes each thread in the low priority queue's thread pool */
@@ -134,7 +134,7 @@ extern struct lp_wqueue_s g_lpwork;
  * Description:
  *   Start the high-priority, kernel-mode work queue.
  *
- * Input parameters:
+ * Input Parameters:
  *   None
  *
  * Returned Value:
@@ -153,7 +153,7 @@ int work_hpstart(void);
  * Description:
  *   Start the low-priority, kernel-mode worker thread(s)
  *
- * Input parameters:
+ * Input Parameters:
  *   None
  *
  * Returned Value:
@@ -175,9 +175,8 @@ int work_lpstart(void);
  *   part of the internal implementation of each work queue; it should not
  *   be called from application level logic.
  *
- * Input parameters:
+ * Input Parameters:
  *   wqueue - Describes the work queue to be processed
- *   period - The polling period in clock ticks
  *   wndx   - The worker thread index
  *
  * Returned Value:
@@ -185,7 +184,7 @@ int work_lpstart(void);
  *
  ****************************************************************************/
 
-void work_process(FAR struct kwork_wqueue_s *wqueue, systime_t period, int wndx);
+void work_process(FAR struct kwork_wqueue_s *wqueue, int wndx);
 
 #endif /* CONFIG_SCHED_WORKQUEUE */
 #endif /* __SCHED_WQUEUE_WQUEUE_H */

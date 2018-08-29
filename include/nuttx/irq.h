@@ -53,11 +53,12 @@
  ****************************************************************************/
 
 #ifndef __ASSEMBLY__
-/* IRQ detach is a convenience definition.  Detaching an interrupt handler
- * is equivalent to setting a NULL interrupt handler.
+/* IRQ detach is a convenience definition, it detach all the handlers
+ * sharing the same IRQ. Detaching an interrupt handler is equivalent to
+ * setting a NULL interrupt handler.
  */
 
-#  define irq_detach(isr) irq_attach(isr, NULL, NULL)
+#  define irq_detach(irq) irq_attach(irq, NULL, NULL)
 
 /* Maximum/minimum values of IRQ integer types */
 
@@ -163,6 +164,12 @@ extern "C"
 
 int irq_attach(int irq, xcpt_t isr, FAR void *arg);
 
+#ifdef CONFIG_IRQCHAIN
+int irqchain_detach(int irq, xcpt_t isr, FAR void *arg);
+#else
+#  define irqchain_detach(irq, isr, arg) irq_detach(irq)
+#endif
+
 /****************************************************************************
  * Name: enter_critical_section
  *
@@ -247,7 +254,8 @@ void leave_critical_section(irqstate_t flags);
  *
  ****************************************************************************/
 
-#if defined (CONFIG_SMP) && defined (CONFIG_SPINLOCK_IRQ)
+#if defined(CONFIG_SMP) && defined(CONFIG_SPINLOCK_IRQ) && \
+    defined(CONFIG_ARCH_GLOBAL_IRQDISABLE)
 irqstate_t spin_lock_irqsave(void);
 #else
 #  define spin_lock_irqsave(f) enter_critical_section(f)
@@ -275,7 +283,8 @@ irqstate_t spin_lock_irqsave(void);
  *
  ****************************************************************************/
 
-#if defined (CONFIG_SMP) && defined (CONFIG_SPINLOCK_IRQ)
+#if defined(CONFIG_SMP) && defined(CONFIG_SPINLOCK_IRQ) && \
+    defined(CONFIG_ARCH_GLOBAL_IRQDISABLE)
 void spin_unlock_irqrestore(irqstate_t flags);
 #else
 #  define spin_unlock_irqrestore(f) leave_critical_section(f)

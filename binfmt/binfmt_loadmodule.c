@@ -1,7 +1,7 @@
 /****************************************************************************
  * binfmt/binfmt_loadmodule.c
  *
- *   Copyright (C) 2009, 2014, 2017 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2009, 2014, 2017-2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,24 +43,13 @@
 #include <debug.h>
 #include <errno.h>
 
+#include <nuttx/sched.h>
 #include <nuttx/kmalloc.h>
 #include <nuttx/binfmt/binfmt.h>
 
 #include "binfmt.h"
 
 #ifndef CONFIG_BINFMT_DISABLE
-
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Private Function Prototypes
- ****************************************************************************/
-
-/****************************************************************************
- * Private Data
- ****************************************************************************/
 
 /****************************************************************************
  * Private Functions
@@ -88,17 +77,21 @@ static int load_default_priority(FAR struct binary_s *bin)
 
   /* Get the priority of this thread */
 
-  ret = sched_getparam(0, &param);
+  ret = nxsched_getparam(0, &param);
   if (ret < 0)
     {
-      ret = -get_errno();
-      berr("ERROR: sched_getparam failed: %d\n", ret);
+      berr("ERROR: nxsched_getparam failed: %d\n", ret);
       return ret;
     }
 
   /* Save that as the priority of child thread */
 
   bin->priority = param.sched_priority;
+  if (bin->priority <= 0)
+    {
+      bin->priority = SCHED_PRIORITY_DEFAULT;
+    }
+
   return ret;
 }
 

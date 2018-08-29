@@ -435,6 +435,27 @@ static void stm32_stdclockconfig(void)
 
 #endif
 
+  /* Set flash wait states according to sysclk:
+   *
+   *   0WS from 0-24MHz
+   *   1WS from 24-48MHz
+   *   2WS from 48-72MHz
+   */
+
+  regval = getreg32(STM32_FLASH_ACR);
+  regval &= ~(FLASH_ACR_LATENCY_MASK);
+
+#if STM32_SYSCLK_FREQUENCY <= 24000000
+  regval |= FLASH_ACR_LATENCY_0;
+#elif STM32_SYSCLK_FREQUENCY <= 48000000
+  regval |= FLASH_ACR_LATENCY_1;
+#else
+  regval |= FLASH_ACR_LATENCY_2;
+#endif
+
+  regval |= FLASH_ACR_PRTFBE;
+  putreg32(regval, STM32_FLASH_ACR);
+
   /* Select the system clock source (probably the PLL) */
 
   regval  = getreg32(STM32_RCC_CFGR);
@@ -446,7 +467,7 @@ static void stm32_stdclockconfig(void)
 
   while ((getreg32(STM32_RCC_CFGR) & RCC_CFGR_SWS_MASK) != STM32_SYSCLK_SWS);
 
-#if defined(CONFIG_STM32_IWDG) || defined(CONFIG_RTC_LSICLOCK)
+#if defined(CONFIG_STM32_IWDG) || defined(CONFIG_STM32_RTC_LSICLOCK)
   /* Low speed internal clock source LSI
    *
    * TODO: There is another case where the LSI needs to
@@ -456,7 +477,7 @@ static void stm32_stdclockconfig(void)
   stm32_rcc_enablelsi();
 #endif
 
-#if defined(CONFIG_RTC_LSECLOCK)
+#if defined(CONFIG_STM32_RTC_LSECLOCK)
   /* Low speed external clock source LSE
    *
    * TODO: There is another case where the LSE needs to

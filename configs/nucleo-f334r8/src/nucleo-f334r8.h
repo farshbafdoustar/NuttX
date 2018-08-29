@@ -132,7 +132,7 @@ void weak_function stm32_spidev_initialize(void);
  *   devpath - The full path to the timer device.  This should be of the form /dev/timer0
  *   timer   - The timer's number.
  *
- * Returned Values:
+ * Returned Value:
  *   Zero (OK) is returned on success; A negated errno value is returned
  *   to indicate the nature of any failure.
  *
@@ -222,7 +222,7 @@ int stm32_opamp_setup(void);
  *
  ****************************************************************************/
 
-#ifdef CONFIG_HRTIM
+#ifdef CONFIG_STM32_HRTIM
 int stm32_hrtim_setup(void);
 #endif
 

@@ -3,7 +3,7 @@
  * Defines architecture-specific device driver interfaces to the NuttX
  * network.
  *
- *   Copyright (C) 2007, 2009, 2011-2017 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2007, 2009, 2011-2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Derived largely from portions of uIP with has a similar BSD-styple license:
@@ -77,6 +77,12 @@
 #  endif
 #elif defined(CONFIG_WIRELESS_IEEE802154)
 #  define RADIO_MAX_ADDRLEN 8
+#elif defined(CONFIG_WIRELESS_BLUETOOTH)
+#  if CONFIG_PKTRADIO_ADDRLEN > 6
+#    define RADIO_MAX_ADDRLEN CONFIG_PKTRADIO_ADDRLEN
+#  else
+#    define RADIO_MAX_ADDRLEN 6
+#  endif
 #else /* if defined(CONFIG_WIRELESS_PKTRADIO) */
 #  define RADIO_MAX_ADDRLEN CONFIG_PKTRADIO_ADDRLEN
 #endif
@@ -182,9 +188,13 @@ struct netdev_statistics_s
 };
 #endif
 
-#if defined(CONFIG_NET_6LOWPAN) || defined(CONFIG_NET_IEEE802154)
+#if defined(CONFIG_NET_6LOWPAN) || defined(CONFIG_NET_BLUETOOTH) || \
+    defined(CONFIG_NET_IEEE802154)
 /* This structure is used to represent addresses of varying length.  This
  * structure is used to represent the address assigned to a radio.
+ *
+ * NOTE: the Bluetooth address is not variable, but shares struct
+ * radio_driver_s which depends on this type.
  */
 
 struct netdev_maxaddr_s
@@ -231,13 +241,14 @@ struct net_driver_s
 
   uint8_t d_lltype;             /* See enum net_lltype_e */
   uint8_t d_llhdrlen;           /* Link layer header size */
-  uint16_t d_mtu;               /* Maximum packet size */
-#ifdef CONFIG_NET_TCP
-  uint16_t d_recvwndo;          /* TCP receive window size */
+#ifdef CONFIG_NETDEV_IFINDEX
+  uint8_t d_ifindex;            /* Device index */
 #endif
 
+  uint16_t d_pktsize;           /* Maximum packet size */
+
 #if defined(CONFIG_NET_ETHERNET) || defined(CONFIG_NET_6LOWPAN) || \
-    defined(CONFIG_NET_IEEE802154)
+    defined(CONFIG_NET_BLUETOOTH) || defined(CONFIG_NET_IEEE802154)
 
   /* Link layer address */
 
@@ -249,13 +260,14 @@ struct net_driver_s
     struct ether_addr ether;    /* Device Ethernet MAC address */
 #endif
 
-#if defined(CONFIG_NET_6LOWPAN) || defined(CONFIG_NET_IEEE802154)
+#if defined(CONFIG_NET_6LOWPAN) || defined(CONFIG_NET_BLUETOOTH) || \
+    defined(CONFIG_NET_IEEE802154)
   /* The address assigned to an IEEE 802.15.4 or generic packet radio. */
 
     struct netdev_varaddr_s radio;
-#endif /* CONFIG_NET_6LOWPAN || CONFIG_NET_IEEE802154 */
+#endif
   } d_mac;
-#endif /* CONFIG_NET_ETHERNET || CONFIG_NET_6LOWPAN || CONFIG_NET_IEEE802154 */
+#endif /* CONFIG_NET_ETHERNET || CONFIG_NET_6LOWPAN ... || CONFIG_NET_IEEE802154 */
 
   /* Network identity */
 
@@ -557,6 +569,23 @@ void neighbor_out(FAR struct net_driver_s *dev);
 #endif /* CONFIG_NET_IPv6 */
 
 /****************************************************************************
+ * Name: devif_loopback
+ *
+ * Description:
+ *   This function should be called before sending out a packet. The function
+ *   checks the destination address of the packet to see whether the target of
+ *   packet is ourself and then consume the packet directly by calling input
+ *   process functions.
+ *
+ * Returned Value:
+ *   Zero is returned if the packet don't loop back to ourself, otherwise
+ *   a no zero value is returned.
+ *
+ ****************************************************************************/
+
+int devif_loopback(FAR struct net_driver_s *dev);
+
+/****************************************************************************
  * Carrier detection
  *
  * Call netdev_carrier_on when the carrier has become available and the device
@@ -569,6 +598,25 @@ void neighbor_out(FAR struct net_driver_s *dev);
 
 int netdev_carrier_on(FAR struct net_driver_s *dev);
 int netdev_carrier_off(FAR struct net_driver_s *dev);
+
+/****************************************************************************
+ * Name: net_ioctl_arglen
+ *
+ * Description:
+ *   Calculate the ioctl argument buffer length.
+ *
+ * Input Parameters:
+ *
+ *   cmd      The ioctl command
+ *
+ * Returned Value:
+ *   The argument buffer length, or error code.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_NET_USRSOCK
+ssize_t net_ioctl_arglen(int cmd);
+#endif
 
 /****************************************************************************
  * Name: net_chksum

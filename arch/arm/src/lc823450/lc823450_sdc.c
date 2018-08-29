@@ -2,7 +2,7 @@
  * arch/arm/src/lc823450/lc823450_sdc.c
  *
  *   Copyright (C) 2014-2015 ON Semiconductor. All rights reserved.
- *   Copyright (C) 2014-2017 Sony Corporation. All rights reserved.
+ *   Copyright 2014,2015,2016,2017 Sony Video & Sound Products Inc.
  *   Author: Masayuki Ishikawa <Masayuki.Ishikawa@jp.sony.com>
  *   Author: Masatoshi Tateishi <Masatoshi.Tateishi@jp.sony.com>
  *   Author: Nobutaka Toyoshima <Nobutaka.Toyoshima@jp.sony.com>
@@ -241,7 +241,7 @@ int lc823450_sdc_initialize(uint32_t ch)
 
   /* Only ES2 is supported */
 
-  ASSERT(1 == cpu_ver);
+  DEBUGASSERT(1 == cpu_ver);
 
   struct SdDrCfg_s *psd = _cfg[ch];
 
@@ -280,7 +280,7 @@ int lc823450_sdc_initialize(uint32_t ch)
 #endif
 
       default:
-        ASSERT(false);
+        DEBUGASSERT(false);
     }
 
   mcinfo("++++ start \n");
@@ -355,7 +355,9 @@ int lc823450_sdc_setclock(uint32_t ch, uint32_t limitclk, uint32_t sysclk)
 /****************************************************************************
  * Name: lc823450_sdc_refmediatype
  *
- * Return Values: 0(sd), 1(emmc)
+ * Returned Value:
+ *   0(sd), 1(emmc)
+ *
  ****************************************************************************/
 
 int lc823450_sdc_refmediatype(uint32_t ch)

@@ -91,7 +91,7 @@ EXTERN uint16_t g_ipid;
 /* Well-known IPv6 addresses */
 
 #ifdef CONFIG_NET_IPv6
-EXTERN const net_ipv6addr_t g_ipv6_allzeroaddr; /* An address of all zeroes */
+EXTERN const net_ipv6addr_t g_ipv6_unspecaddr;  /* An address of all zeroes */
 EXTERN const net_ipv6addr_t g_ipv6_allnodes;    /* All link local nodes */
 #if defined(CONFIG_NET_ICMPv6_AUTOCONF) || defined(CONFIG_NET_ICMPv6_ROUTER)
 EXTERN const net_ipv6addr_t g_ipv6_allrouters;  /* All link local routers */
@@ -149,7 +149,7 @@ FAR const struct sock_intf_s *
  *   The ipv4_getsockname() and ipv6_getsocknam() function retrieve the
  *   locally-bound name of the specified INET socket.
  *
- * Parameters:
+ * Input Parameters:
  *   psock    Point to the socket structure instance [in]
  *   addr     sockaddr structure to receive data [out]
  *   addrlen  Length of sockaddr structure [in/out]
@@ -172,6 +172,35 @@ int ipv6_getsockname(FAR struct socket *psock, FAR struct sockaddr *addr,
 #endif
 
 /****************************************************************************
+ * Name: ipv4_getpeername and ipv6_peername
+ *
+ * Description:
+ *   The ipv4_getpeername() and ipv6_getsocknam() function retrieve the
+ *   remote-connected name of the specified INET socket.
+ *
+ * Parameters:
+ *   psock    Point to the socket structure instance [in]
+ *   addr     sockaddr structure to receive data [out]
+ *   addrlen  Length of sockaddr structure [in/out]
+ *
+ * Returned Value:
+ *   On success, 0 is returned, the 'addr' argument points to the address
+ *   of the socket, and the 'addrlen' argument points to the length of the
+ *   address.  Otherwise, a negated errno value is returned.  See
+ *   getpeername() for the list of returned error values.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_NET_IPv4
+int ipv4_getpeername(FAR struct socket *psock, FAR struct sockaddr *addr,
+                     FAR socklen_t *addrlen);
+#endif
+#ifdef CONFIG_NET_IPv6
+int ipv6_getpeername(FAR struct socket *psock, FAR struct sockaddr *addr,
+                     FAR socklen_t *addrlen);
+#endif
+
+/****************************************************************************
  * Name: inet_recvfrom
  *
  * Description:
@@ -186,7 +215,7 @@ int ipv6_getsockname(FAR struct socket *psock, FAR struct sockaddr *addr,
  *   modified on return to indicate the actual size of the address stored
  *   there.
  *
- * Parameters:
+ * Input Parameters:
  *   psock    A pointer to a NuttX-specific, internal socket structure
  *   buf      Buffer to receive data
  *   len      Length of buffer
@@ -212,7 +241,7 @@ ssize_t inet_recvfrom(FAR struct socket *psock, FAR void *buf, size_t len,
  * Description:
  *   Performs the close operation on an AF_INET or AF_INET6 socket instance
  *
- * Parameters:
+ * Input Parameters:
  *   psock   Socket instance
  *
  * Returned Value:

@@ -1,7 +1,7 @@
 /****************************************************************************
  * tools/nxstyle.c
  *
- *   Copyright (C) 2015 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2015, 2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,6 +56,7 @@ int main(int argc, char **argv, char **envp)
 {
   FILE *instream;
   char line[LINE_SIZE];
+  char *lptr;
   bool btabs;
   bool bfunctions;
   bool bstatm;
@@ -73,6 +74,10 @@ int main(int argc, char **argv, char **envp)
   int prevncomment;
   int n;
   int i;
+  int comment_lineno;
+  int blank_lineno;
+  int noblank_lineno;
+  int linelen;
 
   instream = fopen(argv[1], "r");
   if (!instream)
@@ -81,16 +86,19 @@ int main(int argc, char **argv, char **envp)
       return 1;
     }
 
-  btabs        = false;
-  bfunctions   = false;
-  bswitch      = false;
-  bstring      = false;
-  lineno       = 0;
-  ncomment     = 0;
-  nnest        = 0;
-  declnest     = 0;
-  prevdeclnest = 0;
-  prevncomment = 0;
+  btabs          = false;
+  bfunctions     = false;
+  bswitch        = false;
+  bstring        = false;
+  lineno         = 0;
+  ncomment       = 0;
+  nnest          = 0;
+  declnest       = 0;
+  prevdeclnest   = 0;
+  prevncomment   = 0;
+  comment_lineno = -1;   /* Line on which the last one line comment was closed */
+  blank_lineno   = -1;   /* Line number of the last blank line */
+  noblank_lineno = -1;   /* A blank line is not needed after this line */
 
   while (fgets(line, LINE_SIZE, instream))
     {
@@ -101,6 +109,32 @@ int main(int argc, char **argv, char **envp)
       prevncomment = ncomment;
       bstatm       = false;
       bfor         = false;  /* REVISIT: Implies for() is all on one line */
+
+      /* Check for a blank line */
+
+      if (line[0] == '\n')
+        {
+          if (lineno == blank_lineno + 1)
+            {
+              fprintf(stderr,  "Too many blank lines at line %d\n", lineno);
+            }
+
+          blank_lineno = lineno;
+        }
+      else /* this line is non-blank */
+        {
+          if (lineno == comment_lineno + 1)
+            {
+              /* TODO:  This generates a false alarm if the current line
+               * contains a right brace or a pre-processor line.  No blank line
+               * should be present in those cases.
+               */
+
+              fprintf(stderr,
+                      "Missing blank line after comment line. Found at line %d\n",
+                      comment_lineno);
+            }
+        }
 
       /* STEP 1: Find the indentation level and the start of real stuff on
        * the line.
@@ -141,7 +175,34 @@ int main(int argc, char **argv, char **envp)
 
       if (line[indent] == '#')
         {
+          /* Suppress error for comment following conditional compilation */
+
+          noblank_lineno = lineno;
           continue;
+        }
+
+      /* Check for a single line comment */
+
+      linelen = strlen(line);
+      if (linelen >= 5)      /* Minimum is slash, star, star, slash, newline */
+        {
+          lptr = strstr(line, "*/");
+          if (line[indent] == '/' && line[indent +1] == '*' &&
+              lptr - line == linelen - 3)
+            {
+              if (comment_lineno != lineno - 1 &&
+                  blank_lineno   != lineno - 1 &&
+                  noblank_lineno != lineno - 1)
+                {
+                  /* TODO:  This generates a false alarm if preceded by a label. */
+
+                  fprintf(stderr,
+                          "Missing blank line before comment found at line %d\n",
+                          lineno);
+                }
+
+              comment_lineno = lineno;
+            }
         }
 
       /* Check for the comment block indicating the beginning of functions. */
@@ -207,7 +268,7 @@ int main(int argc, char **argv, char **envp)
 
       /* Check for a keyword indicating the beginning of a statement.
        * REVISIT:  This, obviously, will not detect statements that do not
-       * begin with a C keyword (such as assignement statements).
+       * begin with a C keyword (such as assignment statements).
        */
 
       else if (strncmp(&line[indent], "break ", 6) == 0 ||
@@ -268,14 +329,14 @@ int main(int argc, char **argv, char **envp)
             {
               /* Check for start of a C comment */
 
-              if (line[n+1] == '*')
+              if (line[n + 1] == '*')
                 {
-                  if (line[n+2] == '\n')
+                  if (line[n + 2] == '\n')
                     {
                       fprintf(stderr, "C comment on separate line at %d:%d\n",
                               lineno, n);
                     }
-                  else if (line[n+2] != ' ' && line[n+2] != '*')
+                  else if (line[n + 2] != ' ' && line[n + 2] != '*')
                     {
                       fprintf(stderr,
                               "Missing space after opening C comment at line %d:%d\n",
@@ -289,14 +350,14 @@ int main(int argc, char **argv, char **envp)
 
               /* Check for end of a C comment */
 
-              else if (n > 0 && line[n-1] == '*')
+              else if (n > 0 && line[n - 1] == '*')
                 {
                   if (n < 2)
                     {
                       fprintf(stderr, "Closing C comment not indented at line %d:%d\n",
                               lineno, n);
                     }
-                  else if (line[n-2] != ' ' && line[n-2] != '*')
+                  else if (line[n - 2] != ' ' && line[n - 2] != '*')
                     {
                       fprintf(stderr,
                               "Missing space before closing C comment at line %d:%d\n",
@@ -308,7 +369,7 @@ int main(int argc, char **argv, char **envp)
                    * expression are commented out within the expression.
                    */
 
-                  if (line[n+1] != '\n')
+                  if (line[n + 1] != '\n')
                     {
                       fprintf(stderr,
                               "Garbage on line after C comment at line %d:%d\n",
@@ -329,9 +390,12 @@ int main(int argc, char **argv, char **envp)
                     }
                 }
 
-              /* Check for C++ style comments */
+              /* Check for C++ style comments
+               * NOTE: Gives false alarms on URLs (http://...) embedded
+               * inside of comments.
+               */
 
-              else if (line[n+1] == '/')
+              else if (line[n + 1] == '/')
                 {
                   fprintf(stderr, "C++ style comment on at %d:%d\n",
                           lineno, n);
@@ -388,7 +452,7 @@ int main(int argc, char **argv, char **envp)
                                     lineno, n);
                           }
                       }
-                    else if (line[n+1] != '\n')
+                    else if (line[n + 1] != '\n')
                       {
                         if (declnest == 0)
                           {
@@ -403,6 +467,10 @@ int main(int argc, char **argv, char **envp)
                       {
                         declnest++;
                       }
+
+                    /* Suppress error for comment following a left brace */
+
+                    noblank_lineno = lineno;
                   }
                   break;
 
@@ -440,9 +508,9 @@ int main(int argc, char **argv, char **envp)
                                    lineno, n);
                           }
                       }
-                    else if (line[n+1] != '\n' &&
-                             line[n+1] != ',' &&
-                             line[n+1] != ';')
+                    else if (line[n + 1] != '\n' &&
+                             line[n + 1] != ',' &&
+                             line[n + 1] != ';')
                       {
                         /* One case where there may be garbage after the right
                          * bracket is, for example, when declaring a until or
@@ -464,7 +532,7 @@ int main(int argc, char **argv, char **envp)
 
                 case '(':
                   {
-                    if (line[n+1] == ' ' /* && !bfor */)
+                    if (line[n + 1] == ' ' /* && !bfor */)
                       {
                         fprintf(stderr,
                                 "Space follows left parenthesis at line %d:%d\n",
@@ -479,7 +547,7 @@ int main(int argc, char **argv, char **envp)
                      * Allow "for (xx; xx; )" (bfor == true)
                      */
 
-                    if (n > 0 && n != indent && line[n-1] == ' ' && !bfor)
+                    if (n > 0 && n != indent && line[n - 1] == ' ' && !bfor)
                       {
                         fprintf(stderr,
                                 "Space precedes right parenthesis at line %d:%d\n",
@@ -492,7 +560,7 @@ int main(int argc, char **argv, char **envp)
 
                 case '[':
                   {
-                    if (line[n+1] == ' ')
+                    if (line[n + 1] == ' ')
                       {
                         fprintf(stderr,
                                 "Space follows left bracket at line %d:%d\n",
@@ -503,7 +571,7 @@ int main(int argc, char **argv, char **envp)
 
                 case ']':
                   {
-                    if (n > 0 && line[n-1] == ' ')
+                    if (n > 0 && line[n - 1] == ' ')
                       {
                         fprintf(stderr,
                                 "Space precedes right bracket at line %d:%d\n",
@@ -516,7 +584,7 @@ int main(int argc, char **argv, char **envp)
 
                 case ';':
                   {
-                    if (!isspace((int)line[n+1]))
+                    if (!isspace((int)line[n + 1]))
                       {
                         fprintf(stderr, "Missing whitespace after semicolon at line %d:%d\n",
                                 lineno, n);
@@ -537,7 +605,7 @@ int main(int argc, char **argv, char **envp)
 
                 case ',':
                   {
-                    if (!isspace((int)line[n+1]))
+                    if (!isspace((int)line[n + 1]))
                       {
                         fprintf(stderr, "Missing whitespace after comma at line %d:%d\n",
                                 lineno, n);
@@ -559,9 +627,9 @@ int main(int argc, char **argv, char **envp)
                   {
                     int endndx = n + 2;
 
-                    if (line[n+1] != '\n' && line[n+1] != '\0')
+                    if (line[n + 1] != '\n' && line[n + 1] != '\0')
                       {
-                        if (line[n+1] == '\\')
+                        if (line[n + 1] == '\\')
                           {
                             for (;
                                  line[endndx] != '\n' &&
@@ -579,7 +647,7 @@ int main(int argc, char **argv, char **envp)
 
                 case '\n':
                   {
-                    if (n > 0 && isspace((int)line[n-1]))
+                    if (n > 0 && isspace((int)line[n - 1]))
                       {
                         fprintf(stderr,
                                 "Dangling whitespace at the end of line %d:%d\n",
@@ -593,7 +661,7 @@ int main(int argc, char **argv, char **envp)
                 case '-':
                   /* -> */
 
-                  if (line[n+1] == '>')
+                  if (line[n + 1] == '>')
                     {
                       n++;
                       break;
@@ -602,7 +670,7 @@ int main(int argc, char **argv, char **envp)
                 case '+':
                   /* ++, -- */
 
-                  if (line[n+1] == line[n])
+                  if (line[n + 1] == line[n])
                     {
                       n++;
                       break;
@@ -611,7 +679,7 @@ int main(int argc, char **argv, char **envp)
                 case '&':
                   /* && */
 
-                  if (line[n] == '&' && line[n+1] == line[n])
+                  if (line[n] == '&' && line[n + 1] == line[n])
                     {
                       int curr;
                       int next;
@@ -639,7 +707,7 @@ int main(int argc, char **argv, char **envp)
 
                   /* &<variable> OR &(<expression>)*/
 
-                  else if (isalpha((int)line[n+1]) || line[n+1] == '_' || line[n+1] == '(')
+                  else if (isalpha((int)line[n + 1]) || line[n + 1] == '_' || line[n + 1] == '(')
                     {
                       break;
                     }
@@ -648,12 +716,12 @@ int main(int argc, char **argv, char **envp)
                   {
                     if (line[n] == '/')
                       {
-                         if (line[n-1] == '*')
+                         if (line[n - 1] == '*')
                            {
                              n++;
                              break;
                            }
-                         else if (line[n+1] == '/')
+                         else if (line[n + 1] == '/')
                           {
                             fprintf(stderr, "C++ style comment on at %d:%d\n",
                                     lineno, n);
@@ -668,8 +736,8 @@ int main(int argc, char **argv, char **envp)
                     /* *\/, ** */
 
                     if (line[n] == '*' &&
-                        (line[n+1] == '/' ||
-                         line[n+1] == '*'))
+                        (line[n + 1] == '/' ||
+                         line[n + 1] == '*'))
                       {
                        n++;
                        break;
@@ -677,20 +745,20 @@ int main(int argc, char **argv, char **envp)
 
                     /* *<variable>, *(<expression>) */
 
-                    else if (isalpha((int)line[n+1]) ||
-                             line[n+1] == '_' ||
-                             line[n+1] == '(')
+                    else if (isalpha((int)line[n + 1]) ||
+                             line[n + 1] == '_' ||
+                             line[n + 1] == '(')
                       {
                         break;
                       }
 
                     /* (<type> *) */
 
-                    else if (line[n+1] == ')')
+                    else if (line[n + 1] == ')')
                       {
                         /* REVISIT: This gives false alarms on syntax like *--ptr */
 
-                        if (line[n-1] != ' ')
+                        if (line[n - 1] != ' ')
                           {
                             fprintf(stderr,
                                     "Operator/assignment must be preceded with whitespace at line %d:%d\n",
@@ -703,7 +771,7 @@ int main(int argc, char **argv, char **envp)
 
                 case '%':
                   {
-                    if (isalnum((int)line[n+1]))
+                    if (isalnum((int)line[n + 1]))
                       {
                         break;
                       }
@@ -726,7 +794,7 @@ int main(int argc, char **argv, char **envp)
                                 lineno, curr);
                       }
 
-                    next = n+1;
+                    next = n + 1;
 
                     /* <<, >>, <<=, >>= */
 

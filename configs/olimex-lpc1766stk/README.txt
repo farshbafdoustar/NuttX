@@ -157,6 +157,20 @@ Olimex LPC1766-STK development board
   MISO0 and MOSI0 are join via a 1K ohm resistor so the LCD appears to be
   write only.
 
+  STATUS:  The LCD driver was never properly integrated.  It was awkward
+  to use because it relied on a 9-bit SPI inteface (the 9th bit being
+  the command/data bit which is normally a discrete input).  All support
+  for the Nokia 6100 was removed on May 19, 2018.  That obsoleted
+  driver can be viewed in the nuttx/drivers/lcd and configs/olimex-lpc1766stk
+  directories of the Obsoleted repository.
+
+  The obsoleted driver attempted to created the 9th bit on-they-flay in the
+  data by expanding the 8-bit data to 16-bits with the 9th bit managed.  I
+  no longer believe that is the correct technical approach.  I now believe
+  that the best solution would be to provide custom management of the 9th
+  data bit inside of the low-level MCU driver, the LPC17 SPI driver in thisi
+  case, via a configration option on the low-level driver.
+
 LEDs
 ^^^^
 
@@ -495,13 +509,6 @@ Olimex LPC1766-STK Configuration Options
 
     CONFIG_ARCH_LEDS -  Use LEDs to show state. Unique to board architecture.
 
-    CONFIG_ARCH_CALIBRATION - Enables some build in instrumentation that
-       cause a 100 second delay during boot-up.  This 100 second delay
-       serves no purpose other than it allows you to calibratre
-       CONFIG_ARCH_LOOPSPERMSEC.  You simply use a stop watch to measure
-       the 100 second delay then adjust CONFIG_ARCH_LOOPSPERMSEC until
-       the delay actually is 100 seconds.
-
     Individual subsystems can be enabled:
 
       CONFIG_LPC17_MAINOSC=y
@@ -556,34 +563,38 @@ Olimex LPC1766-STK Configuration Options
 
     CONFIG_CAN_EXTID - Enables support for the 29-bit extended ID.  Default
       Standard 11-bit IDs.
-    CONFIG_CAN1_BAUD - CAN1 BAUD rate.  Required if CONFIG_LPC17_CAN1 is defined.
-    CONFIG_CAN2_BAUD - CAN1 BAUD rate.  Required if CONFIG_LPC17_CAN2 is defined.
-    CONFIG_CAN1_DIVISOR - CAN1 is clocked at CCLK divided by this number.
-      (the CCLK frequency is divided by this number to get the CAN clock).
-      Options = {1,2,4,6}. Default: 4.
-    CONFIG_CAN2_DIVISOR - CAN2 is clocked at CCLK divided by this number.
-      (the CCLK frequency is divided by this number to get the CAN clock).
-      Options = {1,2,4,6}. Default: 4.
-    CONFIG_CAN_TSEG1 - The number of CAN time quanta in segment 1. Default: 6
-    CONFIG_CAN_TSEG2 - the number of CAN time quanta in segment 2. Default: 7
+    CONFIG_LPC17_CAN1_BAUD - CAN1 BAUD rate.  Required if CONFIG_LPC17_CAN1
+      is defined.
+    CONFIG_LPC17_CAN2_BAUD - CAN1 BAUD rate.  Required if CONFIG_LPC17_CAN2
+      is defined.
+    CONFIG_LPC17_CAN1_DIVISOR - CAN1 is clocked at CCLK divided by this
+      number. (the CCLK frequency is divided by this number to get the CAN
+      clock). Options = {1,2,4,6}. Default: 4.
+    CONFIG_LPC17_CAN2_DIVISOR - CAN2 is clocked at CCLK divided by this
+      number.  (the CCLK frequency is divided by this number to get the CAN
+      clock).  Options = {1,2,4,6}. Default: 4.
+    CONFIG_LPC17_CAN_TSEG1 - The number of CAN time quanta in segment 1.
+      Default: 6
+    CONFIG_LPC17_CAN_TSEG2 = the number of CAN time quanta in segment 2.
+      Default: 7
 
   LPC17xx specific PHY/Ethernet device driver settings.  These setting
   also require CONFIG_NET and CONFIG_LPC17_ETHERNET.
 
     CONFIG_ETH0_PHY_KS8721 - Selects Micrel KS8721 PHY
-    CONFIG_PHY_AUTONEG - Enable auto-negotion
-    CONFIG_PHY_SPEED100 - Select 100Mbit vs. 10Mbit speed.
-    CONFIG_PHY_FDUPLEX - Select full (vs. half) duplex
+    CONFIG_LPC17_PHY_AUTONEG - Enable auto-negotion
+    CONFIG_LPC17_PHY_SPEED100 - Select 100Mbit vs. 10Mbit speed.
+    CONFIG_LPC17_PHY_FDUPLEX - Select full (vs. half) duplex
 
-    CONFIG_NET_EMACRAM_SIZE - Size of EMAC RAM.  Default: 16Kb
-    CONFIG_NET_NTXDESC - Configured number of Tx descriptors. Default: 18
-    CONFIG_NET_NRXDESC - Configured number of Rx descriptors. Default: 18
-    CONFIG_NET_WOL - Enable Wake-up on Lan (not fully implemented).
+    CONFIG_LPC17_EMACRAM_SIZE - Size of EMAC RAM.  Default: 16Kb
+    CONFIG_LPC17_ETH_NTXDESC - Configured number of Tx descriptors. Default: 18
+    CONFIG_LPC17_ETH_NRXDESC - Configured number of Rx descriptors. Default: 18
+    CONFIG_LPC17_ETH_WOL - Enable Wake-up on Lan (not fully implemented).
     CONFIG_NET_REGDEBUG - Enabled low level register debug.  Also needs
       CONFIG_DEBUG_FEATURES.
     CONFIG_NET_DUMPPACKET - Dump all received and transmitted packets.
       Also needs CONFIG_DEBUG_FEATURES.
-    CONFIG_NET_HASH - Enable receipt of near-perfect match frames.
+    CONFIG_LPC17_ETH_HASH - Enable receipt of near-perfect match frames.
     CONFIG_LPC17_MULTICAST - Enable receipt of multicast (and unicast) frames.
       Automatically set if CONFIG_NET_IGMP is selected.
 
@@ -607,17 +618,17 @@ Olimex LPC1766-STK Configuration Options
       Define if the hardware  implementation does not support the LED output
 
   LPC17xx USB Host Configuration
-    CONFIG_USBHOST_OHCIRAM_SIZE
+    CONFIG_LPC17_OHCIRAM_SIZE
       Total size of OHCI RAM (in AHB SRAM Bank 1)
-    CONFIG_USBHOST_NEDS
+    CONFIG_LP17_USBHOST_NEDS
       Number of endpoint descriptors
-    CONFIG_USBHOST_NTDS
+    CONFIG_LP17_USBHOST_NTDS
       Number of transfer descriptors
-    CONFIG_USBHOST_TDBUFFERS
+    CONFIG_LPC17_USBHOST_TDBUFFERS
       Number of transfer descriptor buffers
-    CONFIG_USBHOST_TDBUFSIZE
+    CONFIG_LPC17_USBHOST_TDBUFSIZE
       Size of one transfer descriptor buffer
-    CONFIG_USBHOST_IOBUFSIZE
+    CONFIG_LPC17_USBHOST_IOBUFSIZE
       Size of one end-user I/O buffer.  This can be zero if the
       application can guarantee that all end-user I/O buffers
       reside in AHB SRAM.
@@ -631,9 +642,7 @@ USB host operations.  To make these modifications, do the following:
 1. First configure to build the NSH configuration from the top-level
    NuttX directory:
 
-     cd tools
      ./configure olimex-lpc1766stk/nsh
-     cd ..
 
 2. Modify the top-level .config file to enable USB host using:
 
@@ -673,9 +682,7 @@ Common Configuration Notes
   1. Each Olimex LPC1766-STK configuration is maintained in a
      sub-directory and can be selected as follow:
 
-       cd tools
-       ./configure.sh olimex-lpc1766stk/<subdir>
-       cd -
+       tools/configure.sh olimex-lpc1766stk/<subdir>
 
      Where <subdir> is one of the sub-directories identified in the following
      paragraphs.
@@ -802,14 +809,6 @@ Configuration Sub-Directories
 
        CONFIG_FAT_LFN=y                    : Enables long file name support
 
-  nx:
-    An example using the NuttX graphics system (NX).  This example uses
-    the Nokia 6100 LCD driver.
-
-    NOTES:
-
-    1. The Nokia 6100 driver does not work on this board as of this writing.
-
   slip-httpd:
     This configuration is identical to the thttpd configuration except that
     it uses the SLIP data link layer via a serial driver instead of the
@@ -831,7 +830,7 @@ Configuration Sub-Directories
        use the UART1 hardware flow control yet.
 
        NOTE: The Linux slip module hard-codes its MTU size to 296.  So you
-       might as well set CONFIG_NET_ETH_MTU to 296 as well.
+       might as well set CONFIG_NET_ETH_PKTSIZE to 296 as well.
 
     4. After turning over the line to the SLIP driver, you must configure
        the network interface. Again, you do this using the standard
@@ -941,7 +940,7 @@ Configuration Sub-Directories
        In principle, Zmodem transfers could be performed on the any serial
        device, including the console device.  However, only the LPC17xx
        UART1 supports hardware flow control which is required for Zmodem
-       trasnfers.  Also, this configuration permits debug output on the
+       transfers.  Also, this configuration permits debug output on the
        serial console while the transfer is in progress without interfering
        with the file transfer.
 
@@ -1022,6 +1021,7 @@ Configuration Sub-Directories
 
          $ sudo stty -F /dev/ttyS0 2400     # Select 2400 BAUD
          $ sudo stty -F /dev/ttyS0 crtscts  # Enables CTS/RTS handshaking *
+         $ sudo stty -F /dev/ttyS0 raw      # Puts the TTY in raw mode
          $ sudo stty -F /dev/ttyS0          # Show the TTY configuration
 
          * Only is hardware flow control is enabled.  It is *not* in this
@@ -1068,6 +1068,7 @@ Configuration Sub-Directories
 
          $ sudo stty -F /dev/ttyS0 2400     # Select 2400 BAUD
          $ sudo stty -F /dev/ttyS0 crtscts  # Enables CTS/RTS handshaking *
+         $ sudo stty -F /dev/ttyS0 raw      # Puts the TTY in raw mode
          $ sudo stty -F /dev/ttyS0          # Show the TTY configuration
 
          * Only is hardware flow control is enabled.  It is *not* in this
@@ -1084,7 +1085,12 @@ Configuration Sub-Directories
 
        Then use the sz command on Linux to send the file to the target:
 
-         $ sudo sz <filename> t </dev/ttyS0 >/dev/ttyS0
+         $ sudo sz <filename> [-l nnnn] </dev/ttyS0 >/dev/ttyS0
+
+       Where <filename> is the file that you want to send. If -l nnnn is not
+       specified, then there will likely be packet buffer overflow errors.
+       nnnn should be set to a value less than or equal to
+       CONFIG_SYSTEM_ZMODEM_PKTBUFSIZE
 
        Where <filename> is the file that you want to send.
 
@@ -1133,11 +1139,15 @@ Configuration Sub-Directories
         best thing to do would be to use the matching NuttX sz on the Linux
         host side.
 
-    2013-7-16. More Testing against the NuttX rz/sz on Both Ends.
+      2013-7-16. More Testing against the NuttX rz/sz on Both Ends.
 
-      The NuttX sz/rz commands have been modified so that they can be
-      built and executed under Linux.  In this case, there are no
-      transfer problems at all in either direction and with large or
-      small files.  This configuration could probably run at much higher
-      serial speeds and with much smaller buffers (although that has not
-      been verified as of this writing).
+        The NuttX sz/rz commands have been modified so that they can be
+        built and executed under Linux.  In this case, there are no
+        transfer problems at all in either direction and with large or
+        small files.  This configuration could probably run at much higher
+        serial speeds and with much smaller buffers (although that has not
+        been verified as of this writing).
+
+        CONCLUSION:  You really do need proper hardware flow control to
+        use zmodem.  That is not currently implemented in the LPC17xx
+        family.

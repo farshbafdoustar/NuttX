@@ -68,14 +68,11 @@
  *   with the subnet served by the device.  Only "up" devices are considered
  *   (since a "down" device has no meaningful address).
  *
- * Parameters:
+ * Input Parameters:
  *   ripaddr - Remote address of a connection to use in the lookup
  *
  * Returned Value:
  *  Pointer to driver on success; null on failure
- *
- * Assumptions:
- *  Called from normal user mode
  *
  ****************************************************************************/
 
@@ -121,14 +118,11 @@ static FAR struct net_driver_s *netdev_finddevice_ipv4addr(in_addr_t ripaddr)
  *   with the subnet served by the device.  Only "up" devices are considered
  *   (since a "down" device has no meaningful address).
  *
- * Parameters:
+ * Input Parameters:
  *   ripaddr - Remote address of a connection to use in the lookup
  *
  * Returned Value:
  *  Pointer to driver on success; null on failure
- *
- * Assumptions:
- *  Called from normal user mode
  *
  ****************************************************************************/
 
@@ -178,15 +172,12 @@ netdev_finddevice_ipv6addr(const net_ipv6addr_t ripaddr)
  *   Find a previously registered network device by matching an arbitrary
  *   IPv4 address.
  *
- * Parameters:
+ * Input Parameters:
  *   lipaddr - Local, bound address of a connection.
  *   ripaddr - Remote address of a connection to use in the lookup
  *
  * Returned Value:
  *  Pointer to driver on success; null on failure
- *
- * Assumptions:
- *  Called from normal user mode
  *
  ****************************************************************************/
 
@@ -212,13 +203,9 @@ FAR struct net_driver_s *netdev_findby_ipv4addr(in_addr_t lipaddr,
            * broadcast packet out ALL locally available networks.  I am not
            * sure of that and, in any event, there is nothing we can do
            * about that here.
-           *
-           * REVISIT:  For now, arbitrarily return the first network
-           * interface in the list of network devices.  The broadcast
-           * will be sent on that device only.
            */
 
-          return g_netdevices;
+          return netdev_default();
         }
       else
         {
@@ -259,15 +246,11 @@ FAR struct net_driver_s *netdev_findby_ipv4addr(in_addr_t lipaddr,
 #endif /* CONFIG_NET_ROUTE */
 
   /* The above lookup will fail if the packet is being sent out of our
-   * out subnet to a router and there is no routing information.
+   * out subnet to a router and there is no routing information. Let's
+   * try the default network device.
    */
 
-  /* If we will did not find the network device, then we might as well fail
-   * because we are not configured properly to determine the route to the
-   * destination.
-   */
-
-  return dev;
+  return netdev_default();
 }
 #endif /* CONFIG_NET_IPv4 */
 
@@ -278,15 +261,12 @@ FAR struct net_driver_s *netdev_findby_ipv4addr(in_addr_t lipaddr,
  *   Find a previously registered network device by matching an arbitrary
  *   IPv6 address.
  *
- * Parameters:
+ * Input Parameters:
  *   lipaddr - Local, bound address of a connection.
  *   ripaddr - Remote address of a connection to use in the lookup
  *
  * Returned Value:
  *  Pointer to driver on success; null on failure
- *
- * Assumptions:
- *  Called from normal user mode
  *
  ****************************************************************************/
 
@@ -300,29 +280,23 @@ FAR struct net_driver_s *netdev_findby_ipv6addr(const net_ipv6addr_t lipaddr,
   int ret;
 #endif
 
-  /* First, check if this is the multicast IP address  We should actually
-   * pick off certain multicast address (all hosts multicast address, and
-   * the solicited-node multicast address).  We will cheat here and accept
-   * all multicast packets that are destined for the ff02::/16 addresses.
-   */
+  /* First, check if this is the multicast IP address */
 
-  if (ripaddr[0] == HTONS(0xff02))
+  if (net_is_addr_mcast(ripaddr))
     {
-      /* Yes.. Check the local, bound address.  Is it INADDR_ANY? */
+      /* Yes.. Check the local, bound address.  Is it the IPv6 unspecified
+       * address?
+       */
 
-      if (net_ipv6addr_cmp(lipaddr, g_ipv6_allzeroaddr))
+      if (net_ipv6addr_cmp(lipaddr, g_ipv6_unspecaddr))
         {
           /* Yes.. In this case, I think we are supposed to send the
            * broadcast packet out ALL locally available networks.  I am not
            * sure of that and, in any event, there is nothing we can do
            * about that here.
-           *
-           * REVISIT:  For now, arbitrarily return the first network
-           * interface in the list of network devices.  The broadcast
-           * will be sent on that device only.
            */
 
-          return g_netdevices;
+          return netdev_default();
         }
       else
         {
@@ -363,15 +337,11 @@ FAR struct net_driver_s *netdev_findby_ipv6addr(const net_ipv6addr_t lipaddr,
 #endif /* CONFIG_NET_ROUTE */
 
   /* The above lookup will fail if the packet is being sent out of our
-   * out subnet to a router and there is no routing information.
+   * out subnet to a router and there is no routing information. Let's
+   * try the default network device.
    */
 
-  /* If we will did not find the network device, then we might as well fail
-   * because we are not configured properly to determine the route to the
-   * destination.
-   */
-
-  return dev;
+  return netdev_default();
 }
 #endif /* CONFIG_NET_IPv6 */
 

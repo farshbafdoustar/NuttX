@@ -510,7 +510,7 @@ static int telnet_open(FAR struct file *filep)
   if (ret < 0)
     {
       nerr("ERROR: nxsem_wait failed: %d\n", ret);
-      DEBUGASSERT(ret == -EINTR);
+      DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
       goto errout;
     }
 
@@ -559,7 +559,7 @@ static int telnet_close(FAR struct file *filep)
   if (ret < 0)
     {
       nerr("ERROR: nxsem_wait failed: %d\n", ret);
-      DEBUGASSERT(ret == -EINTR);
+      DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
       goto errout;
     }
 
@@ -690,7 +690,7 @@ static ssize_t telnet_read(FAR struct file *filep, FAR char *buffer, size_t len)
     }
   while (ret == 0);
 
-  /* Return:
+  /* Returned Value:
    *
    * ret > 0:  The number of characters copied into the user buffer by
    *           telnet_receive().
@@ -779,11 +779,11 @@ static ssize_t telnet_write(FAR struct file *filep, FAR const char *buffer, size
  *   Create a character driver to "wrap" the telnet session.  This function
  *   will select and return a unique path for the new telnet device.
  *
- * Parameters:
+ * Input Parameters:
  *   session - On input, contains the socket descriptor that represents the
  *   new telnet connection.  On output, it holds the path to the new Telnet driver.
  *
- * Return:
+ * Returned Value:
  *   Zero (OK) on success; a negated errno value on failure.
  *
  ****************************************************************************/
@@ -863,7 +863,7 @@ static int telnet_session(FAR struct telnet_session_s *session)
                priv->td_minor);
 
       ret = stat(session->ts_devpath, &statbuf);
-      DEBUGASSERT(ret >= 0 || errno == ENOENT);
+      DEBUGASSERT(ret >= 0 || get_errno() == ENOENT);
     }
   while (ret >= 0 && start != g_telnet_common.tc_minor);
 
@@ -975,10 +975,10 @@ static int common_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
  * Description:
  *   Create the Telnet factory at /dev/telnet.
  *
- * Parameters:
+ * Input Parameters:
  *   None
  *
- * Return:
+ * Returned Value:
  *   Zero (OK) on success; a negated errno value on failure.
  *
  ****************************************************************************/

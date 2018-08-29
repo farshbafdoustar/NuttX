@@ -1,7 +1,7 @@
 /****************************************************************************
  * drivers/usbmonitor/usbmonitor.c
  *
- *   Copyright (C) 2013, 2016-2017 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2013, 2016-2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,6 +50,7 @@
 
 #include <nuttx/signal.h>
 #include <nuttx/kthread.h>
+#include <nuttx/syslog/syslog.h>
 #include <nuttx/usb/usbdev_trace.h>
 #include <nuttx/usb/usbhost_trace.h>
 
@@ -144,10 +145,10 @@ static int usbtrace_syslog(FAR const char *fmt, ...)
   va_list ap;
   int ret;
 
-  /* Let vsyslog do the real work */
+  /* Let nx_vsyslog do the real work */
 
   va_start(ap, fmt);
-  ret = vsyslog(LOG_INFO, fmt, ap);
+  ret = nx_vsyslog(LOG_INFO, fmt, &ap);
   va_end(ap);
   return ret;
 }
@@ -197,7 +198,7 @@ static int usbmonitor_daemon(int argc, char **argv)
  * Input Parameters:
  *   None
  *
- * Returned values:
+ * Returned Value:
  *   Zero (OK) is returned on success; a negated errno value is return on
  *   any failure.
  *
@@ -231,25 +232,24 @@ int usbmonitor_start(void)
                            (FAR char * const *)NULL);
       if (ret < 0)
         {
-          int errcode = errno;
           uerr("ERROR: Failed to start the USB monitor: %d\n",
-               errcode);
-          UNUSED(errcode);
+               ret);
         }
       else
         {
           g_usbmonitor.pid = ret;
           uinfo("Started: %d\n", g_usbmonitor.pid);
+          ret = OK;
         }
 
       sched_unlock();
-      return 0;
+      return ret;
     }
 
   sched_unlock();
   uinfo("%s: %d\n",
         g_usbmonitor.stop ? "Stopping" : "Running", g_usbmonitor.pid);
-  return 0;
+  return OK;
 }
 
 /****************************************************************************
@@ -260,7 +260,7 @@ int usbmonitor_start(void)
  * Input Parameters:
  *   None
  *
- * Returned values:
+ * Returned Value:
  *   Zero (OK) is returned on success; a negated errno value is return on
  *   any failure.
  *

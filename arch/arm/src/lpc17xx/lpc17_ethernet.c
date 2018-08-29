@@ -130,11 +130,11 @@
  * interrupt priority to the default.
  */
 
-#ifndef CONFIG_NET_PRIORITY
-#  define CONFIG_NET_PRIORITY NVIC_SYSH_PRIORITY_DEFAULT
+#ifndef CONFIG_LPC17_ETH_PRIORITY
+#  define CONFIG_LPC17_ETH_PRIORITY NVIC_SYSH_PRIORITY_DEFAULT
 #endif
 
-#define PKTBUF_SIZE (MAX_NET_DEV_MTU + CONFIG_NET_GUARDSIZE)
+#define PKTBUF_SIZE (MAX_NETDEV_PKTSIZE + CONFIG_NET_GUARDSIZE)
 
 /* Debug Configuration *****************************************************/
 /* Register debug -- can only happen of CONFIG_DEBUG_NET_INFO is selected */
@@ -229,14 +229,14 @@
 #define LPC17_100BASET_HD    (LPC17_SPEED_100 | LPC17_DUPLEX_HALF)
 #define LPC17_100BASET_FD    (LPC17_SPEED_100 | LPC17_DUPLEX_FULL)
 
-#ifdef CONFIG_PHY_SPEED100
-#  ifdef CONFIG_PHY_FDUPLEX
+#ifdef CONFIG_LPC17_PHY_SPEED100
+#  ifdef CONFIG_LPC17_PHY_FDUPLEX
 #    define LPC17_MODE_DEFLT LPC17_100BASET_FD
 #  else
 #    define LPC17_MODE_DEFLT LPC17_100BASET_HD
 #  endif
 #else
-#  ifdef CONFIG_PHY_FDUPLEX
+#  ifdef CONFIG_LPC17_PHY_FDUPLEX
 #    define LPC17_MODE_DEFLT LPC17_10BASET_FD
 #  else
 #    define LPC17_MODE_DEFLT LPC17_10BASET_HD
@@ -385,7 +385,7 @@ static void lpc17_phywrite(uint8_t phyaddr, uint8_t regaddr,
                            uint16_t phydata);
 static uint16_t lpc17_phyread(uint8_t phyaddr, uint8_t regaddr);
 static inline int lpc17_phyreset(uint8_t phyaddr);
-#  ifdef CONFIG_PHY_AUTONEG
+#  ifdef CONFIG_LPC17_PHY_AUTONEG
 static inline int lpc17_phyautoneg(uint8_t phyaddr);
 #  endif
 static int lpc17_phymode(uint8_t phyaddr, uint8_t mode);
@@ -533,7 +533,7 @@ static void lpc17_putreg(uint32_t val, uint32_t addr)
  * Description:
  *   Check if a free TX descriptor is available.
  *
- * Parameters:
+ * Input Parameters:
  *   priv  - Reference to the driver state structure
  *
  * Returned Value:
@@ -554,7 +554,7 @@ static int lpc17_txdesc(struct lpc17_driver_s *priv)
   /* Get the next producer index */
 
   prodidx = lpc17_getreg(LPC17_ETH_TXPRODIDX) & ETH_TXPRODIDX_MASK;
-  if (++prodidx >= CONFIG_NET_NTXDESC)
+  if (++prodidx >= CONFIG_LPC17_ETH_NTXDESC)
     {
       /* Wrap back to index zero */
 
@@ -576,7 +576,7 @@ static int lpc17_txdesc(struct lpc17_driver_s *priv)
  *   Start hardware transmission.  Called either from the txdone interrupt
  *   handling or from watchdog based polling.
  *
- * Parameters:
+ * Input Parameters:
  *   priv  - Reference to the driver state structure
  *
  * Returned Value:
@@ -637,7 +637,7 @@ static int lpc17_transmit(struct lpc17_driver_s *priv)
 
   /* Bump the producer index, making the packet available for transmission. */
 
-  if (++prodidx >= CONFIG_NET_NTXDESC)
+  if (++prodidx >= CONFIG_LPC17_ETH_NTXDESC)
     {
       /* Wrap back to index zero */
 
@@ -670,7 +670,7 @@ static int lpc17_transmit(struct lpc17_driver_s *priv)
  *   2. When the preceding TX packet send timesout and the interface is reset
  *   3. During normal TX polling
  *
- * Parameters:
+ * Input Parameters:
  *   dev  - Reference to the NuttX driver state structure
  *
  * Returned Value:
@@ -716,17 +716,20 @@ static int lpc17_txpoll(struct net_driver_s *dev)
         }
 #endif /* CONFIG_NET_IPv6 */
 
-      /* Send this packet.  In this context, we know that there is space for
-       * at least one more packet in the descriptor list.
-       */
+      if (!devif_loopback(&priv->lp_dev))
+        {
+          /* Send this packet.  In this context, we know that there is space for
+           * at least one more packet in the descriptor list.
+           */
 
-      lpc17_transmit(priv);
+          lpc17_transmit(priv);
 
-      /* Check if there is room in the device to hold another packet. If not,
-       * return any non-zero value to terminate the poll.
-       */
+          /* Check if there is room in the device to hold another packet. If not,
+           * return any non-zero value to terminate the poll.
+           */
 
-      ret = lpc17_txdesc(priv);
+          ret = lpc17_txdesc(priv);
+        }
     }
 
   /* If zero is returned, the polling will continue until all connections have
@@ -749,7 +752,7 @@ static int lpc17_txpoll(struct net_driver_s *dev)
  *   (2) hold the outgoing packet in a pending state until the next Tx
  *   interrupt occurs.
  *
- * Parameters:
+ * Input Parameters:
  *   priv  - Reference to the driver state structure
  *
  * Returned Value:
@@ -794,7 +797,7 @@ static void lpc17_response(struct lpc17_driver_s *priv)
  *   Perform Rx interrupt handling logic outside of the interrupt handler (on
  *   the work queue thread).
  *
- * Parameters:
+ * Input Parameters:
  *   arg - The reference to the driver structure (case to void*)
  *
  * Returned Value:
@@ -860,7 +863,7 @@ static void lpc17_rxdone_work(FAR void *arg)
        * imply that the packet is too big.
        */
 
-      /* else */ if (pktlen > CONFIG_NET_ETH_MTU + CONFIG_NET_GUARDSIZE)
+      /* else */ if (pktlen > CONFIG_NET_ETH_PKTSIZE + CONFIG_NET_GUARDSIZE)
         {
           nwarn("WARNING: Too big. considx: %08x prodidx: %08x pktlen: %d rxstat: %08x\n",
                 considx, prodidx, pktlen, *rxstat);
@@ -1025,7 +1028,7 @@ static void lpc17_rxdone_work(FAR void *arg)
        * might also have gotten bumped up by the hardware).
        */
 
-      if (++considx >= CONFIG_NET_NRXDESC)
+      if (++considx >= CONFIG_LPC17_ETH_NRXDESC)
         {
           /* Wrap back to index zero */
 
@@ -1060,7 +1063,7 @@ static void lpc17_rxdone_work(FAR void *arg)
  *   Perform Tx interrupt handling logic outside of the interrupt handler (on
  *   the work queue thread).
  *
- * Parameters:
+ * Input Parameters:
  *   arg - The reference to the driver structure (case to void*)
  *
  * Returned Value:
@@ -1112,7 +1115,7 @@ static void lpc17_txdone_work(FAR void *arg)
  * Description:
  *   Hardware interrupt handler
  *
- * Parameters:
+ * Input Parameters:
  *   irq     - Number of the IRQ that generated the interrupt
  *   context - Interrupt register state save info (architecture-specific)
  *
@@ -1146,7 +1149,7 @@ static int lpc17_interrupt(int irq, void *context, FAR void *arg)
       /* Handle each pending interrupt **************************************/
       /* Check for Wake-Up on Lan *******************************************/
 
-#ifdef CONFIG_NET_WOL
+#ifdef CONFIG_LPC17_ETH_WOL
       if ((status & ETH_INT_WKUP) != 0)
         {
 #         warning "Missing logic"
@@ -1310,7 +1313,7 @@ static int lpc17_interrupt(int irq, void *context, FAR void *arg)
  * Description:
  *   Perform TX timeout related work from the worker thread
  *
- * Parameters:
+ * Input Parameters:
  *   arg - The argument passed when work_queue() as called.
  *
  * Returned Value:
@@ -1352,7 +1355,7 @@ static void lpc17_txtimeout_work(FAR void *arg)
  *   Our TX watchdog timed out.  Called from the timer interrupt handler.
  *   The last TX never completed.  Reset the hardware and start again.
  *
- * Parameters:
+ * Input Parameters:
  *   argc - The number of available arguments
  *   arg  - The first argument
  *
@@ -1393,7 +1396,7 @@ static void lpc17_txtimeout_expiry(int argc, uint32_t arg, ...)
  * Description:
  *   Perform periodic polling from the worker thread
  *
- * Parameters:
+ * Input Parameters:
  *   arg - The argument passed when work_queue() as called.
  *
  * Returned Value:
@@ -1453,7 +1456,7 @@ static void lpc17_poll_work(FAR void *arg)
  * Description:
  *   Periodic timer handler.  Called from the timer interrupt handler.
  *
- * Parameters:
+ * Input Parameters:
  *   argc - The number of available arguments
  *   arg  - The first argument
  *
@@ -1482,7 +1485,7 @@ static void lpc17_poll_expiry(int argc, uint32_t arg, ...)
  * Description:
  *   Configure the IPv6 multicast MAC address.
  *
- * Parameters:
+ * Input Parameters:
  *   priv - A reference to the private driver state structure
  *
  * Returned Value:
@@ -1556,7 +1559,7 @@ static void lpc17_ipv6multicast(FAR struct lpc17_driver_s *priv)
  *   NuttX Callback: Bring up the Ethernet interface when an IP address is
  *   provided
  *
- * Parameters:
+ * Input Parameters:
  *   dev  - Reference to the NuttX driver state structure
  *
  * Returned Value:
@@ -1636,7 +1639,7 @@ static int lpc17_ifup(struct net_driver_s *dev)
 #ifdef CONFIG_LPC17_MULTICAST
   regval |= (ETH_RXFLCTRL_MCASTEN | ETH_RXFLCTRL_UCASTEN);
 #endif
-#ifdef CONFIG_NET_HASH
+#ifdef CONFIG_LPC17_ETH_HASH
   regval |= (ETH_RXFLCTRL_MCASTHASHEN | ETH_RXFLCTRL_UCASTHASHEN);
 #endif
   lpc17_putreg(regval, LPC17_ETH_RXFLCTRL);
@@ -1654,9 +1657,9 @@ static int lpc17_ifup(struct net_driver_s *dev)
 
 #ifdef CONFIG_ARCH_IRQPRIO
 #if CONFIG_LPC17_NINTERFACES > 1
-  (void)up_prioritize_irq(priv->irq, CONFIG_NET_PRIORITY);
+  (void)up_prioritize_irq(priv->irq, CONFIG_LPC17_ETH_PRIORITY);
 #else
-  (void)up_prioritize_irq(LPC17_IRQ_ETH, CONFIG_NET_PRIORITY);
+  (void)up_prioritize_irq(LPC17_IRQ_ETH, CONFIG_LPC17_ETH_PRIORITY);
 #endif
 #endif
 
@@ -1664,7 +1667,7 @@ static int lpc17_ifup(struct net_driver_s *dev)
    * not Wakeup on Lan (WoL) has been configured.
    */
 
-#ifdef CONFIG_NET_WOL
+#ifdef CONFIG_LPC17_ETH_WOL
   /* Configure WoL: Clear all receive filter WoLs and enable the perfect
    * match WoL interrupt.  We will wait until the Wake-up to finish
    * bringing things up.
@@ -1731,7 +1734,7 @@ static int lpc17_ifup(struct net_driver_s *dev)
  * Description:
  *   NuttX Callback: Stop the interface.
  *
- * Parameters:
+ * Input Parameters:
  *   dev  - Reference to the NuttX driver state structure
  *
  * Returned Value:
@@ -1770,7 +1773,7 @@ static int lpc17_ifdown(struct net_driver_s *dev)
  * Description:
  *   Perform an out-of-cycle poll on the worker thread.
  *
- * Parameters:
+ * Input Parameters:
  *   arg - Reference to the NuttX driver state structure (cast to void*)
  *
  * Returned Value:
@@ -1811,7 +1814,7 @@ static void lpc17_txavail_work(FAR void *arg)
  *   stimulus perform an out-of-cycle poll and, thereby, reduce the TX
  *   latency.
  *
- * Parameters:
+ * Input Parameters:
  *   dev  - Reference to the NuttX driver state structure
  *
  * Returned Value:
@@ -1861,7 +1864,7 @@ static int lpc17_txavail(struct net_driver_s *dev)
  *     warranty that such application will be suitable for the specified
  *     use without further testing or modification.
  *
- * Parameters:
+ * Input Parameters:
  *   data   - the data to be checked
  *   length - length of the data
  *
@@ -1942,7 +1945,7 @@ static uint32_t lpc17_calcethcrc(const uint8_t *data, size_t length)
  *   NuttX Callback: Add the specified MAC address to the hardware multicast
  *   address filtering
  *
- * Parameters:
+ * Input Parameters:
  *   dev  - Reference to the NuttX driver state structure
  *   mac  - The MAC address to be added
  *
@@ -2017,7 +2020,7 @@ static int lpc17_addmac(struct net_driver_s *dev, const uint8_t *mac)
  *   NuttX Callback: Remove the specified MAC address from the hardware multicast
  *   address filtering
  *
- * Parameters:
+ * Input Parameters:
  *   dev  - Reference to the NuttX driver state structure
  *   mac  - The MAC address to be removed
  *
@@ -2098,7 +2101,7 @@ static int lpc17_rmmac(struct net_driver_s *dev, const uint8_t *mac)
  * Description:
  *   Dump GPIO registers
  *
- * Parameters:
+ * Input Parameters:
  *   None
  *
  * Returned Value:
@@ -2122,7 +2125,7 @@ static void lpc17_showpins(void)
  * Description:
  *   Dump PHY MII registers
  *
- * Parameters:
+ * Input Parameters:
  *   phyaddr - The device address where the PHY was discovered
  *
  * Returned Value:
@@ -2153,7 +2156,7 @@ static void lpc17_showmii(uint8_t phyaddr, const char *msg)
  * Description:
  *   Write a value to an MII PHY register
  *
- * Parameters:
+ * Input Parameters:
  *   phyaddr - The device address where the PHY was discovered
  *   regaddr - The address of the PHY register to be written
  *   phydata - The data to write to the PHY register
@@ -2196,7 +2199,7 @@ static void lpc17_phywrite(uint8_t phyaddr, uint8_t regaddr, uint16_t phydata)
  * Description:
  *   Read a value from an MII PHY register
  *
- * Parameters:
+ * Input Parameters:
  *   phyaddr - The device address where the PHY was discovered
  *   regaddr - The address of the PHY register to be written
  *
@@ -2241,7 +2244,7 @@ static uint16_t lpc17_phyread(uint8_t phyaddr, uint8_t regaddr)
  * Description:
  *   Reset the PHY
  *
- * Parameters:
+ * Input Parameters:
  *   phyaddr - The device address where the PHY was discovered
  *
  * Returned Value:
@@ -2289,7 +2292,7 @@ static inline int lpc17_phyreset(uint8_t phyaddr)
  * Description:
  *   Enable auto-negotiation.
  *
- * Parameters:
+ * Input Parameters:
  *   phyaddr - The device address where the PHY was discovered
  *
  * Returned Value:
@@ -2300,7 +2303,7 @@ static inline int lpc17_phyreset(uint8_t phyaddr)
  *
  ****************************************************************************/
 
-#if defined(LPC17_HAVE_PHY) && defined(CONFIG_PHY_AUTONEG)
+#if defined(LPC17_HAVE_PHY) && defined(CONFIG_LPC17_PHY_AUTONEG)
 static inline int lpc17_phyautoneg(uint8_t phyaddr)
 {
   int32_t timeout;
@@ -2336,7 +2339,7 @@ static inline int lpc17_phyautoneg(uint8_t phyaddr)
  * Description:
  *   Set the PHY to operate at a selected speed/duplex mode.
  *
- * Parameters:
+ * Input Parameters:
  *   phyaddr - The device address where the PHY was discovered
  *   mode - speed/duplex mode
  *
@@ -2420,7 +2423,7 @@ static int lpc17_phymode(uint8_t phyaddr, uint8_t mode)
  * Description:
  *   Initialize the PHY
  *
- * Parameters:
+ * Input Parameters:
  *   priv - Pointer to EMAC device driver structure
  *
  * Returned Value:
@@ -2521,7 +2524,7 @@ static inline int lpc17_phyinit(struct lpc17_driver_s *priv)
 
   /* Are we configured to do auto-negotiation? */
 
-#ifdef CONFIG_PHY_AUTONEG
+#ifdef CONFIG_LPC17_PHY_AUTONEG
   /* Setup the Auto-negotiation advertisement: 100 or 10, and HD or FD */
 
   lpc17_phywrite(phyaddr, MII_ADVERTISE,
@@ -2695,7 +2698,7 @@ static inline int lpc17_phyinit(struct lpc17_driver_s *priv)
    * (probably more than little redundant).
    *
    * REVISIT: Revisit the following CONFIG_PHY_CEMENT_DISABLE work-around.
-   * It is should not needed if CONFIG_PHY_AUTONEG is defined and is known
+   * It is should not needed if CONFIG_LPC17_PHY_AUTONEG is defined and is known
    * cause a problem for at least one PHY (DP83848I PHY).  It might be
    * safe just to remove this elided coded for all PHYs.
    */
@@ -2720,7 +2723,7 @@ static inline int lpc17_phyinit(struct lpc17_driver_s *priv)
  * Description:
  *   Initialize the EMAC Tx descriptor table
  *
- * Parameters:
+ * Input Parameters:
  *   priv - Pointer to EMAC device driver structure
  *
  * Returned Value:
@@ -2743,14 +2746,14 @@ static inline void lpc17_txdescinit(struct lpc17_driver_s *priv)
 
   lpc17_putreg(LPC17_TXDESC_BASE, LPC17_ETH_TXDESC);
   lpc17_putreg(LPC17_TXSTAT_BASE, LPC17_ETH_TXSTAT);
-  lpc17_putreg(CONFIG_NET_NTXDESC-1, LPC17_ETH_TXDESCRNO);
+  lpc17_putreg(CONFIG_LPC17_ETH_NTXDESC-1, LPC17_ETH_TXDESCRNO);
 
   /* Initialize Tx descriptors and link to packet buffers */
 
   txdesc  = (uint32_t *)LPC17_TXDESC_BASE;
   pktaddr = LPC17_TXBUFFER_BASE;
 
-  for (i = 0; i < CONFIG_NET_NTXDESC; i++)
+  for (i = 0; i < CONFIG_LPC17_ETH_NTXDESC; i++)
     {
       *txdesc++ = pktaddr;
       *txdesc++ = (TXDESC_CONTROL_INT | (LPC17_MAXPACKET_SIZE - 1));
@@ -2760,7 +2763,7 @@ static inline void lpc17_txdescinit(struct lpc17_driver_s *priv)
   /* Initialize Tx status */
 
   txstat  = (uint32_t *)LPC17_TXSTAT_BASE;
-  for (i = 0; i < CONFIG_NET_NTXDESC; i++)
+  for (i = 0; i < CONFIG_LPC17_ETH_NTXDESC; i++)
     {
       *txstat++ = 0;
     }
@@ -2776,7 +2779,7 @@ static inline void lpc17_txdescinit(struct lpc17_driver_s *priv)
  * Description:
  *   Initialize the EMAC Rx descriptor table
  *
- * Parameters:
+ * Input Parameters:
  *   priv - Pointer to EMAC device driver structure
  *
  * Returned Value:
@@ -2799,14 +2802,14 @@ static inline void lpc17_rxdescinit(struct lpc17_driver_s *priv)
 
   lpc17_putreg(LPC17_RXDESC_BASE, LPC17_ETH_RXDESC);
   lpc17_putreg(LPC17_RXSTAT_BASE, LPC17_ETH_RXSTAT);
-  lpc17_putreg(CONFIG_NET_NRXDESC-1, LPC17_ETH_RXDESCNO);
+  lpc17_putreg(CONFIG_LPC17_ETH_NRXDESC-1, LPC17_ETH_RXDESCNO);
 
   /* Initialize Rx descriptors and link to packet buffers */
 
   rxdesc  = (uint32_t *)LPC17_RXDESC_BASE;
   pktaddr = LPC17_RXBUFFER_BASE;
 
-  for (i = 0; i < CONFIG_NET_NRXDESC; i++)
+  for (i = 0; i < CONFIG_LPC17_ETH_NRXDESC; i++)
     {
       *rxdesc++ = pktaddr;
       *rxdesc++ = (RXDESC_CONTROL_INT | (LPC17_MAXPACKET_SIZE - 1));
@@ -2816,7 +2819,7 @@ static inline void lpc17_rxdescinit(struct lpc17_driver_s *priv)
   /* Initialize Rx status */
 
   rxstat  = (uint32_t *)LPC17_RXSTAT_BASE;
-  for (i = 0; i < CONFIG_NET_NRXDESC; i++)
+  for (i = 0; i < CONFIG_LPC17_ETH_NRXDESC; i++)
     {
       *rxstat++ = 0;
       *rxstat++ = 0;
@@ -2833,7 +2836,7 @@ static inline void lpc17_rxdescinit(struct lpc17_driver_s *priv)
  * Description:
  *   Set the MAC to operate at a selected speed/duplex mode.
  *
- * Parameters:
+ * Input Parameters:
  *   mode - speed/duplex mode
  *
  * Returned Value:
@@ -2914,7 +2917,7 @@ static void lpc17_macmode(uint8_t mode)
  * Description:
  *   Configure and reset the Ethernet module, leaving it in a disabled state.
  *
- * Parameters:
+ * Input Parameters:
  *   priv   - Reference to the driver state structure
  *
  * Returned Value:
@@ -2993,7 +2996,7 @@ static void lpc17_ethreset(struct lpc17_driver_s *priv)
  * Description:
  *   Initialize one Ethernet controller and driver structure.
  *
- * Parameters:
+ * Input Parameters:
  *   intf - Selects the interface to be initialized.
  *
  * Returned Value:
@@ -3056,7 +3059,7 @@ static inline int lpc17_ethinitialize(int intf)
   priv->lp_irq           = ??;            /* Ethernet controller IRQ number */
 #endif
 
-  /* Create a watchdog for timing polling for and timing of transmisstions */
+  /* Create a watchdog for timing polling for and timing of transmissions */
 
   priv->lp_txpoll        = wd_create();   /* Create periodic poll timer */
   priv->lp_txtimeout     = wd_create();   /* Create TX timeout timer */

@@ -1,7 +1,7 @@
 ############################################################################
 # configs/lc823450-xgevk/scripts/Make.defs
 #
-#   Copyright (C) 2017 Sony Corporation. All rights reserved.
+#   Copyright 2017,2018 Sony Video & Sound Products Inc.
 #   Author: Masayuki Ishikawa <Masayuki.Ishikawa@jp.sony.com>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -63,7 +63,8 @@ CC = $(CROSSDEV)gcc
 CXX = $(CROSSDEV)g++
 CPP = $(CROSSDEV)gcc -E
 LD = $(CROSSDEV)ld
-AR = $(CROSSDEV)ar rcs
+STRIP = $(CROSSDEV)strip --strip-unneeded
+AR = flock $(TOPDIR) $(CROSSDEV)ar rcs
 NM = $(CROSSDEV)nm
 OBJCOPY = $(CROSSDEV)objcopy
 OBJDUMP = $(CROSSDEV)objdump
@@ -93,14 +94,32 @@ CXXPICFLAGS = $(ARCHPICFLAGS) $(CXXFLAGS)
 CPPFLAGS = $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES)
 AFLAGS = $(CFLAGS) -D__ASSEMBLY__
 
+# NXFLAT module definitions
+
 NXFLATLDFLAGS1 = -r -d -warn-common
 NXFLATLDFLAGS2 = $(NXFLATLDFLAGS1) -T$(TOPDIR)/binfmt/libnxflat/gnu-nxflat-pcrel.ld -no-check-sections
 LDNXFLATFLAGS = -e main -s 2048
+
+# ELF module definitions
+
+CELFFLAGS = $(CFLAGS) -mlong-calls # --target1-abs
+CXXELFFLAGS = $(CXXFLAGS) -mlong-calls # --target1-abs
+
+LDELFFLAGS = -r -e main
+ifeq ($(WINTOOL),y)
+  LDELFFLAGS += -T "${shell cygpath -w $(TOPDIR)/configs/$(CONFIG_ARCH_BOARD)/scripts/gnu-elf.ld}"
+else
+  LDELFFLAGS += -T $(TOPDIR)/configs/$(CONFIG_ARCH_BOARD)/scripts/gnu-elf.ld
+endif
+
+# File extensions
 
 ASMEXT = .S
 OBJEXT = .o
 LIBEXT = .a
 EXEEXT =
+
+# Linker flags
 
 ifneq ($(CROSSDEV),arm-nuttx-elf-)
   LDFLAGS += -nostartfiles -nodefaultlibs

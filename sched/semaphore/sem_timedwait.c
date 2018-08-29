@@ -82,11 +82,11 @@
  *   - It is not a cancellaction point, and
  *   - It does not modify the errno value.
  *
- * Parameters:
+ * Input Parameters:
  *   sem     - Semaphore object
  *   abstime - The absolute time to wait until a timeout is declared.
  *
- * Return Value:
+ * Returned Value:
  *   This is an internal OS interface and should not be used by applications.
  *   It follows the NuttX internal error return policy:  Zero (OK) is
  *   returned on success.  A negated errno value is returned on failure.
@@ -107,7 +107,7 @@ int nxsem_timedwait(FAR sem_t *sem, FAR const struct timespec *abstime)
 {
   FAR struct tcb_s *rtcb = this_task();
   irqstate_t flags;
-  ssystime_t ticks;
+  sclock_t ticks;
   int status;
   int ret = ERROR;
 
@@ -231,11 +231,11 @@ errout_with_irqdisabled:
  *   absolute time specified by abstime has already been passed at the
  *   time of the call.
  *
- * Parameters:
+ * Input Parameters:
  *   sem     - Semaphore object
  *   abstime - The absolute time to wait until a timeout is declared.
  *
- * Return Value:
+ * Returned Value:
  *   Zero (OK) is returned on success.  On failure, -1 (ERROR) is returned
  *   and the errno is set appropriately:
  *

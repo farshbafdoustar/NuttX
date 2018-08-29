@@ -67,7 +67,7 @@
 #define _SF_LISTENING       0x10  /* Bit 4: SOCK_STREAM is listening */
 #define _SF_BOUND           0x20  /* Bit 5: SOCK_STREAM is bound to an address */
                                   /* Bits 6-7: Connection state */
-#define _SF_CONNECTED       0x40  /* Bit 6: SOCK_STREAM is connected */
+#define _SF_CONNECTED       0x40  /* Bit 6: SOCK_STREAM/SOCK_DGRAM is connected */
 #define _SF_CLOSED          0x80  /* Bit 7: SOCK_STREAM was gracefully disconnected */
 
 /* Connection state encoding:
@@ -241,7 +241,7 @@ FAR const struct sock_intf_s *
  *   Check if a timeout has elapsed.  This can be called from a socket poll
  *   function to determine if a timeout has occurred.
  *
- * Parameters:
+ * Input Parameters:
  *   start_time Timeout start time in system clock ticks
  *   timeout    Timeout value in deciseconds.
  *
@@ -253,7 +253,7 @@ FAR const struct sock_intf_s *
  ****************************************************************************/
 
 #ifdef CONFIG_NET_SOCKOPTS
-int net_timeo(systime_t start_time, socktimeo_t timeo);
+int net_timeo(clock_t start_time, socktimeo_t timeo);
 #endif
 
 /****************************************************************************
@@ -266,7 +266,7 @@ int net_timeo(systime_t start_time, socktimeo_t timeo);
  *   send() is equivalent to write(). Also, send(sockfd,buf,len,flags) is
  *   equivalent to sendto(sockfd,buf,len,flags,NULL,0).
  *
- * Parameters:
+ * Input Parameters:
  *   psock    An instance of the internal socket structure.
  *   buf      Data to send
  *   len      Length of data to send

@@ -1,7 +1,8 @@
 /****************************************************************************
  * arch/arm/src/armv7-m/up_assert.c
  *
- *   Copyright (C) 2009-2010, 2012-2016 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2009-2010, 2012-2016, 2018 Gregory Nutt. All rights
+ *     reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -47,14 +48,17 @@
 #include <nuttx/irq.h>
 #include <nuttx/arch.h>
 #include <nuttx/board.h>
+#include <nuttx/syslog/syslog.h>
 #include <nuttx/usb/usbdev_trace.h>
 
 #include <arch/board/board.h>
 
-#include "up_arch.h"
 #include "sched/sched.h"
 #include "irq/irq.h"
+
+#include "up_arch.h"
 #include "up_internal.h"
+#include "chip.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -63,6 +67,10 @@
 
 #ifndef CONFIG_USBDEV_TRACE
 #  undef CONFIG_ARCH_USBDUMP
+#endif
+
+#ifndef CONFIG_BOARD_RESET_ON_ASSERT
+#  define CONFIG_BOARD_RESET_ON_ASSERT 0
 #endif
 
 /****************************************************************************
@@ -196,10 +204,10 @@ static int usbtrace_syslog(FAR const char *fmt, ...)
   va_list ap;
   int ret;
 
-  /* Let vsyslog do the real work */
+  /* Let nx_vsyslog do the real work */
 
   va_start(ap, fmt);
-  ret = vsyslog(LOG_EMERG, fmt, ap);
+  ret = nx_vsyslog(LOG_EMERG, fmt, &ap);
   va_end(ap);
   return ret;
 }
@@ -222,7 +230,7 @@ static void up_dumpstate(void)
   uint32_t sp = up_getsp();
   uint32_t ustackbase;
   uint32_t ustacksize;
-#if CONFIG_ARCH_INTERRUPTSTACK > 3
+#if CONFIG_ARCH_INTERRUPTSTACK > 7
   uint32_t istackbase;
   uint32_t istacksize;
 #endif
@@ -240,11 +248,15 @@ static void up_dumpstate(void)
       ustacksize = (uint32_t)rtcb->adj_stack_size;
     }
 
-#if CONFIG_ARCH_INTERRUPTSTACK > 3
+#if CONFIG_ARCH_INTERRUPTSTACK > 7
   /* Get the limits on the interrupt stack memory */
 
+#ifdef CONFIG_SMP
+  istackbase = (uint32_t)up_intstack_base();
+#else
   istackbase = (uint32_t)&g_intstackbase;
-  istacksize = (CONFIG_ARCH_INTERRUPTSTACK & ~3);
+#endif
+  istacksize = (CONFIG_ARCH_INTERRUPTSTACK & ~7);
 
   /* Show interrupt stack info */
 
@@ -351,6 +363,10 @@ static void up_dumpstate(void)
 static void _up_assert(int errorcode) noreturn_function;
 static void _up_assert(int errorcode)
 {
+  /* Flush any buffered SYSLOG data */
+
+  (void)syslog_flush();
+
   /* Are we in an interrupt handler or the idle task? */
 
   if (CURRENT_REGS || (this_task())->pid == 0)
@@ -364,6 +380,9 @@ static void _up_assert(int errorcode)
           (void)spin_trylock(&g_cpu_irqlock);
 #endif
 
+#if CONFIG_BOARD_RESET_ON_ASSERT >= 1
+          board_reset(0);
+#endif
 #ifdef CONFIG_ARCH_LEDS
           board_autoled_on(LED_PANIC);
           up_mdelay(250);
@@ -374,6 +393,9 @@ static void _up_assert(int errorcode)
     }
   else
     {
+#if CONFIG_BOARD_RESET_ON_ASSERT >= 2
+      board_reset(0);
+#endif
       exit(errorcode);
     }
 }
@@ -394,6 +416,19 @@ void up_assert(const uint8_t *filename, int lineno)
 
   board_autoled_on(LED_ASSERTION);
 
+  /* Flush any buffered SYSLOG data (prior to the assertion) */
+
+  (void)syslog_flush();
+
+#ifdef CONFIG_SMP
+#if CONFIG_TASK_NAME_SIZE > 0
+  _alert("Assertion failed CPU%d at file:%s line: %d task: %s\n",
+        up_cpu_index(), filename, lineno, rtcb->name);
+#else
+  _alert("Assertion failed CPU%d at file:%s line: %d\n",
+        up_cpu_index(), filename, lineno);
+#endif
+#else
 #if CONFIG_TASK_NAME_SIZE > 0
   _alert("Assertion failed at file:%s line: %d task: %s\n",
         filename, lineno, rtcb->name);
@@ -401,8 +436,13 @@ void up_assert(const uint8_t *filename, int lineno)
   _alert("Assertion failed at file:%s line: %d\n",
         filename, lineno);
 #endif
+#endif
 
   up_dumpstate();
+
+  /* Flush any buffered SYSLOG data (from the above) */
+
+  (void)syslog_flush();
 
 #ifdef CONFIG_BOARD_CRASHDUMP
   board_crashdump(up_getsp(), this_task(), filename, lineno);

@@ -1,7 +1,7 @@
 /****************************************************************************
  * syscall/syscall_stublookup.c
  *
- *   Copyright (C) 2011-2013, 2015-2017 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2011-2013, 2015-2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -160,7 +160,7 @@ uintptr_t STUB_clock_nanosleep(int nbr, uintptr_t parm1, uintptr_t parm2,
  * NuttX configuration.
  */
 
-uintptr_t STUB_clock_systimer(int nbr);
+uintptr_t STUB_clock(int nbr);
 uintptr_t STUB_clock_getres(int nbr, uintptr_t parm1, uintptr_t parm2);
 uintptr_t STUB_clock_gettime(int nbr, uintptr_t parm1, uintptr_t parm2);
 uintptr_t STUB_clock_settime(int nbr, uintptr_t parm1, uintptr_t parm2);
@@ -178,7 +178,7 @@ uintptr_t STUB_timer_settime(int nbr, uintptr_t parm1, uintptr_t parm2,
 
 /* System logging */
 
-uintptr_t STUB__vsyslog(int nbr, uintptr_t parm1, uintptr_t parm2,
+uintptr_t STUB_nx_vsyslog(int nbr, uintptr_t parm1, uintptr_t parm2,
             uintptr_t parm3);
 
 /* The following are defined if either file or socket descriptor are
@@ -206,10 +206,19 @@ uintptr_t STUB_poll(int nbr, uintptr_t parm1, uintptr_t parm2,
 uintptr_t STUB_select(int nbr, uintptr_t parm1, uintptr_t parm2,
             uintptr_t parm3, uintptr_t parm4, uintptr_t parm5);
 
+/* Asynchronous I/O */
+
 uintptr_t STUB_aio_read(int nbr, uintptr_t parm1);
 uintptr_t STUB_aio_write(int nbr, uintptr_t parm1);
 uintptr_t STUB_aio_fsync(int nbr, uintptr_t parm1, uintptr_t parm2);
 uintptr_t STUB_aio_cancel(int nbr, uintptr_t parm1, uintptr_t parm2);
+
+/* Network interface indices */
+
+uintptr_t STUB_if_indextoname(int nbr, uintptr_t parm1, uintptr_t parm2);
+uintptr_t STUB_if_nametoindex(int nbr, uintptr_t parm1);
+
+/* Termios */
 
 uintptr_t STUB_tcdrain(int nbr, uintptr_t parm1);
 
@@ -363,6 +372,10 @@ uintptr_t STUB_accept(int nbr, uintptr_t parm1, uintptr_t parm2,
 uintptr_t STUB_bind(int nbr, uintptr_t parm1, uintptr_t parm2,
             uintptr_t parm3);
 uintptr_t STUB_connect(int nbr, uintptr_t parm1, uintptr_t parm2,
+            uintptr_t parm3);
+uintptr_t STUB_getpeername(int nbr, uintptr_t parm1, uintptr_t parm2,
+            uintptr_t parm3);
+uintptr_t STUB_getsockname(int nbr, uintptr_t parm1, uintptr_t parm2,
             uintptr_t parm3);
 uintptr_t STUB_getsockopt(int nbr, uintptr_t parm1, uintptr_t parm2,
             uintptr_t parm3, uintptr_t parm4, uintptr_t parm5);

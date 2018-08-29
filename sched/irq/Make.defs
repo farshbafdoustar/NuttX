@@ -38,7 +38,9 @@ CSRCS += irq_initialize.c irq_attach.c irq_dispatch.c irq_unexpectedisr.c
 ifeq ($(CONFIG_SMP),y)
 CSRCS += irq_csection.c
 ifeq ($(CONFIG_SPINLOCK_IRQ),y)
+ifeq ($(CONFIG_ARCH_GLOBAL_IRQDISABLE),y)
 CSRCS += irq_spinlock.c
+endif
 endif
 else ifeq ($(CONFIG_SCHED_INSTRUMENTATION_CSECTION),y)
 CSRCS += irq_csection.c
@@ -49,6 +51,10 @@ CSRCS += irq_foreach.c
 ifeq ($(CONFIG_FS_PROCFS),y)
 CSRCS += irq_procfs.c
 endif
+endif
+
+ifeq ($(CONFIG_IRQCHAIN),y)
+CSRCS += irq_chain.c
 endif
 
 # Include irq build support

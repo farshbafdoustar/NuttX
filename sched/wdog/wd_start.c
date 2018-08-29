@@ -1,7 +1,8 @@
 /****************************************************************************
  * sched/wdog/wd_start.c
  *
- *   Copyright (C) 2007-2009, 2012, 2014, 2016 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2007-2009, 2012, 2014, 2016, 2018 Gregory Nutt.  All
+ *     rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -97,13 +98,11 @@ typedef void (*wdentry4_t)(int argc, wdparm_t arg1, wdparm_t arg2,
  *   Check if the timer for the watchdog at the head of list is ready to
  *   run.  If so, remove the watchdog from the list and execute it.
  *
- * Parameters:
+ * Input Parameters:
  *   None
  *
- * Return Value:
+ * Returned Value:
  *   None
- *
- * Assumptions:
  *
  ****************************************************************************/
 
@@ -190,7 +189,7 @@ static inline void wd_expiration(void)
  * Name: wd_start
  *
  * Description:
- *   This function adds a watchdog timer to the actuve timer queue.  The
+ *   This function adds a watchdog timer to the active timer queue.  The
  *   specified watchdog function at 'wdentry' will be called from the
  *   interrupt level after the specified number of ticks has elapsed.
  *   Watchdog timers may be started from the interrupt level.
@@ -204,14 +203,15 @@ static inline void wd_expiration(void)
  *   call wd_start again with the same wdog; only the most recent wdStart()
  *   on a given watchdog ID has any effect.
  *
- * Parameters:
+ * Input Parameters:
  *   wdog     - watchdog ID
  *   delay    - Delay count in clock ticks
  *   wdentry  - function to call on timeout
  *   parm1..4 - parameters to pass to wdentry
  *
- * Return Value:
- *   OK or ERROR
+ * Returned Value:
+ *   Zero (OK) is returned on success; a negated errno value is return to
+ *   indicate the nature of any failure.
  *
  * Assumptions:
  *   The watchdog routine runs in the context of the timer interrupt handler
@@ -229,12 +229,11 @@ int wd_start(WDOG_ID wdog, int32_t delay, wdentry_t wdentry,  int argc, ...)
   irqstate_t flags;
   int i;
 
-  /* Verify the wdog */
+  /* Verify the wdog and setup parameters */
 
-  if (!wdog || argc > CONFIG_MAX_WDOGPARMS || delay < 0)
+  if (wdog == NULL || argc > CONFIG_MAX_WDOGPARMS || delay < 0)
     {
-      set_errno(EINVAL);
-      return ERROR;
+      return -EINVAL;
     }
 
   /* Check if the watchdog has been started. If so, stop it.
@@ -401,13 +400,13 @@ int wd_start(WDOG_ID wdog, int32_t delay, wdentry_t wdentry,  int argc, ...)
  *   function will be executed in the context of the timer interrupt
  *   handler.
  *
- * Parameters:
+ * Input Parameters:
  *   ticks - If CONFIG_SCHED_TICKLESS is defined then the number of ticks
  *     in the interval that just expired is provided.  Otherwise,
  *     this function is called on each timer interrupt and a value of one
  *     is implicit.
  *
- * Return Value:
+ * Returned Value:
  *   If CONFIG_SCHED_TICKLESS is defined then the number of ticks for the
  *   next delay is provided (zero if no delay).  Otherwise, this function
  *   has no returned value.
@@ -429,7 +428,7 @@ unsigned int wd_timer(int ticks)
 
 #ifdef CONFIG_SMP
   /* We are in an interrupt handler as, as a consequence, interrupts are
-   * disabled.  But in the SMP case, interrupst MAY be disabled only on
+   * disabled.  But in the SMP case, interrupts MAY be disabled only on
    * the local CPU since most architectures do not permit disabling
    * interrupts on other CPUS.
    *
@@ -491,7 +490,7 @@ void wd_timer(void)
   irqstate_t flags;
 
   /* We are in an interrupt handler as, as a consequence, interrupts are
-   * disabled.  But in the SMP case, interrupst MAY be disabled only on
+   * disabled.  But in the SMP case, interrupts MAY be disabled only on
    * the local CPU since most architectures do not permit disabling
    * interrupts on other CPUS.
    *

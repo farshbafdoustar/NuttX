@@ -190,10 +190,10 @@ uint16_t pkt_callback(FAR struct net_driver_s *dev,
  *   packet socket logic.  All frames that are received should be provided to
  *   pkt_input() prior to other routing.
  *
- * Parameters:
+ * Input Parameters:
  *   dev - The device driver structure containing the received packet
  *
- * Return:
+ * Returned Value:
  *   OK    The packet has been processed  and can be deleted
  *   ERROR There is a matching connection, but could not dispatch the packet
  *         yet.  Useful when a packet arrives before a recv call is in
@@ -221,7 +221,7 @@ uint16_t pkt_callback(FAR struct net_driver_s *dev,
  *   modified on return to indicate the actual size of the address stored
  *   there.
  *
- * Parameters:
+ * Input Parameters:
  *   psock    A pointer to a NuttX-specific, internal socket structure
  *   buf      Buffer to receive data
  *   len      Length of buffer
@@ -263,11 +263,11 @@ FAR struct net_driver_s *pkt_find_device(FAR struct pkt_conn_s *conn);
  * Description:
  *   Poll a packet "connection" structure for availability of TX data
  *
- * Parameters:
+ * Input Parameters:
  *   dev - The device driver structure to use in the send operation
  *   conn - The packet "connection" to poll for TX data
  *
- * Return:
+ * Returned Value:
  *   None
  *
  * Assumptions:
@@ -285,7 +285,7 @@ void pkt_poll(FAR struct net_driver_s *dev, FAR struct pkt_conn_s *conn);
  *   The psock_pkt_send() call may be used only when the packet socket is in a
  *   connected state (so that the intended recipient is known).
  *
- * Parameters:
+ * Input Parameters:
  *   psock    An instance of the internal socket structure.
  *   buf      Data to send
  *   len      Length of data to send

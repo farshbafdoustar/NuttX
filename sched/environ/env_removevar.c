@@ -56,16 +56,17 @@
  * Description:
  *   Remove the referenced name=value pair from the environment
  *
- * Parameters:
- *   group The task group with the environment containing the name=value pair
- *   pvar A pointer to the name=value pair in the restroom
+ * Input Parameters:
+ *   group - The task group with the environment containing the name=value
+ *           pair
+ *   pvar  - A pointer to the name=value pair in the restroom
  *
- * Return Value:
+ * Returned Value:
  *   Zero on success
  *
  * Assumptions:
  *   - Not called from an interrupt handler
- *   - Caller has pre-emptions disabled
+ *   - Caller has pre-emption disabled
  *   - Caller will reallocate the environment structure to the correct size
  *
  ****************************************************************************/
@@ -76,7 +77,7 @@ int env_removevar(FAR struct task_group_s *group, FAR char *pvar)
   int alloc;        /* Size of the allocated environment */
   int ret = ERROR;
 
-  DEBUGASSERT(group && pvar);
+  DEBUGASSERT(group != NULL && pvar != NULL);
 
   /* Verify that the pointer lies within the environment region */
 

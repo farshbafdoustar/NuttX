@@ -189,13 +189,18 @@
  * Public Type Definitions
  ****************************************************************************/
 
+/* Forward references */
+
+struct file;
+struct inode;
+struct stat;
+struct statfs;
+struct pollfd;
+struct fs_dirent_s;
+
 /* This structure is provided by devices when they are registered with the
  * system.  It is used to call back to perform device specific operations.
  */
-
-struct file;   /* Forward reference */
-struct pollfd; /* Forward reference */
-struct inode;  /* Forward reference */
 
 struct file_operations
 {
@@ -264,10 +269,6 @@ struct block_operations
  * struct file_operations or struct mountpt_operations
  */
 
-struct inode;
-struct fs_dirent_s;
-struct stat;
-struct statfs;
 struct mountpt_operations
 {
   /* The mountpoint open method differs from the driver open method
@@ -496,10 +497,10 @@ void fs_initialize(void);
  * Description:
  *   Register a character driver inode the pseudo file system.
  *
- * Input parameters:
+ * Input Parameters:
  *   path - The path to the inode to create
  *   fops - The file operations structure
- *   mode - inmode privileges (not used)
+ *   mode - Access privileges (not used)
  *   priv - Private, user data that will be associated with the inode.
  *
  * Returned Value:
@@ -523,10 +524,10 @@ int register_driver(FAR const char *path,
  * Description:
  *   Register a block driver inode the pseudo file system.
  *
- * Input parameters:
+ * Input Parameters:
  *   path - The path to the inode to create
  *   bops - The block driver operations structure
- *   mode - inmode privileges (not used)
+ *   mode - Access privileges (not used)
  *   priv - Private, user data that will be associated with the inode.
  *
  * Returned Value:
@@ -544,6 +545,35 @@ int register_driver(FAR const char *path,
 int register_blockdriver(FAR const char *path,
                          FAR const struct block_operations *bops,
                          mode_t mode, FAR void *priv);
+#endif
+
+/****************************************************************************
+ * Name: register_blockpartition
+ *
+ * Description:
+ *   Register a block partition driver inode the pseudo file system.
+ *
+ * Input Parameters:
+ *   partition   - The path to the partition inode
+ *   parent      - The path to the parent inode
+ *   firstsector - The offset in sectors to the partition
+ *   nsectors    - The number of sectors in the partition
+ *
+ * Returned Value:
+ *   Zero on success (with the inode point in 'inode'); A negated errno
+ *   value is returned on a failure (all error values returned by
+ *   inode_reserve):
+ *
+ *   EINVAL - 'path' is invalid for this operation
+ *   EEXIST - An inode already exists at 'path'
+ *   ENOMEM - Failed to allocate in-memory resources for the operation
+ *
+ ****************************************************************************/
+
+#ifndef CONFIG_DISABLE_MOUNTPOINT
+int register_blockpartition(FAR const char *partition,
+                            mode_t mode, FAR const char *parent,
+                            size_t firstsector, size_t nsectors);
 #endif
 
 /****************************************************************************
@@ -881,7 +911,7 @@ int fs_getfilep(int fd, FAR struct file **filep);
  * Name: file_read
  *
  * Description:
- *   file_read() is an interanl OS interface.  It is functionally similar to
+ *   file_read() is an internal OS interface.  It is functionally similar to
  *   the standard read() interface except:
  *
  *    - It does not modify the errno variable,
@@ -908,7 +938,7 @@ ssize_t file_read(FAR struct file *filep, FAR void *buf, size_t nbytes);
  * Name: nx_read
  *
  * Description:
- *   nx_read() is an interanl OS interface.  It is functionally similar to
+ *   nx_read() is an internal OS interface.  It is functionally similar to
  *   the standard read() interface except:
  *
  *    - It does not modify the errno variable, and
@@ -945,7 +975,7 @@ ssize_t file_write(FAR struct file *filep, FAR const void *buf, size_t nbytes);
  * Name: nx_write
  *
  * Description:
- *  nx_write() writes up to nytes bytes to the file referenced by the file
+ *  nx_write() writes up to nbytes bytes to the file referenced by the file
  *  descriptor fd from the buffer starting at buf.  nx_write() is an
  *  internal OS function.  It is functionally equivalent to write() except
  *  that:
@@ -961,7 +991,7 @@ ssize_t file_write(FAR struct file *filep, FAR const void *buf, size_t nbytes);
  * Returned Value:
  *  On success, the number of bytes written are returned (zero indicates
  *  nothing was written).  On any failure, a negated errno value is returned
- *  (see comments withwrite() for a description of the appropriate errno
+ *  (see comments with write() for a description of the appropriate errno
  *   values).
  *
  ****************************************************************************/
@@ -1046,12 +1076,12 @@ int file_truncate(FAR struct file *filep, off_t length);
  * Description:
  *   Perform device specific operations.
  *
- * Parameters:
+ * Input Parameters:
  *   file     File structure instance
  *   req      The ioctl command
  *   arg      The argument of the ioctl cmd
  *
- * Return:
+ * Returned Value:
  *   Returns a non-negative number on success;  A negated errno value is
  *   returned on any failure (see comments ioctl() for a list of appropriate
  *   errno values).
@@ -1086,10 +1116,33 @@ int file_vfcntl(FAR struct file *filep, int cmd, va_list ap);
 #endif
 
 /****************************************************************************
+ * Name: file_fcntl
+ *
+ * Description:
+ *   Similar to the standard fcntl function except that is accepts a struct
+ *   struct file instance instead of a file descriptor.
+ *
+ * Input Parameters:
+ *   filep - Instance for struct file for the opened file.
+ *   cmd   - Identifies the operation to be performed.  Command specific
+ *           arguments may follow.
+ *
+ * Returned Value:
+ *   The nature of the return value depends on the command.  Non-negative
+ *   values indicate success.  Failures are reported as negated errno
+ *   values.
+ *
+ ****************************************************************************/
+
+#if CONFIG_NFILE_DESCRIPTORS > 0
+int file_fcntl(FAR struct file *filep, int cmd, ...);
+#endif
+
+/****************************************************************************
  * Name: file_poll
  *
  * Description:
- *   Low-level poll operation based on struc file.  This is used both to (1)
+ *   Low-level poll operation based on struct file.  This is used both to (1)
  *   support detached file, and also (2) by fdesc_poll() to perform all
  *   normal operations on file descriptors descriptors.
  *
@@ -1106,6 +1159,33 @@ int file_vfcntl(FAR struct file *filep, int cmd, va_list ap);
 
 #if CONFIG_NFILE_DESCRIPTORS > 0
 int file_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup);
+#endif
+
+/****************************************************************************
+ * Name: file_fstat
+ *
+ * Description:
+ *   file_fstat() is an internal OS interface.  It is functionally similar to
+ *   the standard fstat() interface except:
+ *
+ *    - It does not modify the errno variable,
+ *    - It is not a cancellation point,
+ *    - It does not handle socket descriptors, and
+ *    - It accepts a file structure instance instead of file descriptor.
+ *
+ * Input Parameters:
+ *   filep  - File structure instance
+ *   buf    - The caller provide location in which to return information about
+ *            the open file.
+ *
+ * Returned Value:
+ *   Upon successful completion, 0 shall be returned. Otherwise, -1 shall be
+ *   returned and errno set to indicate the error.
+ *
+ ****************************************************************************/
+
+#if CONFIG_NFILE_DESCRIPTORS > 0
+int file_fstat(FAR struct file *filep, FAR struct stat *buf);
 #endif
 
 /****************************************************************************

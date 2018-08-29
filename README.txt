@@ -17,7 +17,7 @@ README
     - NuttX Configuration Tool
     - Finding Selections in the Configuration Menus
     - Reveal Hidden Configuration Options
-    - Make Sure that You on on the Right Platform
+    - Make Sure that You are on the Right Platform
     - Comparing Two Configurations
     - Making defconfig Files
     - Incompatibilities with Older Configurations
@@ -41,7 +41,7 @@ ENVIRONMENTS
 ^^^^^^^^^^^^
 
   NuttX requires a POSIX development environment such as you would find under
-  Linux or OSX.  NuttX may also be installed and built on Windows system
+  Linux or macOS.  NuttX may also be installed and built on Windows system
   if you also provide such a POSIX development environment.  Options for a
   POSIX development environment under Windows include:
 
@@ -68,18 +68,47 @@ ENVIRONMENTS
       the time as Cygwin, perhaps 20 minutes for the basic Ubuntu install
       (vs. more than a day for the complete Cygwin install).
 
-    - The MSYS environment.  I have no experience using the MSYS environment
-      and that configuration will not be discussed in this README file.
-      See http://www.mingw.org/wiki/MSYS if you are interested in
-      using MSYS.  People report to me that they have used MSYS
-      successfully.  I suppose that the advantages of the MSYS environment
-      is that it is closer to a native Windows environment and uses only a
-      minimal of add-on POSIX-land tools.
+      There have been even more recent ports of Linux environment to
+      Windows.  I need to update this section to include some mention of
+      these alternatives.
 
-    - NuttX can also be installed and built on a native Windows system, but
-      with some potential tool-related issues (see the discussion "Native
-      Windows Build" under "Building NuttX" below).  GNUWin32 is used to
-      provide compatible native windows tools.
+    - The MSYS environment.  MSYS derives from an older version of Cygwin
+      simplified and adapted to work more naturally in the Windows
+      environment.  See http://www.mingw.org/wiki/MSYS if you are
+      interested in using MSYS.  The advantages of the MSYS environment is
+      that it is better integrted with the native Windows environment and
+      lighter weight; it uses only a  minimal number of add-on POSIX-land
+      tools.
+
+      The download link in that Wiki takes you to the SourceForge download
+      site.  The SourceForge MSYS project has been stagnant for some time.
+      The MSYS project has more recently moved to
+      http://odsn.net/projects/sfnet_mingwbundle.  Downloads of current .zip
+      files are available there but no instructions for the installation.
+
+    - MSYS2 appears to be a re-write of MSYS based on a newer version of
+      Cygwin.  Is it available at https://www.msys2.org.  A windows
+      installer is available at that site along with very good installation
+      instructions.  The download is relatively quick (at least compared to
+      Cygwin) and the 'pacman' package management tool supports supports
+      simple system updates.  For example, 'pacman -S git' will install the
+      GIT command line utilities.
+
+    - Other POSIX environments.  Check out:
+
+        UnxUtils: https://sourceforge.net/projects/unxutils/,
+          https://en.wikipedia.org/wiki/UnxUtils
+        MobaXterm: https://mobaxterm.mobatek.net/
+        Gow: https://github.com/bmatzelle/gow/wiki
+
+      Disclaimer:  In priniple, these should work.  However, I have never
+      used any of these environments and cannot guarantee that there is
+      not some less-than-obvious issues.
+
+  NuttX can also be installed and built on a native Windows system, but with
+  some potential tool-related issues (see the discussion "Native Windows
+  Build" under "Building NuttX" below).  GNUWin32 is used to provide
+  compatible native windows tools.
 
 Installing Cygwin
 -----------------
@@ -128,6 +157,70 @@ Installing Cygwin
   UPDATE: The last time I installed EVERYTHING, the download was
   about 5GiB.  The server I selected was also very slow so it took
   over a day to do the whole install!
+
+Using MSYS
+----------
+
+  MSYS is an environment the derives from Cygwin.  Thus, most things said
+  about Cygwin apply equally to MSYS.  This section will, then, focus on
+  the differences when using MSYS, specifically MSYS2.
+
+  Here is it assumed that you have already downloaded and installed MSYS2
+  from https://www.msys2.org using the windows installer available at that
+  location.  It is also assumed that you have brought in the necessary
+  tools using the 'pacman' package management tool Tools needed including:
+
+    pacman -S git
+    pacman -S make
+    pacman -S gcc
+
+  And possibly others depending upon your usage.  Then you will need to
+  build and install kconfig-frontends per the instructions of the top-level
+  README.txt file in the tools repository.  This required the following
+  additional tools:
+
+    pacman -S bison
+    pacman -S gperf
+    pacman -S ncurses-devel
+    pacman -S automake-wrapper
+    pacman -S autoconf
+    pacman -S pkg-config
+
+  Because of some versioning issues, I had to run 'aclocal' prior to
+  running the kconfig-frontends configure script.  See "Configuring NuttX"
+  below for futher information.ifq
+
+  Unlike Cygwin, MSYS does not support symbolic links.  The 'ln -s' commnad
+  will, in fact, copy a directory!  This means that you Make.defs file will
+  have to include definitions like:
+
+    ifeq ($(CONFIG_WINDOWS_MSYS),y)
+      DIRLINK = $(TOPDIR)/tools/copydir.sh
+      DIRUNLINK = $(TOPDIR)/tools/unlink.sh
+    endif
+
+  This will force the directory copies to work in a way that can be handled
+  by the NuttX build system.  NOTE:  The default link.sh script has been
+  updated so that is should now be MSYS2 compatible.  The above is preferred
+  but no longer necessary in the Make.defs file.
+
+  To build the simulator under MSYS, you also need:
+
+    pacman -S zlib-devel
+
+  It appears that you cannot use directory names with spaces in them like
+  "/c/Program\ Files \(86\)" in the MSYS path variable.  I worked around this
+  by create Windows junctions like this::
+
+    1. Open the a windows command terminal,
+    2. CD to c:\msys64, then
+    3. mklink /j programfiles "C:/Program\ Files" and
+    4. mklink /j programfiles86 "C:/Program\ Files\ \(x86\)"
+
+  They then show up as /programfiles and /programfiles86 with the MSYS2
+  sandbox.  Thos paths can then be used with the PATH variable.  I had
+  to do something similar for the path to the GNU Tools "ARM Embedded
+  Toolchain" which also has spaces in the path name.
 
 Ubuntu Bash under Windows 10
 ----------------------------
@@ -440,7 +533,7 @@ Related Repositories
     There are snapshots of some tools here that you will need to work with
     NuttX:  kconfig-frontends, genromfs, and others.
 
-  * https://bitbucket.org/nuttx/drivers
+  * https://bitbucket.org/nuttx/nonbsd
 
     A few drivers that are not integrated into the main NuttX source tree due
     to licensing issues.
@@ -635,7 +728,7 @@ Instantiating "Canned" Configurations
       refreshing the configuration as described below.
 
       NOTE:  NuttX uses only compressed defconfig files.  For the NuttX
-      defconfig files, this refrshing step is *NOT* optional; it is also
+      defconfig files, this refreshing step is *NOT* optional; it is also
       necessary to uncompress and regenerate the full making file.  This is
       discussed further below.
 
@@ -747,6 +840,13 @@ NuttX Configuration Tool
   This is pretty straight forward for creating new configurations
   but may be less intuitive for modifying existing configurations.
 
+  Another ncurses-based tool that is an option to kconfig-mconf is
+  kconfig-nconf.  The differences are primary in in the aesthetics of the
+  UI.  If you have kconfig-nconf built, then you can invoke that front end
+  with:
+
+    make nconfig
+
   If you have an environment that supports the Qt or GTK graphical systems
   (probably KDE or gnome, respectively, or Cygwin under Windows with Qt or
   GTK installed), then you can also build the graphical kconfig-frontends,
@@ -828,6 +928,10 @@ Make Sure that You are on the Right Platform
   Or, if you are on a Windows/Cygwin 64-bit platform:
 
     tools/sethost.sh -c
+
+  Or, for MSYS/MSYS2:
+
+    tools/sethost.sh -g
 
   Other options are available from the help option built into the
   script.  You can see all options with:
@@ -1422,6 +1526,22 @@ Installing GNUWin32
 CYGWIN BUILD PROBLEMS
 ^^^^^^^^^^^^^^^^^^^^^
 
+Performance
+-----------
+
+  Build performance under Cygwin is really not so bad, certainly not as good
+  as a Linux build.  However, often you will find that the performance is
+  not just bad but terrible.  If you are seeing awful performance.. like two
+  or three compilations per second.. the culprit is usually your Windows
+  Anti-Virus protection interfering with the build tool program execution.
+
+  I use Cygwin quite often and I use Windows Defender.  In order to get good
+  build performance, I routinely keep the Windows Defender "Virus & Threat
+  Protections Settings" screen up:  I disable "Real-Time Protection" just
+  before entering 'make' then turn "Real-Time Protection" back on when the
+  build completes.  With this additional nuisance step, I find that build
+  performance under Cygwin is completely acceptable.
+
 Strange Path Problems
 ---------------------
 
@@ -1436,7 +1556,7 @@ Strange Path Problems
 
   When you install some toolchains (such as Yargarto or CodeSourcery tools),
   they may modify your PATH variable to include a path to their binaries.
-  At that location, they make have GNUWin32 versions of the tools.  So you
+  At that location, they may have GNUWin32 versions of the tools.  So you
   might actually be using a version of make that does not understand Cygwin
   paths.
 
@@ -1475,6 +1595,7 @@ Window Native Toolchain Issues
      if you are using a native Windows toolchain.  That bring us to #3:
 
 General Pre-built Toolchain Issues
+----------------------------------
 
   To continue with the list of "Window Native Toolchain Issues" we can add
   the following.  These, however, are really just issues that you will have
@@ -1528,6 +1649,7 @@ General Pre-built Toolchain Issues
      binutils and possibly different ABIs.
 
 Building Original Linux Boards in Cygwin
+----------------------------------------
 
   Some default board configurations are set to build under Linux and others
   to build under Windows with Cygwin.  Various default toolchains may also
@@ -1546,6 +1668,7 @@ Building Original Linux Boards in Cygwin
   ("Run As" option, right button) you find errors like "Permission denied".
 
 Recovering from Bad Configurations
+----------------------------------
 
   Many people make the mistake of configuring NuttX with the "canned"
   configuration and then just typing 'make' with disastrous consequences;
@@ -1583,7 +1706,8 @@ nuttx/
  |   |
  |   |- arm/
  |   |   `- src
- |   |       `- lpc214x/README.txt
+ |   |       |- lpc214x/README.txt
+ |   |       `- stm32l4/README.txt
  |   |- renesas/
  |   |   |- include/
  |   |   |   `-README.txt
@@ -1618,8 +1742,6 @@ nuttx/
  |   |- bambino-200e/
  |   |   `- README.txt
  |   |- c5471evm/
- |   |   `- README.txt
- |   |- cc3200-launchpad/
  |   |   `- README.txt
  |   |- clicker2-stm32
  |   |   `- README.txt
@@ -1658,6 +1780,8 @@ nuttx/
  |   |   `- README.txt
  |   |- flipnclick-sam3x/
  |   |   `- README.txt
+ |   |- freedom-k28f/
+ |   |   `- README.txt
  |   |- freedom-k64f/
  |   |   `- README.txt
  |   |- freedom-k66f/
@@ -1668,7 +1792,7 @@ nuttx/
  |   |   `- README.txt
  |   |- hymini-stm32v/
  |   |   `- README.txt
- |   |- indium-f7
+ |   |- imxrt1050-evk
  |   |   `- README.txt
  |   |- kwikstik-k40/
  |   |   `- README.txt
@@ -1704,6 +1828,8 @@ nuttx/
  |   |   `- README.txt
  |   |- mcu123-lpc214x/
  |   |   `- README.txt
+ |   |- metro-m4/
+ |   |   `- README.txt
  |   |- micropendous3/
  |   |   `- README.txt
  |   |- mikroe-stm32f/
@@ -1715,6 +1841,8 @@ nuttx/
  |   |- moteino-mega/
  |   |   `- README.txt
  |   |- ne63badge/
+ |   |   `- README.txt
+ |   |- nrf52-pca10040/
  |   |   `- README.txt
  |   |- ntosd-dm320/
  |   |   |- doc/README.txt
@@ -1822,14 +1950,10 @@ nuttx/
  |   |   `- README.txt
  |   |- skp16c26/
  |   |   `- README.txt
- |   |- spark/
- |   |   `- README.txt
  |   |- stm3210e-eval/
  |   |   |- RIDE/README.txt
  |   |   `- README.txt
  |   |- stm3220g-eval/
- |   |   |-ide/nsh/iar/README.txt
- |   |   |-ide/nsh/uvision/README.txt
  |   |   `- README.txt
  |   |- stm3240g-eval/
  |   |   `- README.txt
@@ -1845,9 +1969,11 @@ nuttx/
  |   |   `- README.txt
  |   |- stm32f429i-disco/
  |   |   |- fb/README.txt
- |   |   |- ide/ltcd/uvision/README.txt
  |   |   `- README.txt
  |   |- stm32f746g-disco/
+ |   |   _- fb/README.txt
+ |   |   _- nxdemo/README.txt
+ |   |   _- nxterm/README.txt
  |   |   `- README.txt
  |   |- stm32f769i-disco/
  |   |   `- README.txt
@@ -1855,6 +1981,8 @@ nuttx/
  |   |   `- README.txt
  |   |- stm32l476vg-disco/
  |   |   `- README.txt
+ |   |- stm32l4r9ai-disco/
+ |   |   `-README.txt
  |   |- stm32ldiscovery/
  |   |   `- README.txt
  |   |- stm32vldiscovery/
@@ -1872,6 +2000,8 @@ nuttx/
  |   |- tm4c1294-launchpad/
  |   |   `- README.txt
  |   |- twr-k60n512/
+ |   |   `- README.txt
+ |   |- tms570ls31x-usb-kit/
  |   |   `- README.txt
  |   |- twr-k64f120m/
  |   |   `- README.txt
@@ -1918,6 +2048,8 @@ nuttx/
  |- fs/
  |   |- binfs/
  |   |   `- README.txt
+ |   |- cromfs/
+ |   |   `- README.txt
  |   |- mmap/
  |   |   `- README.txt
  |   |- nxffs/
@@ -1930,17 +2062,19 @@ nuttx/
  |       `- README.txt
  |- graphics/
  |   `- README.txt
- |- lib/
- |   `- README.txt
- |- libc/
- |   |- zoneinfo
+ |- libs/
+ |   |- README.txt
+ |   |- libc/
+ |   |   |- zoneinfo
+ |   |   |   `- README.txt
  |   |   `- README.txt
- |   `- README.txt
- |- libnx/
- |   |- nxfongs
+ |   |- libdsp/
  |   |   `- README.txt
- |   `- README.txt
- |- libxx/
+ |   |- libnx/
+ |   |   |- nxfongs
+ |   |   |   `- README.txt
+ |   |   `- README.txt
+ |   |- libxx/
  |   `- README.txt
  |- mm/
  |   |- shm/
@@ -1949,6 +2083,8 @@ nuttx/
  |- net/
  |   |- sixlowpan
  |   |   `- README.txt
+ |   `- README.txt
+ |- pass1/
  |   `- README.txt
  |- syscall/
  |   `- README.txt
@@ -1970,21 +2106,21 @@ apps/
  |   |- tiff/README.txt
  |   `- traveler/tools/tcledit/README.txt
  |- interpreters/
- |   |- bas
+ |   |- bas/
  |   |  `- README.txt
- |   |- ficl
+ |   |- ficl/
  |   |  `- README.txt
  |   `- README.txt
  |- modbus/
  |   `- README.txt
  |- netutils/
- |   |- discover
+ |   |- discover/
  |   |  `- README.txt
- |   |- ftpc
+ |   |- ftpc/
  |   |  `- README.txt
- |   |- json
+ |   |- json/
  |   |  `- README.txt
- |   |- telnetd
+ |   |- telnetd/
  |   |  `- README.txt
  |   `- README.txt
  |- nshlib/
@@ -1992,23 +2128,31 @@ apps/
  |- NxWidgets/
  |   `- README.txt
  |- system/
- |   |- cdcacm
+ |   |- cdcacm/
  |   |  `- README.txt
- |   |- i2c
+ |   |- i2c/
  |   |  `- README.txt
- |   |- inifile
+ |   |- inifile/
  |   |  `- README.txt
- |   |- install
+ |   |- install/
  |   |  `- README.txt
- |   |- nxplayer
+ |   |- nsh/
+ |   |  `- README.txt
+ |   |- nxplayer/
  |   |  `- README.txt
  |   |- symtab/
  |   |   `- README.txt
- |   |- usbmsc
+ |   |- usbmsc/
  |   |  `- README.txt
- |   `- zmodem
+ |   `- zmodem/
  |      `- README.txt
- `- README.txt
+ `- wireless
+     |- bluetooth/
+     |  `- btsak/
+     |     `- README.txt
+     `- ieee802154
+        `- i8sak/
+           `- README.txt
 
 Additional README.txt files in the other, related repositories:
 

@@ -69,10 +69,10 @@
  *   - It is not a cancellaction point, and
  *   - It does not modify the errno value.
  *
- * Parameters:
+ * Input Parameters:
  *   sem - Semaphore descriptor.
  *
- * Return Value:
+ * Returned Value:
  *   This is an internal OS interface and should not be used by applications.
  *   It follows the NuttX internal error return policy:  Zero (OK) is
  *   returned on success.  A negated errno value is returned on failure.
@@ -128,7 +128,7 @@ int nxsem_wait(FAR sem_t *sem)
            * semaphore
            */
 
-          ASSERT(rtcb->waitsem == NULL);
+          DEBUGASSERT(rtcb->waitsem == NULL);
 
           /* Handle the POSIX semaphore (but don't set the owner yet) */
 
@@ -218,10 +218,10 @@ int nxsem_wait(FAR sem_t *sem)
  *   the semaphore value is (<=) zero, then the calling task will not return
  *   until it successfully acquires the lock.
  *
- * Parameters:
+ * Input Parameters:
  *   sem - Semaphore descriptor.
  *
- * Return Value:
+ * Returned Value:
  *   This function is a standard, POSIX application interface.  It returns
  *   zero (OK) if successful.  Otherwise, -1 (ERROR) is returned and
  *   the errno value is set appropriately.  Possible errno values include:

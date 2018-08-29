@@ -140,13 +140,6 @@ SAM3U-EK-specific Configuration Options
 
     CONFIG_ARCH_LEDS -  Use LEDs to show state. Unique to board architecture.
 
-    CONFIG_ARCH_CALIBRATION - Enables some build in instrumentation that
-       cause a 100 second delay during boot-up.  This 100 second delay
-       serves no purpose other than it allows you to calibratre
-       CONFIG_ARCH_LOOPSPERMSEC.  You simply use a stop watch to measure
-       the 100 second delay then adjust CONFIG_ARCH_LOOPSPERMSEC until
-       the delay actually is 100 seconds.
-
   Individual subsystems can be enabled:
 
     CONFIG_SAM34_RTC           - Real Time Clock
@@ -212,9 +205,7 @@ Configurations
   Each SAM3U-EK configuration is maintained in a sub-directory and
   can be selected as follow:
 
-    cd tools
-    ./configure.sh sam3u-ek/<subdir>
-    cd -
+    tools/configure.sh sam3u-ek/<subdir>
 
   Before building, make sure the PATH environment variable includes the
   correct path to the directory than holds your toolchain binaries.
@@ -275,7 +266,7 @@ Configurations
      This re-configuration should be done before making NuttX or else the
      subsequent 'make' will fail.  If you have already attempted building
      NuttX then you will have to 1) 'make distclean' to remove the old
-     configuration, 2) 'cd tools; ./configure.sh sam3u-ek/ksnh' to start
+     configuration, 2) 'tools/configure.sh sam3u-ek/ksnh' to start
      with a fresh configuration, and 3) perform the configuration changes
      above.
 
@@ -496,14 +487,11 @@ Configurations
 
     1. Intall the nxwm configuration
 
-       $ cd ~/nuttx-git/nuttx/tools
-       $ ./configure.sh sam3u-ek/nxwm
+       $ tools/configure.sh sam3u-ek/nxwm
 
     2. Make the build context (only)
 
-       $ cd ..
        $ make context
-       ...
 
     3. Install the nxwm unit test
 

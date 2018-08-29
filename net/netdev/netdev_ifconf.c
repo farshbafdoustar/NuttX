@@ -83,7 +83,7 @@ struct ifconf_ipv6_info_s
  *   Callback from netdev_foreach() that does the real implementation of
  *   netdev_ipv4_ifconf().
  *
- * Parameters:
+ * Input Parameters:
  *   dev - The network device for this callback.
  *   arg - User callback argument
  *
@@ -160,7 +160,7 @@ static int ifconf_ipv4_callback(FAR struct net_driver_s *dev, FAR void *arg)
  *   Callback from netdev_foreach() that does the real implementation of
  *   netdev_ipv6_ifconf().
  *
- * Parameters:
+ * Input Parameters:
  *   dev - The network device for this callback.
  *   arg - User callback argument
  *
@@ -183,7 +183,7 @@ static int ifconf_ipv6_callback(FAR struct net_driver_s *dev, FAR void *arg)
    * state.
    */
 
-  if (!net_ipv6addr_cmp(dev->d_ipv6addr, g_ipv6_allzeroaddr) &&
+  if (!net_ipv6addr_cmp(dev->d_ipv6addr, g_ipv6_unspecaddr) &&
       (dev->d_flags & IFF_UP) != 0)
     {
       /* Check if we would exceed the buffer space provided by the caller.
@@ -241,7 +241,7 @@ static int ifconf_ipv6_callback(FAR struct net_driver_s *dev, FAR void *arg)
  *   Return the IPv4 configuration of each network adaptor that (1) has
  *   and IPv4 address assigned and (2) is in the UP state
  *
- * Parameters:
+ * Input Parameters:
  *   ifc - A reference to the instance of struct ifconf in which to return
  *         the information.
  *
@@ -274,7 +274,7 @@ int netdev_ipv4_ifconf(FAR struct ifconf *ifc)
  *   Return the IPv6 configuration of each network adaptor that (1) has
  *   and IPv6 address assigned and (2) is in the UP state.
  *
- * Parameters:
+ * Input Parameters:
  *   lifc - A reference to the instance of struct lifconf in which to return
  *          the information.
  *

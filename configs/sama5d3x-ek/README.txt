@@ -111,7 +111,7 @@ Development Environment
 
   Several possible development environments may be used:
 
-  - Linux or OSX native
+  - Linux or macOS native
   - Cygwin unders Windows
   - MinGW + MSYS under Windows
   - Windows native (with GNUMake from GNUWin32).
@@ -211,8 +211,7 @@ NuttX EABI "buildroot" Toolchain
 
   1. You must have already configured Nuttx in <some-dir>/nuttx.
 
-     cd tools
-     ./configure.sh sama5d3x-ek/<sub-dir>
+     tools/configure.sh sama5d3x-ek/<sub-dir>
 
   2. Download the latest buildroot package into <some-dir>
 
@@ -262,8 +261,7 @@ NXFLAT Toolchain
 
   1. You must have already configured Nuttx in <some-dir>/nuttx.
 
-     cd tools
-     ./configure.sh sama5d3x-ek/<sub-dir>
+     tools/configure.sh sama5d3x-ek/<sub-dir>
 
   2. Download the latest buildroot package into <some-dir>
 
@@ -369,9 +367,7 @@ Creating and Using NORBOOT
      the norboot configuration and setup the PATH variable in order to do
      the build:
 
-       cd tools
-       ./configure.sh sama5d3x-ek/<subdir>
-       cd -
+       tools/configure.sh sama5d3x-ek/<subdir>
 
      Before building, make sure the PATH environment variable includes the
      correct path to the directory than holds your toolchain binaries.
@@ -401,9 +397,7 @@ Creating and Using NORBOOT
 
        cd <nuttx>
        make distclean                 # Remove the norboot configuration
-       cd tools
-       ./configure.sh sama5d3x-ek/nsh # Establish the NSH configuration
-       cd -
+       tools/configure.sh sama5d3x-ek/nsh # Establish the NSH configuration
        make                           # Build the NSH configuration
 
      Then use SAM-BA to write the nuttx.bin binary into NOR FLASH.  This
@@ -982,8 +976,7 @@ Networking
   Networking Support
     CONFIG_NET=y                         : Enable Networking
     CONFIG_NET_SOCKOPTS=y                : Enable socket operations
-    CONFIG_NET_ETH_MTU=562               : Maximum packet size (MTU) 1518 is more standard
-    CONFIG_NET_ETH_TCP_RECVWNDO=562      : Should be the same as CONFIG_NET_ETH_MTU
+    CONFIG_NET_ETH_PKTSIZE=562           : Maximum packet size 1518 is more standard
     CONFIG_NET_TCP=y                     : Enable TCP/IP networking
     CONFIG_NET_TCPBACKLOG=y              : Support TCP/IP backlog
     CONFIG_NET_TCP_READAHEAD_BUFSIZE=562 : Read-ahead buffer size
@@ -3177,13 +3170,6 @@ SAMA5D3x-EK Configuration Options
 
   CONFIG_ARCH_LEDS -  Use LEDs to show state. Unique to board architecture.
 
-  CONFIG_ARCH_CALIBRATION - Enables some build in instrumentation that
-  cause a 100 second delay during boot-up.  This 100 second delay
-  serves no purpose other than it allows you to calibrate
-  CONFIG_ARCH_LOOPSPERMSEC.  You simply use a stop watch to measure
-  the 100 second delay then adjust CONFIG_ARCH_LOOPSPERMSEC until
-  the delay actually is 100 seconds.
-
   Individual subsystems can be enabled:
 
     CONFIG_SAMA5_DBGU        - Debug Unit
@@ -3301,9 +3287,7 @@ Configurations
   Each SAMA5D3x-EK configuration is maintained in a sub-directory and
   can be selected as follow:
 
-    cd tools
-    ./configure.sh sama5d3x-ek/<subdir>
-    cd -
+    tools/configure.sh sama5d3x-ek/<subdir>
 
   Before building, make sure the PATH environment variable includes the
   correct path to the directory than holds your toolchain binaries.
@@ -3791,14 +3775,11 @@ Configurations
 
     1. Install the nxwm configuration
 
-       $ cd ~/nuttx-git/nuttx/tools
-       $ ./configure.sh sama5d3x-ek/nxwm
+       $ tools/configure.sh sama5d3x-ek/nxwm
 
     2. Make the build context (only)
 
-       $ cd ..
        $ make context
-       ...
 
     3. Install the nxwm unit test
 

@@ -142,12 +142,12 @@
  *   WIFCONTINUED(stat_val) - Evaluates to a non-zero value if status was
  *    returned for a child process that has continued from a job control stop.
  *
- * Parameters:
+ * Input Parameters:
  *   pid - The task ID of the thread to waid for
  *   stat_loc - The location to return the exit status
  *   options - ignored
  *
- * Return Value:
+ * Returned Value:
  *   If waitpid() returns because the status of a child process is available,
  *   it will return a value equal to the process ID of the child process for
  *   which status is reported.
@@ -239,7 +239,7 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 
   /* Then wait for the task to exit */
 
-  if (options & WNOHANG)
+  if ((options & WNOHANG) != 0)
     {
       /* Don't wait if status is not available */
 

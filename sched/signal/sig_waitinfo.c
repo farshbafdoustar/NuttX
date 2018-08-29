@@ -55,11 +55,11 @@
  *   This function is equivalent to sigtimedwait with a NULL timeout
  *   parameter.
  *
- * Parameters:
+ * Input Parameters:
  *   set - The pending signal set
  *   info - The returned value
  *
- * Return Value:
+ * Returned Value:
  *   Signal number that cause the wait to be terminated, otherwise -1 (ERROR)
  *   is returned and the errno variable is set appropriately.
  *

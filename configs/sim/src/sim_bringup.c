@@ -1,7 +1,7 @@
 /****************************************************************************
  * configs/sim/src/sam_bringup.c
  *
- *   Copyright (C) 2015 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2015, 2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -52,6 +52,8 @@
 #include <nuttx/video/fb.h>
 #include <nuttx/timers/oneshot.h>
 #include <nuttx/wireless/pktradio.h>
+#include <nuttx/wireless/bluetooth/bt_driver.h>
+#include <nuttx/wireless/bluetooth/bt_null.h>
 #include <nuttx/wireless/ieee802154/ieee802154_loopback.h>
 
 #include "up_internal.h"
@@ -68,8 +70,7 @@ int trv_mount_world(int minor, FAR const char *mountpoint);
 #define NEED_FRAMEBUFFER 1
 
 /* If we are using the X11 touchscreen simulation, then the frame buffer
- * initialization happens in board_tsc_setup.  Otherwise, we will need to
- * do that here.
+ * initialization will need to be done here.
  */
 
 #if defined(CONFIG_SIM_X11FB) && defined(CONFIG_SIM_TOUCHSCREEN)
@@ -106,10 +107,27 @@ int sim_bringup(void)
 #endif
   int ret;
 
+#ifdef CONFIG_FS_PROCFS
+  /* Mount the procfs file system */
+
+  ret = mount(NULL, SIM_PROCFS_MOUNTPOINT, "procfs", 0, NULL);
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: Failed to mount procfs at %s: %d\n",
+             SIM_PROCFS_MOUNTPOINT, ret);
+    }
+#endif
+
 #ifdef CONFIG_LIB_ZONEINFO_ROMFS
   /* Mount the TZ database */
 
   (void)sim_zoneinfo(3);
+#endif
+
+#ifdef CONFIG_GRAPHICS_TRAVELER_ROMFSDEMO
+  /* Special initialization for the Traveler game simulation */
+
+  (void)trv_mount_world(0, CONFIG_GRAPHICS_TRAVELER_DEFPATH);
 #endif
 
 #ifdef CONFIG_EXAMPLES_GPIO
@@ -200,20 +218,13 @@ int sim_bringup(void)
   sim_ajoy_initialize();
 #endif
 
-#ifdef CONFIG_GRAPHICS_TRAVELER_ROMFSDEMO
-  /* Special initialization for the Traveler game simulation */
+#if defined(CONFIG_SIM_X11FB) && defined(CONFIG_SIM_TOUCHSCREEN)
+  /* Initialize the touchscreen */
 
-  (void)trv_mount_world(0, CONFIG_GRAPHICS_TRAVELER_DEFPATH);
-#endif
-
-#ifdef CONFIG_FS_PROCFS
-  /* Mount the procfs file system */
-
-  ret = mount(NULL, SIM_PROCFS_MOUNTPOINT, "procfs", 0, NULL);
+  ret = sim_tsc_setup(0);
   if (ret < 0)
     {
-      syslog(LOG_ERR, "ERROR: Failed to mount procfs at %s: %d\n",
-             SIM_PROCFS_MOUNTPOINT, ret);
+      syslog(LOG_ERR, "ERROR: sim_tsc_setup failed: %d\n", ret);
     }
 #endif
 
@@ -245,6 +256,29 @@ int sim_bringup(void)
     {
       syslog(LOG_ERR, "ERROR: pktradio_loopback() failed: %d\n", ret);
     }
+#endif
+
+#ifdef CONFIG_WIRELESS_BLUETOOTH
+#ifdef CONFIG_BLUETOOTH_NULL
+  /* Register the NULL Bluetooth network device */
+
+  ret = btnull_register();
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: btnull_register() failed: %d\n", ret);
+    }
+#endif
+
+  /* Initialize the Bluetooth stack (This will fail if no device has been
+   * registered).
+   */
+
+  ret = bt_netdev_register();
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: bt_netdev_register() failed: %d\n", ret);
+    }
+
 #endif
 
   UNUSED(ret);

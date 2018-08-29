@@ -167,7 +167,7 @@ static struct ads7843e_dev_s *g_ads7843elist;
  *   to assure: (1) exclusive access to the SPI bus, and (2) to assure that
  *   the shared bus is properly configured for the touchscreen controller.
  *
- * Parameters:
+ * Input Parameters:
  *   spi  - Reference to the SPI driver structure
  *
  * Returned Value:
@@ -205,7 +205,7 @@ static void ads7843e_lock(FAR struct spi_dev_s *spi)
  *   Un-lock the SPI bus after each transfer,  possibly losing the current
  *   configuration if we are sharing the bus with other devices.
  *
- * Parameters:
+ * Input Parameters:
  *   spi  - Reference to the SPI driver structure
  *
  * Returned Value:
@@ -225,7 +225,7 @@ static void ads7843e_unlock(FAR struct spi_dev_s *spi)
 /****************************************************************************
  * Name: ads7843e_sendcmd
  *
- * Description.
+ * Description:
  *   The command/data sequences is as follows:
  *
  *            DCLK
@@ -530,7 +530,7 @@ static void ads7843e_worker(FAR void *arg)
   bool                          pendown;
   int                           ret;
 
-  ASSERT(priv != NULL);
+  DEBUGASSERT(priv != NULL);
 
   /* Get a pointer the callbacks for convenience (and so the code is not so
    * ugly).
@@ -607,7 +607,8 @@ static void ads7843e_worker(FAR void *arg)
        * later.
        */
 
-       wd_start(priv->wdog, ADS7843E_WDOG_DELAY, ads7843e_wdog, 1, (uint32_t)priv);
+       (void)wd_start(priv->wdog, ADS7843E_WDOG_DELAY, ads7843e_wdog, 1,
+                      (uint32_t)priv);
        goto ignored;
     }
   else
@@ -720,7 +721,7 @@ static int ads7843e_interrupt(int irq, FAR void *context, FAR void *arg)
        priv && priv->configs->irq != irq;
        priv = priv->flink);
 
-  ASSERT(priv != NULL);
+  DEBUGASSERT(priv != NULL);
 #endif
 
   /* Get a pointer the callbacks for convenience (and so the code is not so
@@ -767,7 +768,7 @@ static int ads7843e_open(FAR struct file *filep)
     {
       /* This should only happen if the wait was cancelled by an signal */
 
-      DEBUGASSERT(ret == -EINTR);
+      DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
       return ret;
     }
 
@@ -824,7 +825,7 @@ static int ads7843e_close(FAR struct file *filep)
     {
       /* This should only happen if the wait was canceled by an signal */
 
-      DEBUGASSERT(ret == -EINTR);
+      DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
       return ret;
     }
 
@@ -885,7 +886,7 @@ static ssize_t ads7843e_read(FAR struct file *filep, FAR char *buffer, size_t le
       /* This should only happen if the wait was cancelled by an signal */
 
       ierr("ERROR: nxsem_wait: %d\n", ret);
-      DEBUGASSERT(ret == -EINTR);
+      DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
       return ret;
     }
 
@@ -974,7 +975,7 @@ errout:
 }
 
 /****************************************************************************
- * Name:ads7843e_ioctl
+ * Name: ads7843e_ioctl
  ****************************************************************************/
 
 static int ads7843e_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
@@ -997,7 +998,7 @@ static int ads7843e_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
     {
       /* This should only happen if the wait was cancelled by an signal */
 
-      DEBUGASSERT(ret == -EINTR);
+      DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
       return ret;
     }
 
@@ -1057,7 +1058,7 @@ static int ads7843e_poll(FAR struct file *filep, FAR struct pollfd *fds,
     {
       /* This should only happen if the wait was cancelled by an signal */
 
-      DEBUGASSERT(ret == -EINTR);
+      DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
       return ret;
     }
 

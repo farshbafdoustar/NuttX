@@ -115,7 +115,7 @@ struct timespec;  /* Forward reference */
  *   This is an internal OS interface.  It is functionally equivalent to
  *   sigprocmask() except that it does not modify the errno value.
  *
- * Parameters:
+ * Input Parameters:
  *   how - How the signal mast will be changed:
  *         SIG_BLOCK   - The resulting set is the union of the current set
  *                       and the signal set pointed to by 'set'.
@@ -127,7 +127,7 @@ struct timespec;  /* Forward reference */
  *   set  - Location of the new signal mask
  *   oset - Location to store the old signal mask
  *
- * Return Value:
+ * Returned Value:
  *   This is an internal OS interface and should not be used by applications.
  *   It follows the NuttX internal error return policy:  Zero (OK) is
  *   returned on success.  A negated errno value is returned on failure.
@@ -155,12 +155,12 @@ int nxsig_procmask(int how, FAR const sigset_t *set, FAR sigset_t *oset);
  *   This is an internal OS interface.  It is functionally equivalent to
  *   sigqueue() except that it does not modify the errno value.
  *
- * Parameters:
+ * Input Parameters:
  *   pid - Process ID of task to receive signal
  *   signo - Signal number
  *   value - Value to pass to task with signal
  *
- * Return Value:
+ * Returned Value:
  *   This is an internal OS interface and should not be used by applications.
  *   It follows the NuttX internal error return policy:  Zero (OK) is
  *   returned on success.  A negated errno value is returned on failure.
@@ -186,13 +186,13 @@ int nxsig_queue(int pid, int signo, void *sival_ptr);
  *   The nxsig_kill() system call can be used to send any signal to any task.
  *
  *   This is an internal OS interface.  It is functionally equivalent to
- *   the POSIX standard kill() function but does not modify the appliation
+ *   the POSIX standard kill() function but does not modify the application
  *   errno variable.
  *
  *   Limitation: Sending of signals to 'process groups' is not
  *   supported in NuttX
  *
- * Parameters:
+ * Input Parameters:
  *   pid - The id of the task to receive the signal.  The POSIX nxsig_kill
  *     specification encodes process group information as zero and
  *     negative pid values.  Only positive, non-zero values of pid are
@@ -228,11 +228,11 @@ int nxsig_kill(pid_t pid, int signo);
  *   - It is not a cancellaction point, and
  *   - It does not modify the errno value.
  *
- * Parameters:
+ * Input Parameters:
  *   set - The pending signal set
  *   info - The returned value
  *
- * Return Value:
+ * Returned Value:
  *   This is an internal OS interface and should not be used by applications.
  *   It follows the NuttX internal error return policy:  Zero (OK) is
  *   returned on success.  A negated errno value is returned on failure.
@@ -265,12 +265,12 @@ int nxsig_kill(pid_t pid, int signo);
  *   - It is not a cancellaction point, and
  *   - It does not modify the errno value.
  *
- * Parameters:
+ * Input Parameters:
  *   set     - The pending signal set.
  *   info    - The returned value (may be NULL).
  *   timeout - The amount of time to wait (may be NULL)
  *
- * Return Value:
+ * Returned Value:
  *   This is an internal OS interface and should not be used by applications.
  *   It follows the NuttX internal error return policy:  Zero (OK) is
  *   returned on success.  A negated errno value is returned on failure.
@@ -304,7 +304,7 @@ int nxsig_timedwait(FAR const sigset_t *set, FAR struct siginfo *info,
  *   The use of the nxsig_nanosleep() function has no effect on the action
  *   or blockage of any signal.
  *
- * Parameters:
+ * Input Parameters:
  *   rqtp - The amount of time to be suspended from execution.
  *   rmtp - If the rmtp argument is non-NULL, the timespec structure
  *          referenced by it is updated to contain the amount of time
@@ -356,7 +356,7 @@ int nxsig_nanosleep(FAR const struct timespec *rqtp,
  *   See the description of sleep() for additional information that is not
  *   duplicated here.
  *
- * Parameters:
+ * Input Parameters:
  *   seconds - The number of seconds to sleep
  *
  * Returned Value:
@@ -389,7 +389,7 @@ unsigned int nxsig_sleep(unsigned int seconds);
  *   See the description of usleep() for additional information that is not
  *   duplicated here.
  *
- * Parameters:
+ * Input Parameters:
  *   usec - the number of microseconds to wait.
  *
  * Returned Value:

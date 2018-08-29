@@ -235,7 +235,7 @@ int sixlowpan_nexthopaddr(FAR struct radio_driver_s *radio,
  *
  *    128  112  96   80    64   48   32   16
  *    ---- ---- ---- ----  ---- ---- ---- ----
- *    ff02 xxxx xxxx xxxx  xxxx xxxx xxxx xxxx Multicast
+ *    ffxx xxxx xxxx xxxx  xxxx xxxx xxxx xxxx Multicast address (RFC 3513)
  *    ff02 0000 0000 0000  0000 0000 0000 0001 All nodes multicast group
  *    xxxx 0000 0000 0000  0000 00ff fe00 xx00 1-byte short address IEEE 48-bit MAC
  *    xxxx 0000 0000 0000  0000 00ff fe00 xxxx 2-byte short address IEEE 48-bit MAC
@@ -274,7 +274,7 @@ int sixlowpan_destaddrfromip(FAR struct radio_driver_s *radio,
 
    /* Check for a multicast address */
 
-   if (ipaddr[0] == HTONS(0xff02))
+   if (net_is_addr_mcast(ipaddr))
      {
         DEBUGASSERT(radio->r_properties != NULL);
         ret = radio->r_properties(radio, &properties);
@@ -299,6 +299,9 @@ int sixlowpan_destaddrfromip(FAR struct radio_driver_s *radio,
             memcpy(destaddr, &properties.sp_bcast,
                    sizeof(struct netdev_varaddr_s));
           }
+
+        /* Some other RFC 3513 multicast address */
+
         else
           {
             memcpy(destaddr, &properties.sp_mcast,
@@ -573,7 +576,7 @@ bool sixlowpan_ismacbased(const net_ipv6addr_t ipaddr,
  * Description:
  *   Get the maximum frame length supported by radio network drvier.
  *
- * Input parameters:
+ * Input Parameters:
  *   radio - Reference to a radio network driver state instance.
  *
  * Returned Value:
@@ -607,7 +610,7 @@ int sixlowpan_radio_framelen(FAR struct radio_driver_s *radio)
  * Description:
  *   Get the source PAN ID from the IEEE802.15.4 MAC layer.
  *
- * Input parameters:
+ * Input Parameters:
  *   radio - Reference to a radio network driver state instance.
  *   panid - The location in which to return the PAN ID.  0xfff may be
  *           returned if the device is not associated.
@@ -647,7 +650,7 @@ int sixlowpan_src_panid(FAR struct radio_driver_s *radio,
  *   Extract the source MAC address from the radio-specific RX metadata, and
  *   return the source address in a radio-agnostic form.
  *
- * Input parameters:
+ * Input Parameters:
  *   radio    - Reference to a radio network driver state instance.
  *   metadata - Opaque reference to the radio-specific RX metadata.
  *   srcaddr  - The location in which to return the source MAC address.
@@ -714,7 +717,7 @@ int sixlowpan_extract_srcaddr(FAR struct radio_driver_s *radio,
  *   Extract the destination MAC address from the radio-specific RX metadata,
  *   and return the destination address in a radio-agnostic form.
  *
- * Input parameters:
+ * Input Parameters:
  *   radio    - Reference to a radio network driver state instance.
  *   metadata - Opaque reference to the radio-specific RX metadata.
  *   destaddr - The location in which to return the destination MAC address.

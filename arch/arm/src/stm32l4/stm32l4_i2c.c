@@ -6,7 +6,7 @@
  *
  *   Copyright (C) 2011 Uros Platise. All rights reserved.
  *   Author: Uros Platise <uros.platise@isotel.eu>
- *   Copyright (C) 2011-2013, 2016-2017 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2011-2013, 2016-2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *   Author: John Wharington
  *   Author: Sebastien Lorquet
@@ -84,7 +84,7 @@
  *  - Multiple instances (shared bus)
  *  - Interrupt based operation
  *  - RELOAD support
- *  - I2C_M_NORESTART support
+ *  - I2C_M_NOSTART support
  *
  * Test Environment:
  *  - STM32L451CEU6 based board with I2C slaves LIS2DH accelerometer and
@@ -111,7 +111,7 @@
  *  All supported features have been tested and found to be operational.
  *
  *  Although the RELOAD capability has been tested as it was required to
- *  implement the I2C_M_NORESTART flag on F3 hardware, the associated
+ *  implement the I2C_M_NOSTART flag on F3 hardware, the associated
  *  logic to support the transfer messages with more than 255 byte
  *  payloads has not been  tested as the author lacked access to a real
  *  device supporting these types of transfers.
@@ -258,6 +258,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <semaphore.h>
 #include <errno.h>
 #include <debug.h>
@@ -267,6 +268,7 @@
 #include <nuttx/clock.h>
 #include <nuttx/semaphore.h>
 #include <nuttx/kmalloc.h>
+#include <nuttx/power/pm.h>
 #include <nuttx/i2c/i2c_master.h>
 
 #include <arch/board/board.h>
@@ -445,6 +447,10 @@ struct stm32l4_i2c_priv_s
 #endif
 
   uint32_t status;             /* End of transfer SR2|SR1 status */
+
+#ifdef CONFIG_PM
+  struct pm_callback_s pm_cb;  /* PM callbacks */
+#endif
 };
 
 /* I2C Device, Instance */
@@ -504,6 +510,10 @@ static int stm32l4_i2c_transfer(FAR struct i2c_master_s *dev,
 #ifdef CONFIG_I2C_RESET
 static int stm32l4_i2c_reset(FAR struct i2c_master_s *dev);
 #endif
+#ifdef CONFIG_PM
+static int stm32l4_i2c_pm_prepare(FAR struct pm_callback_s *cb, int domain,
+                                  enum pm_state_e pmstate);
+#endif
 
 /************************************************************************************
  * Private Data
@@ -534,7 +544,10 @@ static struct stm32l4_i2c_priv_s stm32l4_i2c1_priv =
   .frequency  = 0,
   .dcnt       = 0,
   .flags      = 0,
-  .status     = 0
+  .status     = 0,
+#ifdef CONFIG_PM
+  .pm_cb.prepare = stm32l4_i2c_pm_prepare,
+#endif
 };
 #endif
 
@@ -563,7 +576,10 @@ static struct stm32l4_i2c_priv_s stm32l4_i2c2_priv =
   .frequency  = 0,
   .dcnt       = 0,
   .flags      = 0,
-  .status     = 0
+  .status     = 0,
+#ifdef CONFIG_PM
+  .pm_cb.prepare = stm32l4_i2c_pm_prepare,
+#endif
 };
 #endif
 
@@ -592,7 +608,10 @@ static struct stm32l4_i2c_priv_s stm32l4_i2c3_priv =
   .frequency  = 0,
   .dcnt       = 0,
   .flags      = 0,
-  .status     = 0
+  .status     = 0,
+#ifdef CONFIG_PM
+  .pm_cb.prepare = stm32l4_i2c_pm_prepare,
+#endif
 };
 #endif
 
@@ -621,7 +640,10 @@ static struct stm32l4_i2c_priv_s stm32l4_i2c4_priv =
   .frequency  = 0,
   .dcnt       = 0,
   .flags      = 0,
-  .status     = 0
+  .status     = 0,
+#ifdef CONFIG_PM
+  .pm_cb.prepare = stm32l4_i2c_pm_prepare,
+#endif
 };
 #endif
 
@@ -1473,7 +1495,7 @@ static void stm32l4_i2c_setclock(FAR struct stm32l4_i2c_priv_s *priv,
 #endif
       else
         {
-          PANIC();
+          DEBUGPANIC();
         }
 
       uint32_t timingr =
@@ -1546,7 +1568,7 @@ static inline void stm32l4_i2c_sendstart(FAR struct stm32l4_i2c_priv_s *priv)
    *  The following flags can be used to override this behavior as follows:
    *
    *   - I2C_M_READ: Sets the transfer direction to READ (R/W bit = 1)
-   *   - I2C_M_NORESTART: Prevents a RESTART from being issued prior to the
+   *   - I2C_M_NOSTART: Prevents a RESTART from being issued prior to the
    *      transfer of the message (where allowed by the protocol).
    *
    */
@@ -1555,7 +1577,7 @@ static inline void stm32l4_i2c_sendstart(FAR struct stm32l4_i2c_priv_s *priv)
   priv->dcnt  = priv->msgv->length;
   priv->flags = priv->msgv->flags;
 
-  if ((priv->flags & I2C_M_NORESTART) != 0)
+  if ((priv->flags & I2C_M_NOSTART) != 0)
     {
       /* Flag the first byte as an address byte */
 
@@ -1573,7 +1595,7 @@ static inline void stm32l4_i2c_sendstart(FAR struct stm32l4_i2c_priv_s *priv)
 
   if (priv->msgc > 0)
     {
-      next_norestart = (((priv->msgv + 1)->flags & I2C_M_NORESTART) != 0);
+      next_norestart = (((priv->msgv + 1)->flags & I2C_M_NOSTART) != 0);
     }
 
   if (next_norestart || priv->dcnt > 255)
@@ -1997,7 +2019,7 @@ static int stm32l4_i2c_isr_process(struct stm32l4_i2c_priv_s *priv)
    *
    * The fact that the hardware must either RESTART or STOP when a TC
    * event occurs explains why, when messages must be sent back to back
-   * (i.e. without a restart by specifying the I2C_M_NORESTART flag),
+   * (i.e. without a restart by specifying the I2C_M_NOSTART flag),
    * RELOAD mode must be enabled and TCR event(s) must be generated
    * instead.  See the TCR handler for more.
    */
@@ -2076,7 +2098,7 @@ static int stm32l4_i2c_isr_process(struct stm32l4_i2c_priv_s *priv)
    *
    *  1) We're trying to send a message with a payload greater than 255 bytes.
    *  2) We're trying to send messages back to back, regardless of their
-   *     payload size, to avoid a RESTART (i.e. I2C_M_NORESTART flag is set).
+   *     payload size, to avoid a RESTART (i.e. I2C_M_NOSTART flag is set).
    *
    * These conditions may be true simultaneously, as would be the case if
    * we're sending multiple messages with payloads > 255 bytes.   So we only
@@ -2437,7 +2459,7 @@ static int stm32l4_i2c_process(FAR struct i2c_master_s *dev,
   int         errval = 0;
   int         waitrc = 0;
 
-  ASSERT(count);
+  DEBUGASSERT(count > 0);
 
   /* Wait for any STOP in progress */
 
@@ -2627,9 +2649,9 @@ static int stm32l4_i2c_process(FAR struct i2c_master_s *dev,
 
       status = stm32l4_i2c_getstatus(priv);
 
-      while(status & I2C_ISR_BUSY)
+      while (status & I2C_ISR_BUSY)
         {
-          if((clock_systimer() - start) > timeout)
+          if ((clock_systimer() - start) > timeout)
             {
               i2cerr("ERROR: I2C Bus busy");
               errval = EBUSY;
@@ -2682,7 +2704,7 @@ static int stm32l4_i2c_reset(FAR struct i2c_master_s * dev)
   uint32_t frequency;
   int ret = ERROR;
 
-  ASSERT(dev);
+  DEBUGASSERT(dev);
 
   /* Get I2C private structure */
 
@@ -2690,7 +2712,7 @@ static int stm32l4_i2c_reset(FAR struct i2c_master_s * dev)
 
   /* Our caller must own a ref */
 
-  ASSERT(priv->refs > 0);
+  DEBUGASSERT(priv->refs > 0);
 
   /* Lock out other clients */
 
@@ -2791,6 +2813,76 @@ out:
 #endif /* CONFIG_I2C_RESET */
 
 /************************************************************************************
+ * Name: stm32l4_i2c_pm_prepare
+ *
+ * Description:
+ *   Request the driver to prepare for a new power state. This is a
+ *   warning that the system is about to enter into a new power state.  The
+ *   driver should begin whatever operations that may be required to enter
+ *   power state.  The driver may abort the state change mode by returning
+ *   a non-zero value from the callback function.
+ *
+ * Input Parameters:
+ *   cb      - Returned to the driver.  The driver version of the callback
+ *             structure may include additional, driver-specific state
+ *             data at the end of the structure.
+ *   domain  - Identifies the activity domain of the state change
+ *   pmstate - Identifies the new PM state
+ *
+ * Returned Value:
+ *   0 (OK) means the event was successfully processed and that the driver
+ *   is prepared for the PM state change.  Non-zero means that the driver
+ *   is not prepared to perform the tasks needed achieve this power setting
+ *   and will cause the state change to be aborted.  NOTE:  The prepare
+ *   method will also be recalled when reverting from lower back to higher
+ *   power consumption modes (say because another driver refused a lower
+ *   power state change).  Drivers are not permitted to return non-zero
+ *   values when reverting back to higher power consumption modes!
+ *
+ ************************************************************************************/
+
+#ifdef CONFIG_PM
+static int stm32l4_i2c_pm_prepare(FAR struct pm_callback_s *cb, int domain,
+                                  enum pm_state_e pmstate)
+{
+  struct stm32l4_i2c_priv_s *priv =
+      (struct stm32l4_i2c_priv_s *)((char *)cb -
+                                    offsetof(struct stm32l4_i2c_priv_s, pm_cb));
+  int sval;
+
+  /* Logic to prepare for a reduced power state goes here. */
+
+  switch (pmstate)
+    {
+    case PM_NORMAL:
+    case PM_IDLE:
+      break;
+
+    case PM_STANDBY:
+    case PM_SLEEP:
+      /* Check if exclusive lock for I2C bus is held. */
+
+      if (nxsem_getvalue(&priv->sem_excl, &sval) < 0)
+        {
+          DEBUGASSERT(false);
+          return -EINVAL;
+        }
+
+      if (sval <= 0)
+        {
+          /* Exclusive lock is held, do not allow entry to deeper PM states. */
+
+          return -EBUSY;
+        }
+
+      break;
+    }
+
+  return OK;
+}
+#endif
+
+/************************************************************************************
  * Public Functions
  ************************************************************************************/
 
@@ -2806,7 +2898,10 @@ FAR struct i2c_master_s *stm32l4_i2cbus_initialize(int port)
 {
   struct stm32l4_i2c_priv_s * priv = NULL;  /* private data of device with multiple instances */
   struct stm32l4_i2c_inst_s * inst = NULL;  /* device, single instance */
-  int irqs;
+  irqstate_t irqs;
+#ifdef CONFIG_PM
+  int ret;
+#endif
 
 #if STM32L4_PCLK1_FREQUENCY != 80000000
 #   warning STM32_I2C_INIT: Peripheral clock is PCLK and it must be 80mHz or the speed/timing calculations need to be redone.
@@ -2863,6 +2958,14 @@ FAR struct i2c_master_s *stm32l4_i2cbus_initialize(int port)
     {
       stm32l4_i2c_sem_init((struct i2c_master_s *)inst);
       stm32l4_i2c_init(priv);
+
+#ifdef CONFIG_PM
+      /* Register to receive power management callbacks */
+
+      ret = pm_register(&priv->pm_cb);
+      DEBUGASSERT(ret == OK);
+      UNUSED(ret);
+#endif
     }
 
   leave_critical_section(irqs);
@@ -2879,9 +2982,9 @@ FAR struct i2c_master_s *stm32l4_i2cbus_initialize(int port)
 
 int stm32l4_i2cbus_uninitialize(FAR struct i2c_master_s * dev)
 {
-  int irqs;
+  irqstate_t irqs;
 
-  ASSERT(dev);
+  DEBUGASSERT(dev);
 
   /* Decrement refs and check for underflow */
 
@@ -2900,6 +3003,12 @@ int stm32l4_i2cbus_uninitialize(FAR struct i2c_master_s * dev)
     }
 
   leave_critical_section(irqs);
+
+#ifdef CONFIG_PM
+  /* Unregister power management callbacks */
+
+  pm_unregister(&((struct stm32l4_i2c_inst_s *)dev)->priv->pm_cb);
+#endif
 
   /* Disable power and other HW resource (GPIO's) */
 

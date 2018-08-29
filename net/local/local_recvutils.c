@@ -63,13 +63,13 @@
  * Description:
  *   Read a data from the read-only FIFO.
  *
- * Parameters:
+ * Input Parameters:
  *   filep - File structure of write-only FIFO.
  *   buf   - Local to store the received data
  *   len   - Length of data to receive [in]
  *           Length of data actually received [out]
  *
- * Return:
+ * Returned Value:
  *   Zero is returned on success; a negated errno value is returned on any
  *   failure.  If -ECONNRESET is received, then the sending side has closed
  *   the FIFO. In this case, the returned data may still be valid (if the
@@ -130,10 +130,10 @@ errout:
  * Description:
  *   Read a sync bytes until the start of the packet is found.
  *
- * Parameters:
+ * Input Parameters:
  *   filep - File structure of write-only FIFO.
  *
- * Return:
+ * Returned Value:
  *   The non-zero size of the following packet is returned on success; a
  *   negated errno value is returned on any failure.
  *
@@ -195,13 +195,13 @@ int local_sync(FAR struct file *filep)
  * Description:
  *   Return the Unix domain address of a connection.
  *
- * Parameters:
+ * Input Parameters:
  *   conn - The connection
  *   addr - The location to return the address
  *   addrlen - The size of the memory allocated by the caller to receive the
  *             address.
  *
- * Return:
+ * Returned Value:
  *   Zero (OK) on success; a negated errno value on failure.
  *
  ****************************************************************************/

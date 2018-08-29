@@ -45,13 +45,25 @@ to set MSP (main stack pointer) as follows.
 SMP related Status
 ^^^^^^^^^^^^^^^^^^
 
-Currently all applications except for ostest work in SMP mode but might stop
-due to deadlocks or ASSERT().
-
 CPU activities are shown at D9 (CPU0) and D10 (CPU1) respectively.
 
-1. "nsh> smp" works but the result will be corrupted.
-2. "nsh> ostest" works but might cause a deadlock or assertion.
+Currently all applications except for ostest work in SMP mode but might stop
+due to deadlocks or ASSERT(). For a workaround, please try
+
+$ cd apps; git diff
+diff --git a/examples/ostest/waitpid.c b/examples/ostest/waitpid.c
+index 687f50ca..8418eff8 100644
+--- a/examples/ostest/waitpid.c
++++ b/examples/ostest/waitpid.c
+@@ -54,7 +54,7 @@
+  ****************************************************************************/
+
+ #define RETURN_STATUS 14
+-#define NCHILDREN     3
++#define NCHILDREN     2
+ #define PRIORITY      100
+
+ /****************************************************************************
 
 Other Status
 ^^^^^^^^^^^^
@@ -240,14 +252,6 @@ Dropped      0001  0000  0000  0000
 Sent         0003  0000  0003  0000
   Rexmit     ----  0000  ----  ----
 
-However, you might need to add a routing table if you want to send
-a packet via the router.
-
-nsh> addroute 0.0.0.0/0 192.168.1.1
-nsh> route
-SEQ TARGET NETMASK ROUTER
-   1. 0.0.0.0 0.0.0.0 192.168.1.1
-
 12. DVFS (Dynamic Voltage and Frequency Scaling)
 
 lc823450-xgevk/audio and rndis configurations support DVFS.
@@ -261,13 +265,20 @@ By default, DVFS is disabled. To enable,
 
 nsh> echo "enable 1" > /proc/dvfs
 
-In addition, you can change CPU frequency to 160/80/40. To change the
-frequency, enable the DVFS first then do the following.
+In addition, you can change CPU frequency to 160/80/40 manually.
+To change the frequency, enable the DVFS first then do the following.
 
 nsh> echo "cur_freq 80" > /proc/dvfs.
 
-Currently, DVFS works in manual mode and Vdd1 is fixed to 1.2V
-which will be changed in the future version.
+If you want to run in autonomous mode,
+
+nsh> echo "auto 1" > /proc/dvfs.
+
+In autonomous mode, you don't need to set cur_freq. Instead,
+cur_freq will show the current CPU frequency.
+
+NOTE: Currently Vdd1 is fixed to 1.2V which will be changed
+in the future version.
 
 TODO
 ^^^^

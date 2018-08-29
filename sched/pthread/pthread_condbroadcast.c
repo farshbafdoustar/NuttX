@@ -56,10 +56,10 @@
  * Description:
  *    A thread broadcast on a condition variable.
  *
- * Parameters:
+ * Input Parameters:
  *   None
  *
- * Return Value:
+ * Returned Value:
  *   None
  *
  * Assumptions:

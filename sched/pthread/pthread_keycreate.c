@@ -65,13 +65,13 @@
  *   in all active threads.  Upon thread creation, the value NULL will be
  *   associated with all defined keys in the new thread.
  *
- * Parameters:
+ * Input Parameters:
  *   key = A pointer to the key to create.
  *   destructor = An optional destructor() function that may be associated
  *      with each key that is invoked when a thread exits.  However, this
  *      argument is ignored in the current implementation.
  *
- * Return Value:
+ * Returned Value:
  *   If successful, the pthread_key_create() function will store the newly
  *   created key value at *key and return zero (OK).  Otherwise, an error
  *   number will bereturned to indicate the error:

@@ -1,7 +1,7 @@
 /****************************************************************************
  * net/socket/net_sockif.c
  *
- *   Copyright (C) 2017 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2017-2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -47,7 +47,9 @@
 
 #include "inet/inet.h"
 #include "local/local.h"
+#include "netlink/netlink.h"
 #include "pkt/pkt.h"
+#include "bluetooth/bluetooth.h"
 #include "ieee802154/ieee802154.h"
 #include "socket/socket.h"
 
@@ -77,7 +79,11 @@ FAR const struct sock_intf_s *
 {
   FAR const struct sock_intf_s *sockif = NULL;
 
-  /* Get the socket interface */
+  /* Get the socket interface.
+   *
+   * REVISIT:  Should also support PF_UNSPEC which would permit the socket
+   * to be used for anything.
+   */
 
   switch (family)
     {
@@ -98,9 +104,21 @@ FAR const struct sock_intf_s *
       break;
 #endif
 
+#ifdef CONFIG_NET_NETLINK
+    case PF_NETLINK:
+      sockif = &g_netlink_sockif;
+      break;
+#endif
+
 #ifdef CONFIG_NET_PKT
     case PF_PACKET:
       sockif = &g_pkt_sockif;
+      break;
+#endif
+
+#ifdef CONFIG_NET_BLUETOOTH
+    case PF_BLUETOOTH:
+      sockif = &g_bluetooth_sockif;
       break;
 #endif
 

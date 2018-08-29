@@ -62,10 +62,10 @@
  *   The effect of destroying a semaphore upon which other processes are
  *   currently blocked is undefined.
  *
- * Parameters:
+ * Input Parameters:
  *   sem - Semaphore to be destroyed.
  *
- * Return Value:
+ * Returned Value:
  *   This is an internal OS interface and should not be used by applications.
  *   It follows the NuttX internal error return policy:  Zero (OK) is
  *   returned on success.  A negated errno value is returned on failure.
@@ -116,10 +116,10 @@ int nxsem_destroy (FAR sem_t *sem)
  *   The effect of destroying a semaphore upon which other processes are
  *   currently blocked is undefined.
  *
- * Parameters:
+ * Input Parameters:
  *   sem - Semaphore to be destroyed.
  *
- * Return Value:
+ * Returned Value:
  *   This function is a application interface.  It returns zero (OK) if
  *   successful.  Otherwise, -1 (ERROR) is returned and the errno value is
  *   set appropriately.

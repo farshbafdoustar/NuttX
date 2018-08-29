@@ -60,7 +60,7 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define XBEE_ATQUERY_TIMEOUT 100
+#define XBEE_ATQUERY_TIMEOUT MSEC2TICK(100)
 
 /****************************************************************************
  * Private Types
@@ -104,7 +104,7 @@ static void xbee_atquery_timeout(int argc, uint32_t arg, ...);
  * Description:
  *   Hardware interrupt handler
  *
- * Parameters:
+ * Input Parameters:
  *   irq     - Number of the IRQ that generated the interrupt
  *   context - Interrupt register state save info (architecture-specific)
  *
@@ -145,7 +145,7 @@ static int xbee_interrupt(int irq, FAR void *context, FAR void *arg)
  *   Perform interrupt handling (Attention) logic outside of the interrupt handler
  *   (on the work queue thread).
  *
- * Parameters:
+ * Input Parameters:
  *   arg     - The reference to the driver structure (cast to void*)
  *
  * Returned Value:
@@ -381,12 +381,12 @@ static void xbee_attnworker(FAR void *arg)
  *   Verifies that the API frame type is known and that the length makes
  *   sense for that frame type.
  *
- * Parameters:
+ * Input Parameters:
  *    frame - pointer to the frame data
  *    datalen - The size of the data section of the frame.  This is the value
  *              included as the second and third byte of the frame.
  *
- * Returns:
+ * Returned Value:
  *   true  - Frame type is known and length is logical
  *   false - Frame type is unknown or length is invalid for frame type
  *
@@ -449,11 +449,11 @@ static bool xbee_validate_apiframe(uint8_t frametype, uint16_t datalen)
  * Description:
  *   Verifies API frame checksum.
  *
- * Parameters:
+ * Input Parameters:
  *    frame - pointer to the frame data
  *    framelen - size of the overall frame. NOT the data length field
  *
- * Returns:
+ * Returned Value:
  *   true  - Checksum is valid
  *   false - Checksum is invalid
  *
@@ -625,6 +625,11 @@ static void xbee_process_apiframes(FAR struct xbee_priv_s *priv,
                       wlinfo("Sleep Period: %dsec\n",
                              frame->io_data[frame->io_offset]/100);
                     }
+                  else if (memcmp(command, "RR", 2) == 0)
+                    {
+                      wlinfo("XBee Retries: %d\n",
+                             frame->io_data[frame->io_offset]);
+                    }
                   else
                     {
                       wlwarn("Unhandled AT Response: %.*s\n", 2, command);
@@ -643,8 +648,10 @@ static void xbee_process_apiframes(FAR struct xbee_priv_s *priv,
             break;
           case XBEE_APIFRAME_TXSTATUS:
             {
+              wd_cancel(priv->reqdata_wd);
               xbee_process_txstatus(priv, frame->io_data[frame->io_offset],
                                     frame->io_data[frame->io_offset + 1]);
+              priv->txdone = true;
               nxsem_post(&priv->txdone_sem);
             }
             break;
@@ -942,7 +949,7 @@ static void xbee_notify_worker(FAR void *arg)
  *   from the XBee module. This really should never happen, but if it does,
  *   handle it gracefully by retrying the query.
  *
- * Parameters:
+ * Input Parameters:
  *   argc - The number of available arguments
  *   arg  - The first argument
  *
@@ -977,7 +984,7 @@ static void xbee_atquery_timeout(int argc, uint32_t arg, ...)
  *   Initialize an XBee driver.  The XBee device is assumed to be
  *   in the post-reset state upon entry to this function.
  *
- * Parameters:
+ * Input Parameters:
  *   spi   - A reference to the platform's SPI driver for the XBee
  *   lower - The MCU-specific interrupt used to control low-level MCU
  *           functions (i.e., XBee GPIO interrupts).
@@ -1027,6 +1034,7 @@ XBEEHANDLE xbee_init(FAR struct spi_dev_s *spi,
 
   priv->assocwd    = wd_create();
   priv->atquery_wd = wd_create();
+  priv->reqdata_wd = wd_create();
 
   priv->frameid = 0; /* Frame ID should never be 0, but it is incremented
                       * in xbee_next_frameid before being used so it will be 1 */
@@ -1267,7 +1275,7 @@ int xbee_atquery(FAR struct xbee_priv_s *priv, FAR const char *atcommand)
   ret = nxsem_wait(&priv->atquery_sem);
   if (ret < 0)
     {
-      DEBUGASSERT(ret == -EINTR);
+      DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
       return ret;
     }
 
@@ -1298,7 +1306,7 @@ int xbee_atquery(FAR struct xbee_priv_s *priv, FAR const char *atcommand)
       ret = nxsem_wait(&priv->atresp_sem);
       if (ret < 0)
         {
-          DEBUGASSERT(ret == -EINTR);
+          DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
           wd_cancel(priv->atquery_wd);
           priv->querycmd[0] = 0;
           priv->querycmd[1] = 0;
@@ -1554,4 +1562,5 @@ void xbee_regdump(FAR struct xbee_priv_s *priv)
   xbee_send_atquery(priv, "A1");
   xbee_send_atquery(priv, "A2");
   xbee_send_atquery(priv, "SP");
+  xbee_send_atquery(priv, "RR");
 }

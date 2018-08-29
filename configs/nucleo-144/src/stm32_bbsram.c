@@ -41,7 +41,6 @@
 
 #include <sys/ioctl.h>
 
-#include <stdio.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -363,7 +362,7 @@ int stm32_bbsram_int(void)
   rv = hardfault_get_desc(&desc);
   if (rv >= OK)
     {
-      printf("There is a hard fault logged.\n");
+      syslog(LOG_EMERG, "There is a hard fault logged.\n");
       state = (desc.lastwrite.tv_sec || desc.lastwrite.tv_nsec) ?  OK : 1;
 
       syslog(LOG_INFO, "Fault Log info File No %d Length %d flags:0x%02x "
@@ -546,10 +545,6 @@ void board_crashdump(uintptr_t currentsp, FAR void *tcb,
 
       up_lowputc('!');
     }
-
-#if defined(CONFIG_BOARD_RESET_ON_CRASH)
-  up_systemreset();
-#endif
 }
 #endif /* CONFIG_STM32F7_SAVE_CRASHDUMP */
 

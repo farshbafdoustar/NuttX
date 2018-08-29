@@ -54,24 +54,24 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define STM32L4_RTC_PRESCALER_SECOND  32767  /* Default prescaler to get a second base */
-#define STM32L4_RTC_PRESCALER_MIN         1  /* Maximum speed of 16384 Hz */
+#define STM32L4_RTC_PRESCALER_SECOND         32767  /* Default prescaler to get a second base */
+#define STM32L4_RTC_PRESCALER_MIN             1     /* Maximum speed of 16384 Hz */
 
-#if !defined(CONFIG_RTC_MAGIC)
-# define CONFIG_RTC_MAGIC (0xfacefeee)
+#if !defined(CONFIG_STM32L4_RTC_MAGIC)
+# define CONFIG_STM32L4_RTC_MAGIC           (0xfacefeee)
 #endif
 
-#if !defined(CONFIG_RTC_MAGIC_TIME_SET)
-#  define CONFIG_RTC_MAGIC_TIME_SET (CONFIG_RTC_MAGIC + 1)
+#if !defined(CONFIG_STM32L4_RTC_MAGIC_TIME_SET)
+#  define CONFIG_STM32L4_RTC_MAGIC_TIME_SET (0xf00dface)
 #endif
 
-#if !defined(CONFIG_RTC_MAGIC_REG)
-# define CONFIG_RTC_MAGIC_REG (0)
+#if !defined(CONFIG_STM32L4_RTC_MAGIC_REG)
+# define CONFIG_STM32L4_RTC_MAGIC_REG       (0)
 #endif
 
-#define RTC_MAGIC            CONFIG_RTC_MAGIC
-#define RTC_MAGIC_TIME_SET   CONFIG_RTC_MAGIC_TIME_SET
-#define RTC_MAGIC_REG        STM32L4_RTC_BKR(CONFIG_RTC_MAGIC_REG)
+#define RTC_MAGIC                           CONFIG_STM32L4_RTC_MAGIC
+#define RTC_MAGIC_TIME_SET                  CONFIG_STM32L4_RTC_MAGIC_TIME_SET
+#define RTC_MAGIC_REG                       STM32L4_RTC_BKR(CONFIG_STM32L4_RTC_MAGIC_REG)
 
 /****************************************************************************
  * Public Types
@@ -133,13 +133,13 @@ extern "C"
  * Public Functions
  ****************************************************************************/
 
-/************************************************************************************
+/****************************************************************************
  * Name: stm32l4_rtc_is_initialized
  *
  * Description:
  *    Returns 'true' if the RTC has been initialized
- *    Returns 'false' if the RTC has never been initialized since first time power
- *    up, and the counters are stopped until it is first initialized.
+ *    Returns 'false' if the RTC has never been initialized since first time
+ *    power up, and the counters are stopped until it is first initialized.
  *
  * Input Parameters:
  *   None
@@ -147,7 +147,7 @@ extern "C"
  * Returned Value:
  *   Returns true if RTC has been initialized.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
 bool stm32l4_rtc_is_initialized(void);
 
@@ -198,7 +198,7 @@ int stm32l4_rtc_setdatetime(FAR const struct tm *tp);
 #endif
 
 /****************************************************************************
- * Name: stm32l4_rtc_setdatetime
+ * Name: stm32l4_rtc_havesettime
  *
  * Description:
  *   Check if RTC time has been set.
@@ -227,7 +227,7 @@ bool stm32l4_rtc_havesettime(void);
 
 int stm32l4_rtc_setalarm(FAR struct alm_setalarm_s *alminfo);
 
-/************************************************************************************
+/****************************************************************************
  * Name: stm32l4_rtc_rdalarm
  *
  * Description:
@@ -239,7 +239,7 @@ int stm32l4_rtc_setalarm(FAR struct alm_setalarm_s *alminfo);
  * Returned Value:
  *   Zero (OK) on success; a negated errno on failure
  *
- ************************************************************************************/
+ ****************************************************************************/
 
 int stm32l4_rtc_rdalarm(FAR struct alm_rdalarm_s *alminfo);
 

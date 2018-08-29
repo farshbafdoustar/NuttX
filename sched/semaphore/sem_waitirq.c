@@ -64,13 +64,13 @@
  *   2. From logic associated with sem_timedwait().  This function is called
  *      when the timeout elapses without receiving the semaphore.
  *
- * Parameters:
+ * Input Parameters:
  *   wtcb    - A pointer to the TCB of the task that is waiting on a
  *             semphaphore, but has received a signal or timeout instead.
  *   errcode - EINTR if the semaphore wait was awakened by a signal;
  *             ETIMEDOUT if awakened by a timeout
  *
- * Return Value:
+ * Returned Value:
  *   None
  *
  * Assumptions:

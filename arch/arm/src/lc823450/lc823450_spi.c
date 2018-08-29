@@ -1,7 +1,7 @@
 /****************************************************************************
  * arch/arm/src/lc823450/lc823450_spi.c
  *
- *   Copyright (C) 2014-2017 Sony Corporation. All rights reserved.
+ *   Copyright 2014,2015,2016,2017 Sony Video & Sound Products Inc.
  *   Author: Nobutaka Toyoshima <Nobutaka.Toyoshima@jp.sony.com>
  *   Author: Masatoshi Tateishi <Masatoshi.Tateishi@jp.sony.com>
  *   Author: Masayuki Ishikawa <Masayuki.Ishikawa@jp.sony.com>
@@ -512,7 +512,7 @@ static void spi_recvblock(FAR struct spi_dev_s *dev, FAR void *buffer, size_t nw
  * Description:
  *   Initialize the selected SPI port.
  *
- * Input Parameter:
+ * Input Parameters:
  *   Port number (for hardware that has mutiple SPI interfaces)
  *
  * Returned Value:

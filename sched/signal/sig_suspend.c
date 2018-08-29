@@ -72,10 +72,10 @@
  *   Waiting for an empty signal set stops a task without freeing any
  *   resources.
  *
- * Parameters:
+ * Input Parameters:
  *   set - signal mask to use while suspended.
  *
- * Return Value:
+ * Returned Value:
  *   -1 (ERROR) always
  *
  * Assumptions:
@@ -126,7 +126,7 @@ int sigsuspend(FAR const sigset_t *set)
 
       unblocksigno = nxsig_lowest(&intersection);
       sigpend = nxsig_remove_pendingsignal(rtcb, unblocksigno);
-      ASSERT(sigpend);
+      DEBUGASSERT(sigpend);
 
       nxsig_release_pendingsignal(sigpend);
       leave_critical_section(flags);

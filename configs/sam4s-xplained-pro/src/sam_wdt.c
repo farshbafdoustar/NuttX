@@ -197,7 +197,9 @@ int sam_watchdog_initialize(void)
                               CONFIG_WDT_THREAD_STACKSIZE,
                               (main_t)wdog_daemon, (FAR char * const *)NULL);
 
-  ASSERT(taskid > 0);
+  DEBUGASSERT(taskid > 0);
+  UNUSED(taskid);
+
   sched_unlock();
 #endif
   return OK;

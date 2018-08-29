@@ -108,9 +108,8 @@ static void go_os_start(void *pv, unsigned int nbytes)
  * g_idle_topstack is a read-only variable the provides this computed
  * address.
  */
-#if defined(CONFIG_ARMV7M_CMNVECTOR)
+
 const uintptr_t g_idle_topstack = HEAP_BASE;
-#endif
 
 /****************************************************************************
  * Private Data
@@ -155,7 +154,7 @@ void __start(void) __attribute__ ((no_instrument_function));
  ****************************************************************************/
 
 #ifdef CONFIG_ARCH_FPU
-#if defined(CONFIG_ARMV7M_CMNVECTOR) && !defined(CONFIG_ARMV7M_LAZYFPU)
+#ifndef CONFIG_ARMV7M_LAZYFPU
 
 static inline void xmc4_fpu_config(void)
 {
@@ -396,9 +395,17 @@ void __start(void)
 
   /* Then start NuttX */
 
+#ifdef CONFIG_STACK_COLORATION
+  /* Set the IDLE stack to the coloration value and jump into os_start() */
+
+  go_os_start((FAR void *)&_ebss, CONFIG_IDLETHREAD_STACKSIZE);
+#else
+  /* Call os_start() */
+
   os_start();
 
   /* Shouldn't get here */
 
   for (; ; );
+#endif
 }

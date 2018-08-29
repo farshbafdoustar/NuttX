@@ -1,7 +1,7 @@
 /****************************************************************************
  * fs/nfs/rpc_clnt.c
  *
- *   Copyright (C) 2012-2013 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2012-2013, 2018 Gregory Nutt. All rights reserved.
  *   Copyright (C) 2012 Jose Pablo Rojas Vargas. All rights reserved.
  *   Author: Jose Pablo Rojas Vargas <jrojas@nx-engineering.com>
  *           Gregory Nutt <gnutt@nuttx.org>
@@ -166,12 +166,12 @@ static int rpcclnt_send(FAR struct rpcclnt *rpc, int procid, int prog,
 
   /* Send the call message
    *
-   * On success, psock_sendto returns the number of bytes sent;
+   * On success, psock_send returns the number of bytes sent;
    * On failure, it returns a negated errno value.
    */
 
-  nbytes = psock_sendto(rpc->rc_so, call, reqlen, 0,
-                        rpc->rc_name, sizeof(struct sockaddr));
+  nbytes = psock_send(rpc->rc_so, call, reqlen, 0);
+
   if (nbytes < 0)
     {
       /* psock_sendto failed */
@@ -457,9 +457,9 @@ int rpcclnt_connect(struct rpcclnt *rpc)
       goto bad;
     }
 
-  /* Protocols that do not require connections may be optionally left
-   * unconnected for servers that reply from a port other than
-   * NFS_PORT.
+  /* Protocols that do not require connections could be optionally left
+   * unconnected.  That would allow servers to reply from a port other than
+   * the NFS_PORT.
    */
 
   error = psock_connect(rpc->rc_so, saddr, sizeof(*saddr));
@@ -475,7 +475,7 @@ int rpcclnt_connect(struct rpcclnt *rpc)
    */
 
   request.sdata.pmap.prog = txdr_unsigned(RPCPROG_MNT);
-  request.sdata.pmap.vers = txdr_unsigned(RPCMNT_VER1);
+  request.sdata.pmap.vers = txdr_unsigned(RPCMNT_VER3);
   request.sdata.pmap.proc = txdr_unsigned(IPPROTO_UDP);
   request.sdata.pmap.port = 0;
 
@@ -504,7 +504,7 @@ int rpcclnt_connect(struct rpcclnt *rpc)
   strncpy(request.mountd.mount.rpath, rpc->rc_path, 90);
   request.mountd.mount.len =  txdr_unsigned(sizeof(request.mountd.mount.rpath));
 
-  error = rpcclnt_request(rpc, RPCMNT_MOUNT, RPCPROG_MNT, RPCMNT_VER1,
+  error = rpcclnt_request(rpc, RPCMNT_MOUNT, RPCPROG_MNT, RPCMNT_VER3,
                           (FAR void *)&request.mountd, sizeof(struct call_args_mount),
                           (FAR void *)&response.mdata, sizeof(struct rpc_reply_mount));
   if (error != 0)
@@ -520,7 +520,8 @@ int rpcclnt_connect(struct rpcclnt *rpc)
       goto bad;
     }
 
-  memcpy(&rpc->rc_fh, &response.mdata.mount.fhandle, sizeof(nfsfh_t));
+  rpc->rc_fhsize = fxdr_unsigned(uint32_t, response.mdata.mount.fhandle.length);
+  memcpy(&rpc->rc_fh, &response.mdata.mount.fhandle.handle, rpc->rc_fhsize);
 
   /* Do the RPC to get a dynamic bounding with the server using PMAP.
    * NFS port in the socket.
@@ -630,7 +631,7 @@ int rpcclnt_umount(struct rpcclnt *rpc)
     }
 
   request.sdata.pmap.prog = txdr_unsigned(RPCPROG_MNT);
-  request.sdata.pmap.vers = txdr_unsigned(RPCMNT_VER1);
+  request.sdata.pmap.vers = txdr_unsigned(RPCMNT_VER3);
   request.sdata.pmap.proc = txdr_unsigned(IPPROTO_UDP);
   request.sdata.pmap.port = 0;
 
@@ -659,7 +660,7 @@ int rpcclnt_umount(struct rpcclnt *rpc)
   strncpy(request.mountd.umount.rpath, rpc->rc_path, 92);
   request.mountd.umount.len =  txdr_unsigned(sizeof(request.mountd.umount.rpath));
 
-  error = rpcclnt_request(rpc, RPCMNT_UMOUNT, RPCPROG_MNT, RPCMNT_VER1,
+  error = rpcclnt_request(rpc, RPCMNT_UMOUNT, RPCPROG_MNT, RPCMNT_VER3,
                           (FAR void *)&request.mountd, sizeof(struct call_args_umount),
                           (FAR void *)&response.mdata, sizeof(struct rpc_reply_umount));
   if (error != 0)

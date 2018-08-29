@@ -60,13 +60,13 @@
  * Description:
  *   Send a local packet as a stream.
  *
- * Parameters:
+ * Input Parameters:
  *   psock    An instance of the internal socket structure.
  *   buf      Data to send
  *   len      Length of data to send
  *   flags    Send flags (ignored for now)
  *
- * Return:
+ * Returned Value:
  *   On success, returns the number of characters sent.  On  error,
  *   -1 is returned, and errno is set appropriately (see send() for the
  *   list of errno numbers).

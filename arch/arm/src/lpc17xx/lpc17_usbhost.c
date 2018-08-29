@@ -1812,7 +1812,7 @@ static int lpc17_usbinterrupt(int irq, void *context, FAR void *arg)
                */
 
               if ((uintptr_t)td < LPC17_TDFREE_BASE ||
-                  (uintptr_t)td >= (LPC17_TDFREE_BASE + LPC17_TD_SIZE*CONFIG_USBHOST_NTDS))
+                  (uintptr_t)td >= (LPC17_TDFREE_BASE + LPC17_TD_SIZE*CONFIG_LP17_USBHOST_NTDS))
                 {
                   break;
                 }
@@ -1933,8 +1933,8 @@ static int lpc17_usbinterrupt(int irq, void *context, FAR void *arg)
  *   hport - The location to return the hub port descriptor that detected the
  *      connection related event.
  *
- * Returned Values:
- *   Zero (OK) is returned on success when a device in connected or
+ * Returned Value:
+ *   Zero (OK) is returned on success when a device is connected or
  *   disconnected. This function will not return until either (1) a device is
  *   connected or disconnect to/from any hub port or until (2) some failure
  *   occurs.  On a failure, a negated errno value is returned indicating the
@@ -2029,7 +2029,7 @@ static int lpc17_wait(struct usbhost_connection_s *conn,
  *   hport - The descriptor of the hub port that has the newly connected
  *      device.
  *
- * Returned Values:
+ * Returned Value:
  *   On success, zero (OK) is returned. On a failure, a negated errno value is
  *   returned indicating the nature of the failure
  *
@@ -2128,7 +2128,7 @@ static int lpc17_enumerate(FAR struct usbhost_connection_s *conn,
  *   mps (maxpacketsize) - The maximum number of bytes that can be sent to or
  *    received from the endpoint in a single data packet
  *
- * Returned Values:
+ * Returned Value:
  *   On success, zero (OK) is returned. On a failure, a negated errno value is
  *   returned indicating the nature of the failure
  *
@@ -2183,7 +2183,7 @@ static int lpc17_ep0configure(struct usbhost_driver_s *drvr, usbhost_ep_t ep0,
  *   ep - A memory location provided by the caller in which to receive the
  *      allocated endpoint descriptor.
  *
- * Returned Values:
+ * Returned Value:
  *   On success, zero (OK) is returned. On a failure, a negated errno value is
  *   returned indicating the nature of the failure
  *
@@ -2339,7 +2339,7 @@ static int lpc17_epalloc(struct usbhost_driver_s *drvr,
  *      the class create() method.
  *   ep - The endpint to be freed.
  *
- * Returned Values:
+ * Returned Value:
  *   On success, zero (OK) is returned. On a failure, a negated errno value is
  *   returned indicating the nature of the failure
  *
@@ -2422,7 +2422,7 @@ static int lpc17_epfree(struct usbhost_driver_s *drvr, usbhost_ep_t ep)
  *   maxlen - The address of a memory location provided by the caller in which to
  *     return the maximum size of the allocated buffer memory.
  *
- * Returned Values:
+ * Returned Value:
  *   On success, zero (OK) is returned. On a failure, a negated errno value is
  *   returned indicating the nature of the failure
  *
@@ -2446,7 +2446,7 @@ static int lpc17_alloc(struct usbhost_driver_s *drvr,
   *buffer = lpc17_tballoc();
   if (*buffer)
     {
-      *maxlen = CONFIG_USBHOST_TDBUFSIZE;
+      *maxlen = CONFIG_LPC17_USBHOST_TDBUFSIZE;
       ret = OK;
     }
 
@@ -2468,7 +2468,7 @@ static int lpc17_alloc(struct usbhost_driver_s *drvr,
  *      the class create() method.
  *   buffer - The address of the allocated buffer memory to be freed.
  *
- * Returned Values:
+ * Returned Value:
  *   On success, zero (OK) is returned. On a failure, a negated errno value is
  *   returned indicating the nature of the failure
  *
@@ -2508,7 +2508,7 @@ static int lpc17_free(struct usbhost_driver_s *drvr, uint8_t *buffer)
  *     return the allocated buffer memory address.
  *   buflen - The size of the buffer required.
  *
- * Returned Values:
+ * Returned Value:
  *   On success, zero (OK) is returned. On a failure, a negated errno value is
  *   returned indicating the nature of the failure
  *
@@ -2523,7 +2523,7 @@ static int lpc17_ioalloc(struct usbhost_driver_s *drvr,
   DEBUGASSERT(drvr && buffer);
 
 #if LPC17_IOBUFFERS > 0
-  if (buflen <= CONFIG_USBHOST_IOBUFSIZE)
+  if (buflen <= CONFIG_LPC17_USBHOST_IOBUFSIZE)
     {
       uint8_t *alloc = lpc17_allocio();
       if (alloc)
@@ -2553,7 +2553,7 @@ static int lpc17_ioalloc(struct usbhost_driver_s *drvr,
  *      the class create() method.
  *   buffer - The address of the allocated buffer memory to be freed.
  *
- * Returned Values:
+ * Returned Value:
  *   On success, zero (OK) is returned. On a failure, a negated errno value is
  *   returned indicating the nature of the failure
  *
@@ -2600,7 +2600,7 @@ static int lpc17_iofree(struct usbhost_driver_s *drvr, uint8_t *buffer)
  *   NOTE: On an IN transaction, req and buffer may refer to the same allocated
  *   memory.
  *
- * Returned Values:
+ * Returned Value:
  *   On success, zero (OK) is returned. On a failure, a negated errno value is
  *   returned indicating the nature of the failure
  *
@@ -2701,7 +2701,7 @@ static int lpc17_ctrlout(struct usbhost_driver_s *drvr, usbhost_ep_t ep0,
  *     (IN endpoint).  buffer must have been allocated using DRVR_ALLOC
  *   buflen - The length of the data to be sent or received.
  *
- * Returned Values:
+ * Returned Value:
  *   On success, zero (OK) is returned. On a failure, a negated errno value is
  *   returned indicating the nature of the failure.
  *
@@ -2779,7 +2779,7 @@ static int lpc17_transfer_common(struct lpc17_usbhost_s *priv,
  *   buflen - The length of the data to be sent or received.
  *   alloc - The location to return the allocated DMA buffer.
  *
- * Returned Values:
+ * Returned Value:
  *   On success, zero (OK) is returned. On a failure, a negated errno value is
  *   returned indicating the nature of the failure.
  *
@@ -2801,10 +2801,10 @@ static int lpc17_dma_alloc(struct lpc17_usbhost_s *priv,
     {
       /* Will the transfer fit in an IO buffer? */
 
-      if (buflen > CONFIG_USBHOST_IOBUFSIZE)
+      if (buflen > CONFIG_LPC17_USBHOST_IOBUFSIZE)
         {
           uinfo("buflen (%d) > IO buffer size (%d)\n",
-                 buflen, CONFIG_USBHOST_IOBUFSIZE);
+                 buflen, CONFIG_LPC17_USBHOST_IOBUFSIZE);
           return -ENOMEM;
         }
 
@@ -2851,7 +2851,7 @@ static int lpc17_dma_alloc(struct lpc17_usbhost_s *priv,
  *   buflen - The length of the data to be sent or received.
  *   alloc - The allocated DMA buffer to be freed.
  *
- * Returned Values:
+ * Returned Value:
  *   On success, zero (OK) is returned. On a failure, a negated errno value is
  *   returned indicating the nature of the failure.
  *
@@ -2913,7 +2913,7 @@ static void lpc17_dma_free(struct lpc17_usbhost_s *priv,
  *     (IN endpoint).  buffer must have been allocated using DRVR_ALLOC
  *   buflen - The length of the data to be sent or received.
  *
- * Returned Values:
+ * Returned Value:
  *   On success, a non-negative value is returned that indicates the number
  *   of bytes successfully transferred.  On a failure, a negated errno value is
  *   returned that indicates the nature of the failure:
@@ -3087,7 +3087,7 @@ errout_with_sem:
  *   ep - The IN or OUT endpoint descriptor for the device endpoint on which the
  *      transfer was performed.
  *
- * Returned Values:
+ * Returned Value:
  *   None
  *
  * Assumptions:
@@ -3189,7 +3189,7 @@ static void lpc17_asynch_completion(struct lpc17_usbhost_s *priv,
  *   arg - The arbitrary parameter that will be passed to the callback function
  *     when the transfer completes.
  *
- * Returned Values:
+ * Returned Value:
  *   On success, zero (OK) is returned. On a failure, a negated errno value is
  *   returned indicating the nature of the failure
  *
@@ -3306,7 +3306,7 @@ errout_with_sem:
  *   ep - The IN or OUT endpoint descriptor for the device endpoint on which an
  *      asynchronous transfer should be transferred.
  *
- * Returned Values:
+ * Returned Value:
  *   On success, zero (OK) is returned. On a failure, a negated errno value is
  *   returned indicating the nature of the failure.
  *
@@ -3451,7 +3451,7 @@ static int lpc17_cancel(FAR struct usbhost_driver_s *drvr, usbhost_ep_t ep)
  *      related event
  *   connected - True: device connected; false: device disconnected
  *
- * Returned Values:
+ * Returned Value:
  *   On success, zero (OK) is returned. On a failure, a negated errno value is
  *   returned indicating the nature of the failure.
  *
@@ -3502,7 +3502,7 @@ static int lpc17_connect(FAR struct usbhost_driver_s *drvr,
  *   hport - The port from which the device is being disconnected.  Might be a port
  *      on a hub.
  *
- * Returned Values:
+ * Returned Value:
  *   None
  *
  * Assumptions:
@@ -3531,7 +3531,7 @@ static void lpc17_disconnect(struct usbhost_driver_s *drvr,
  * Input Parameters:
  *   priv - private driver state instance.
  *
- * Returned Values:
+ * Returned Value:
  *   None
  *
  ****************************************************************************/
@@ -3728,7 +3728,7 @@ struct usbhost_connection_s *lpc17_usbhost_initialize(int controller)
   uinfo("  EDFREE: %08x %d\n", LPC17_EDFREE_BASE, LPC17_ED_SIZE);
   uinfo("  TDFREE: %08x %d\n", LPC17_TDFREE_BASE, LPC17_EDFREE_SIZE);
   uinfo("  TBFREE: %08x %d\n", LPC17_TBFREE_BASE, LPC17_TBFREE_SIZE);
-  uinfo("  IOFREE: %08x %d\n", LPC17_IOFREE_BASE, LPC17_IOBUFFERS * CONFIG_USBHOST_IOBUFSIZE);
+  uinfo("  IOFREE: %08x %d\n", LPC17_IOFREE_BASE, LPC17_IOBUFFERS * CONFIG_LPC17_USBHOST_IOBUFSIZE);
 #endif
 
   /* Initialize all the TDs, EDs and HCCA to 0 */
@@ -3747,7 +3747,7 @@ struct usbhost_connection_s *lpc17_usbhost_initialize(int controller)
   /* Initialize user-configurable EDs */
 
   buffer = (uint8_t *)LPC17_EDFREE_BASE;
-  for (i = 0; i < CONFIG_USBHOST_NEDS; i++)
+  for (i = 0; i < CONFIG_LP17_USBHOST_NEDS; i++)
     {
       /* Put the ED in a free list */
 
@@ -3758,7 +3758,7 @@ struct usbhost_connection_s *lpc17_usbhost_initialize(int controller)
   /* Initialize user-configurable TDs */
 
   buffer = (uint8_t *)LPC17_TDFREE_BASE;
-  for (i = 0; i < CONFIG_USBHOST_NTDS; i++)
+  for (i = 0; i < CONFIG_LP17_USBHOST_NTDS; i++)
     {
       /* Put the TD in a free list */
 
@@ -3769,12 +3769,12 @@ struct usbhost_connection_s *lpc17_usbhost_initialize(int controller)
   /* Initialize user-configurable request/descriptor transfer buffers */
 
   buffer = (uint8_t *)LPC17_TBFREE_BASE;
-  for (i = 0; i < CONFIG_USBHOST_TDBUFFERS; i++)
+  for (i = 0; i < CONFIG_LPC17_USBHOST_TDBUFFERS; i++)
     {
       /* Put the TD buffer in a free list */
 
       lpc17_tbfree(buffer);
-      buffer += CONFIG_USBHOST_TDBUFSIZE;
+      buffer += CONFIG_LPC17_USBHOST_TDBUFSIZE;
     }
 
 #if LPC17_IOBUFFERS > 0
@@ -3786,7 +3786,7 @@ struct usbhost_connection_s *lpc17_usbhost_initialize(int controller)
       /* Put the IO buffer in a free list */
 
       lpc17_freeio(buffer);
-      buffer += CONFIG_USBHOST_IOBUFSIZE;
+      buffer += CONFIG_LPC17_USBHOST_IOBUFSIZE;
     }
 #endif
 

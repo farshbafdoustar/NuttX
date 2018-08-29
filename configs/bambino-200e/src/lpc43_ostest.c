@@ -3,7 +3,7 @@
  *
  *   Copyright (C) 2016 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
- *           Alan Carvalho de Assis acassis@gmail.com [nuttx] <nuttx@yahoogroups.com>
+ *           Alan Carvalho de Assis acassis@gmail.com [nuttx] <nuttx@googlegroups.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -60,8 +60,7 @@
 
 #undef HAVE_FPU
 #if defined(CONFIG_ARCH_FPU) && defined(CONFIG_EXAMPLES_OSTEST_FPUSIZE) && \
-    defined(CONFIG_SCHED_WAITPID) && !defined(CONFIG_DISABLE_SIGNALS) && \
-   !defined(CONFIG_ARMV7M_CMNVECTOR)
+    defined(CONFIG_SCHED_WAITPID) && !defined(CONFIG_DISABLE_SIGNALS)
 #    define HAVE_FPU 1
 #endif
 

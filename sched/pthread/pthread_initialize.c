@@ -1,7 +1,8 @@
 /****************************************************************************
  * sched/pthread/pthread_initialize.c
  *
- *   Copyright (C) 2007-2010, 2013, 2017 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2007-2010, 2013, 2017-2018 Gregory Nutt. All rights
+ *     reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -61,10 +62,10 @@
  *   no longer does anything since all of the pthread data structures have
  *   been moved into the "task group"
  *
- * Parameters:
+ * Input Parameters:
  *   None
  *
- * Return Value:
+ * Returned Value:
  *   None
  *
  ****************************************************************************/
@@ -86,12 +87,12 @@ void pthread_initialize(void)
  *   would be to use an internal version of the semaphore functions that
  *   return the error value in the correct form.
  *
- * Parameters:
+ * Input Parameters:
  *  sem  - The semaphore to lock or unlock
  *  intr - false: ignore EINTR errors when locking; true tread EINTR as
  *         other errors by returning the errno value
  *
- * Return Value:
+ * Returned Value:
  *   0 on success or an errno value on failure.
  *
  ****************************************************************************/
@@ -155,7 +156,7 @@ int pthread_sem_trytake(sem_t *sem)
       /* Try to take the semaphore */
 
       int status = nxsem_trywait(sem);
-      ret = ret < 0 ? -ret : OK;
+      ret = status < 0 ? -status : OK;
     }
 
   return ret;
@@ -164,24 +165,22 @@ int pthread_sem_trytake(sem_t *sem)
 
 int pthread_sem_give(sem_t *sem)
 {
-  /* Verify input parameters */
+  int ret;
 
+  /* Verify input parameters */
 
   DEBUGASSERT(sem != NULL);
   if (sem != NULL)
     {
       /* Give the semaphore */
 
-      if (nxsem_post(sem) == OK)
+      ret = nxsem_post(sem);
+      if (ret < 0)
         {
-          return OK;
+          return -ret;
         }
-      else
-        {
-          /* nxsem_post() reported an error */
 
-          return get_errno();
-        }
+      return OK;
     }
   else
     {

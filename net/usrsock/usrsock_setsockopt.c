@@ -161,7 +161,7 @@ static int do_setsockopt_request(FAR struct usrsock_conn_s *conn,
  *
  *   See <sys/socket.h> a complete list of values for the 'option' argument.
  *
- * Parameters:
+ * Input Parameters:
  *   conn      usrsock socket connection structure
  *   level     Protocol level to set the option
  *   option    identifies the option to set
@@ -212,7 +212,7 @@ int usrsock_setsockopt(FAR struct usrsock_conn_s *conn, int level, int option,
 
       while ((ret = net_lockedwait(&state.recvsem)) < 0)
         {
-          DEBUGASSERT(ret == -EINTR);
+          DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
         }
 
       ret = state.result;

@@ -59,10 +59,10 @@
  *   messages if it was a pre-allocated message. If the message was
  *   allocated dynamically it will be deallocated.
  *
- * Inputs:
+ * Input Parameters:
  *   mqmsg - message to free
  *
- * Return Value:
+ * Returned Value:
  *   None
  *
  ****************************************************************************/
@@ -112,6 +112,6 @@ void nxmq_free_msg(FAR struct mqueue_msg_s *mqmsg)
     }
   else
     {
-      PANIC();
+      DEBUGPANIC();
     }
 }

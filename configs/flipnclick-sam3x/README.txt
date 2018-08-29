@@ -14,6 +14,9 @@ Contents
   - STATUS
   - Buttons and LEDs
   - Serial Consoles
+  - SPI
+  - I2C
+  - SSD1306 OLED
   - Loading Code
   - Flip&Click SAM3X-specific Configuration Options
   - Configurations
@@ -22,23 +25,16 @@ STATUS
 ======
 
   2018-01-07:  Created the configuration.  At present it does not work; I
-    believe because of tool-related issues.  I do the following:
-
-    a) Open TeraTerm, select COM7 at 1200 baud, type a few ENTERs, and
-       close teraterm.
-
-    b) Execute the following command which claims to have successfully
-       written to FLASH.
-
-       bossac.exe --info --debug --port COM7 --usb-port=0 --erase --write --verify -b nuttx.bin -R
-
-       But the code does not boot.  There is no indication of life.
-
-    c) Repeat a) then
-
-       bossac.exe --info --debug --port COM7 --usb-port=0 --verify -b nuttx.bin
-
-       And it says that the content of the FLASH is not good.
+    believe because of tool-related issues.  See discussion under "Loading
+    Code" below.
+  2018-01-24:  I ordered a JTAG connector and soldered that to the Flip'n'Click
+    and I am now successfully able to load code.  The NSH configuration appears
+    to be fully functional.
+  2018-02-11:  Added the nxlines configuration to test the custom HiletGo
+    OLED on a Click proto board.  This is the same logic from the Flip&Click
+    PIC32MZ and the result is the same:  No complaints from the software, but
+    nothing appears on the OLED.  There is, most likely, an error in my custom
+    HiletGo Click.  Damn!
 
 Buttons and LEDs
 ================
@@ -81,8 +77,8 @@ Buttons and LEDs
     LED_PANIC        The system has crashed  2Hz N/C N/C N/C N/C
     LED_IDLE         MCU is is sleep mode    ---- Not used -----
 
-  Thus if LED L is glowing on and all other LEDs are off (except LED D which
-  was left on but is no longer controlled by NuttX and so may be in any
+  Thus if LED L is glowing faintly and all other LEDs are off (except LED D
+  which was left on but is no longer controlled by NuttX and so may be in any
   state), NuttX has successfully booted and is, apparently, running normally
   and taking interrupts.  If any of LEDs A-D are statically set, then NuttX
   failed to boot and the LED indicates the initialization phase where the
@@ -99,10 +95,11 @@ Serial Consoles
   serial chip connected to the first of the MCU (RX0 and TX0 on PA8 and PA9,
   respectively).  The output from that port is visible using the Arduino tool.
 
-  Any of UART and USART0-3 may be used as a serial console.  By default,
-  UART0 is used as the serial console in all configurations.  But that is
-  easily changed by modifying the configuration as described under
-  "Configurations" below.
+  [NOTE: My experience so far:  I get serial output on the virtual COM port
+   via the UART, but I receive no serial input for keyboard data entered in
+   the PC serial terminal.  I have not investigated this problem.  It may
+   be something as simple as the Rx pin configuration.  Instead, I just
+   switched to USART0.]
 
   Other convenient U[S]ARTs that may be used as the Serial console include:
 
@@ -125,8 +122,102 @@ Serial Consoles
   transceiver to get the signals to RS232 levels (or connect to the
   USB virtual COM port in the case of UART0).
 
+  Any of UART and USART0-3 may be used as a serial console.  UART0 would
+  be the preferred default console setting. However, due to the communication
+  problems mentioned above, USART0 is used as the default serial console
+  in all configurations.  But that is easily changed by modifying the
+  configuration as described under "Configurations" below.
+
+SPI
+===
+
+   SPI0 is available on the Arduino compatible SPI connector (but no SPI is
+   available on pins D10-D13 of the main Arduino Shield connectors where
+   you might expect then).  The SPI connector is configured as follows:
+
+     Pin Board Signal SAM3X  Pin Board Signal SAM3X
+     --- ------------ -----  --- ------------ -----
+      1  SPI0_MISO    PA25    2  VCC-5V       N/A
+      3  SPI0_SCK     PA27    4  SPI0_MOSI    PA26
+      5  MRST         NRSTB   6  GND          N/A
+
+   SPI0 is also available on each of the mikroBUS Click connectors (in
+   addition to 5V and GND).  The connectivity differs only in the chip
+   select pin:
+
+     MikroBUS A:              MikroBUS B:
+     Pin  Board Signal SAM3X  Pin  Board Signal SAM3X
+     ---- ------------ -----  ---- ------------ -----
+     CS   SPI0_CS0     PA28   CS   PA29         PA29
+     SCK  SPI0_SCK     PA27   SCK  SPI0_SCK     PA27
+     MISO SPI0_MISO    PA25   MISO SPI0_MISO    PA25
+     MOSI SPI0_MOSI    PA26   MOSI SPI0_MOSI    PA26
+
+     MikroBUS C:              MikroBUS D:
+     Pin  Board Signal SAM3X  Pin  Board Signal SAM3X
+     ---- ------------ -----  ---- ------------ -----
+     CS   SPI0_CS2     PB21   CS   SPI0_CS3     PB23
+     SCK  SPI0_SCK     PA27   SCK  SPI0_SCK     PA27
+     MISO SPI0_MISO    PA25   MISO SPI0_MISO    PA25
+     MOSI SPI0_MOSI    PA26   MOSI SPI0_MOSI    PA26
+
+I2C
+===
+
+   I2C0 is available on pins D16-D17 of the Arduino Shield connectors where
+   you would expect then.  The SPI connector is configured as follows:
+
+     Pin Label J1 Board Signal SAM3X
+     --- ----- -- ------------ -----
+     D16 SCL1  8  I2C0_SCL     PA17
+     D17 SDA1  7  I2C0_SDA     PA18
+
+   I2C0 and I2C1 are also available on the mikroBUS Click connectors (in
+   addition to 5V and GND).  The connectors A and B share I2C0 with the
+   Arduino shield connector.  Connectors C and D both connect to I2C1:
+
+     MikroBUS A:              MikroBUS B:
+     Pin  Board Signal SAM3X  Pin  Board Signal SAM3X
+     ---- ------------ -----  ---- ------------ -------
+     SCL  I2C0_SCL     PA17   SCL  I2C0_SCL    PA17
+     SDA  I2C0_SDA     PA1    SDA  I2C0_SDA    PA18
+
+     MikroBUS C:              MikroBUS D:
+     Pin  Board Signal SAM3X  Pin  Board Signal SAM3X
+     ---- ------------ -----  ---- ------------ -------
+     SCL  I2C1_SCL     PB13   SCL  I2C1_SCL     PB13
+     SDA  I2C1_SDA     PB12   SDA  I2C1_SDA     PB12
+
+SSD1306 OLED
+============
+
+  Hardware
+  --------
+  The HiletGo is a 128x64 OLED that can be driven either via SPI or I2C (SPI
+  is the default and is what is used here).  I have mounted the OLED on a
+  proto click board.  The OLED is connected as follows:
+
+  OLED  ALIAS       DESCRIPTION   PROTO CLICK
+  ----- ----------- ------------- -----------------
+   GND              Ground        GND
+   VCC              Power Supply  5V  (3-5V)
+   D0   SCL,CLK,SCK Clock         SCK
+   D1   SDA,MOSI    Data          MOSI,SDI
+   RES  RST,RESET   Reset         RST (GPIO OUTPUT)
+   DC   AO          Data/Command  INT (GPIO OUTPUT)
+   CS               Chip Select   CS  (GPIO OUTPUT)
+
+   NOTE that this is a write-only display (MOSI only)!
+
 Loading Code
 ============
+
+  [NOTE: This text was mostly copied from the Arduino Due README.txt.  I
+   believe, however, that there have been significant changes to the
+   tool environment such that Bossac may no longer be usable.  I don't
+   know that for certain and perhaps someone with more knowledge of
+   the tools than I could make this work.  See STATUS below for the
+   current issues that I see.]
 
   Installing the Arduino USB Driver under Windows
   -----------------------------------------------
@@ -302,6 +393,25 @@ Loading Code
        $ bossac.exe --port=COM7 --usb-port=false --boot=1
        Set boot flash true
 
+  STATUS:
+    At present this procedure does not work.  I do the following:
+
+    a) Open TeraTerm, select COM7 at 1200 baud, type a few ENTERs, and
+       close teraterm.
+
+    b) Execute the following command which claims to have successfully
+       written to FLASH.
+
+       bossac.exe --info --debug --port COM7 --usb-port=0 --erase --write --verify -b nuttx.bin -R
+
+       But the code does not boot.  There is no indication of life.
+
+    c) Repeat a) then
+
+       bossac.exe --info --debug --port COM7 --usb-port=0 --verify -b nuttx.bin
+
+       And it says that the content of the FLASH is not good.
+
   Uploading NuttX to the Flip&Click Using JTAG
   --------------------------------------------
 
@@ -314,7 +424,7 @@ Loading Code
      3  GND            GND
      4  JTAG_TCK       SWDCLK/TCK        SAM3X pin 28, Pulled up on board
      5  GND            GND
-     6  JTAG_TDO       SWO/EXta/TRACECTL SAM3X pin 30, ulled up on board
+     6  JTAG_TDO       SWO/EXta/TRACECTL SAM3X pin 30, Pulled up on board
      7  N/C            Key
      8  JTAG_TDI       NC/EXTb/TDI       SAM3X pin 29, Pulled up on board
      9  GND            GNDDetect
@@ -328,9 +438,10 @@ Loading Code
 
    You should be able to use a 10- to 20-pin adapter to connect a SAM-ICE
    or J-Link debugger to the Flip&Click SAM3X.  I have this Olimex adapter:
-   https://www.olimex.com/Products/ARM/JTAG/ARM-JTAG-20-10/ . But so far I
-   have been unable to get the get the SAM-ICE to communicate with the
-   Flip&Click.
+   https://www.olimex.com/Products/ARM/JTAG/ARM-JTAG-20-10/ .  I have been
+   loading code and debugging with no problems using JTAG.
+
+   You can find photos my setup here: http://www.nuttx.org/doku.php?id=wiki:howtos:flipnclick-sam3x
 
 Flip&Click SAM3X-specific Configuration Options
 ===============================================
@@ -430,7 +541,7 @@ Flip&Click SAM3X-specific Configuration Options
     CONFIG_SAM34_GPIOF_IRQ
 
 Configurations
-^^^^^^^^^^^^^^
+==============
 
   Each Flip&Click SAM3X configuration is maintained in a sub-directory and
   can be selected as follow:
@@ -465,15 +576,16 @@ Configurations
        reconfiguration process.
 
   2. Unless stated otherwise, all configurations generate console
-     output on UART0 which is available both on the USB virtual COM port
-     and on the PWML connector (see the section "Serial Consoles" above).
+     output on USART0 which is available either on the Arduion Shield
+     connector or on mikroBUS A as described above in the section entitled
+     "Serial Consoles".
 
   3. Unless otherwise stated, the configurations are setup for
      Cygwin under Windows:
 
      Build Setup:
        CONFIG_HOST_WINDOWS=y   : Microsoft Windows
-       CONFIG_WINDIWS_CYGWIN=y : Cygwin under Windoes
+       CONFIG_WINDIWS_CYGWIN=y : Cygwin under Windows
 
   3. All of these configurations are set up to build under Windows using the
      "GNU Tools for ARM Embedded Processors" that is maintained by ARM
@@ -502,3 +614,23 @@ Configuration sub-directories
 
        Application Configuration:
          CONFIG_NSH_BUILTIN_APPS=y           : Enable starting apps from NSH command line
+
+  nxlines
+
+    This is an NSH configuration that supports the NX graphics example at
+    apps/examples/nxlines as a built-in application.
+
+    NOTES:
+
+    1. This configuration derives from the nsh configuration.  All of the
+       notes there apply here as well.
+
+    2. The default configuration assumes there is the custom HiletGo OLED
+       in the mikroBUS B slot (and a Mikroe RS-232 Click card in the
+       mikroBUS A slot).  That is easily changed by reconfiguring, however.
+       See the section entitled "HiletGo OLED" for information about this
+       custom click card.
+
+  STATUS:
+    2018-02-11:  No complaints from the software, but nothing appears on the
+      OLED.  There is, most likely, an error in my custom HiletGo Click.  Damn!

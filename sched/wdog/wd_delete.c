@@ -63,12 +63,13 @@
  *   it to the free pool of watchdog timers.  The watchdog timer will be
  *   removed from the active timer queue if had been started.
  *
- * Parameters:
+ * Input Parameters:
  *   wdog - The watchdog ID to delete.  This is actually a pointer to a
  *          watchdog structure.
  *
- * Return Value:
- *   Returns OK or ERROR
+ * Returned Value:
+ *   Zero (OK) is returned on success; a negated errno value is return to
+ *   indicate the nature of any failure.
  *
  * Assumptions:
  *   The caller has assured that the watchdog is no longer in use.

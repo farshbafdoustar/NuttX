@@ -124,7 +124,7 @@ endif
 ifeq ($(CONFIG_SIM_NETDEV),y)
 ifeq ($(CONFIG_NET_ETHERNET),y)
   CSRCS += up_netdriver.c
-  HOSTCFLAGS += -DNETDEV_BUFSIZE=$(CONFIG_NET_ETH_MTU)
+  HOSTCFLAGS += -DNETDEV_BUFSIZE=$(CONFIG_NET_ETH_PKTSIZE)
 ifneq ($(HOSTOS),Cygwin)
   HOSTSRCS += up_tapdev.c up_netdev.c
 ifeq ($(CONFIG_SIM_NET_BRIDGE),y)
@@ -211,7 +211,7 @@ endif
 
 LINKLIBS ?=
 RELLIBS = $(patsubst %.a,%,$(patsubst lib%,-l%,$(LINKLIBS)))
-RELPATHS += -L"$(TOPDIR)/lib"
+RELPATHS += -L"$(TOPDIR)/staging"
 
 # Add the board-specific library and directory
 
@@ -254,6 +254,9 @@ GNU:
 	$(Q) mkdir -p ./GNU
 
 GNU/Linux-names.dat: GNU nuttx-names.dat
+	$(Q) cp nuttx-names.dat $@
+
+Msys-names.dat: GNU nuttx-names.dat
 	$(Q) cp nuttx-names.dat $@
 
 Cygwin-names.dat: nuttx-names.dat

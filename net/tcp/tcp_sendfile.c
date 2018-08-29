@@ -106,7 +106,7 @@ struct sendfile_s
   uint32_t           snd_isn;     /* Initial sequence number */
   uint32_t           snd_acked;   /* The number of bytes acked */
 #ifdef CONFIG_NET_SOCKOPTS
-  systime_t          snd_time;    /* Last send time for determining timeout */
+  clock_t            snd_time;    /* Last send time for determining timeout */
 #endif
 };
 
@@ -120,7 +120,7 @@ struct sendfile_s
  * Description:
  *   Check for send timeout.
  *
- * Parameters:
+ * Input Parameters:
  *   pstate - send state structure
  *
  * Returned Value:
@@ -276,7 +276,7 @@ static uint16_t ack_eventhandler(FAR struct net_driver_s *dev,
  *   NOTE 3: If CONFIG_NET_ARP_SEND then we can be assured that the IP
  *   address mapping is already in the ARP table.
  *
- * Parameters:
+ * Input Parameters:
  *   conn  - The TCP connection structure
  *
  * Returned Value:
@@ -296,7 +296,7 @@ static inline bool sendfile_addrcheck(FAR struct tcp_conn_s *conn)
 #endif
     {
 #if !defined(CONFIG_NET_ARP_IPIN) && !defined(CONFIG_NET_ARP_SEND)
-      return (arp_find(conn->u.ipv4.raddr) != NULL);
+      return (arp_find(conn->u.ipv4.raddr, NULL) >= 0);
 #else
       return true;
 #endif
@@ -328,7 +328,7 @@ static inline bool sendfile_addrcheck(FAR struct tcp_conn_s *conn)
  *   This function is called to perform the actual send operation when
  *   polled by the lower, device interfacing layer.
  *
- * Parameters:
+ * Input Parameters:
  *   dev      The structure of the network driver that caused the event
  *   conn     The connection structure associated with the socket
  *   flags    Set of events describing why the callback was invoked
@@ -516,7 +516,7 @@ wait:
  *   Notify the appropriate device driver that we are have data ready to
  *   be send (TCP)
  *
- * Parameters:
+ * Input Parameters:
  *   psock - Socket state structure
  *   conn  - The TCP connection structure
  *
@@ -567,7 +567,7 @@ static inline void sendfile_txnotify(FAR struct socket *psock,
  *   The tcp_sendfile() call may be used only when the INET socket is in a
  *   connected state (so that the intended recipient is known).
  *
- * Parameters:
+ * Input Parameters:
  *   psock    An instance of the internal socket structure.
  *   buf      Data to send
  *   len      Length of data to send

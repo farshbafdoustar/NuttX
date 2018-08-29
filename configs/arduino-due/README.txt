@@ -330,6 +330,12 @@ Serial Consoles
 Loading Code
 ============
 
+  [NOTE: I believe that there have been significant changes to the more
+   recent tool environment such that Bossac may no longer be usable.  I
+   don't know that for certain and perhaps someone with more knowledge of
+   the tools than I could make this work.  See the Flip'n'Clip SAM3X README
+   file for additional information.]
+
   Installing the Arduino USB Driver under Windows:
   ------------------------------------------------
 
@@ -709,7 +715,7 @@ Configurations
      This re-configuration should be done before making NuttX or else the
      subsequent 'make' will fail.  If you have already attempted building
      NuttX then you will have to 1) 'make distclean' to remove the old
-     configuration, 2) 'cd tools; ./configure.sh sam3u-ek/ksnh' to start
+     configuration, 2) 'tools/configure.sh sam3u-ek/ksnh' to start
      with a fresh configuration, and 3) perform the configuration changes
      above.
 

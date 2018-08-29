@@ -13,7 +13,7 @@
       <h1><big><font color="#3c34ec"><i>NuttX Operating System<p>User's Manual</i></font></big></h1>
       <p><small>by</small></p>
       <p>Gregory Nutt<p>
-      <p>Last Updated: October 20, 2017</p>
+      <p>Last Updated: July 15, 2018</p>
     </td>
   </tr>
 </table>
@@ -307,10 +307,8 @@ int task_create(char *name, int priority, int stack_size, main_t entry, char * c
     <li><code>priority</code>. Priority of the new task</LI>
     <li><code>stack_size</code>. size (in bytes) of the stack needed</LI>
     <li><code>entry</code>. Entry point of a new task</LI>
-    <li><code>argv</code>. A pointer to an array of input parameters.  Up to
-       <code>CONFIG_MAX_TASK_ARG</code> parameters may be provided.
-       If fewer than <code>CONFIG_MAX_TASK_ARG</code> parameters are
-       passed, the list should be terminated with a NULL argv[] value.
+    <li><code>argv</code>. A pointer to an array of input parameters.
+       The array should be terminated with a NULL argv[] value.
        If no parameters are required, argv may be NULL.
   </ul>
 <p>
@@ -376,10 +374,8 @@ VxWorks provides the following similar interface:
     <li><code>stack</code>. Start of the pre-allocated stack
     <li><code>stack_size</code>. size (in bytes) of the pre-allocated stack
     <li><code>entry</code>. Entry point of a new task
-    <li><code>argv</code>. A pointer to an array of input parameters.  Up to
-       <code>CONFIG_MAX_TASK_ARG</code> parameters may be provided.
-       If fewer than <code>CONFIG_MAX_TASK_ARG</code> parameters are
-       passed, the list should be terminated with a NULL argv[] value.
+    <li><code>argv</code>. A pointer to an array of input parameters.
+       The array should be terminated with a NULL argv[] value.
        If no parameters are required, argv may be NULL.
   </ul>
 </p>
@@ -833,7 +829,7 @@ pid_t vfork(void);
 </p>
 <p>
   <b>POSIX Compatibility:</b>
-  Compatible with the Unix interface of the same name.
+  Compatible with the BSD/Linux interface of the same name.  POSIX marks this interface as Obsolete.
 </p>
 
 <H3><a name="exec">2.1.12 exec</a></H3>
@@ -941,7 +937,7 @@ int execv(FAR const char *path, FAR char *const argv[]);
 <p>
    Note the inefficiency when <code>execv()</code> or <code>execl()</code> is called in the normal, two-step process:
    (1) first call <code>vfork()</code> to create a new thread, then (2) call <code>execv()</code> or <code>execl()</code> to replace the new thread with a program from the file system.
-   Since the new thread will be terminated by the <code>execv()</code> or <code>execl()</code> call, it really served no purpose other than to support Unix compatibility.
+   Since the new thread will be terminated by the <code>execv()</code> or <code>execl()</code> call, it really served no purpose other than to support POSIX compatibility.
 </p>
 <p>
    The non-standard binfmt function <code>exec()</code> needs to have (1) a symbol table that provides the list of symbols exported by the base code, and (2) the number of symbols in that table.
@@ -953,12 +949,12 @@ int execv(FAR const char *path, FAR char *const argv[]);
      Enable <code>execv()</code> and <code>execl()</code> support
   </li>
   <li>
-     <code>CONFIG_EXECFUNCS_SYMTAB</code>:
-     Symbol table used by <code>execv()</code> or <code>execl()</code>.
+     <code>CONFIG_EXECFUNCS_SYMTAB_ARRAY</code>:
+     Name of the ymbol table used by <code>execv()</code> or <code>execl()</code>.
   </li>
   <li>
-     <code>CONFIG_EXECFUNCS_NSYMBOLS</code>:
-     Number of symbols in the symbol table
+     <code>CONFIG_EXECFUNCS_NSYMBOLS_VAR</code>:
+     Name of the <code>int</code> variable holding the number of symbols in the symbol table
   </li>
 </ul>
 <p>
@@ -991,7 +987,7 @@ int execv(FAR const char *path, FAR char *const argv[]);
 </p>
 <p>
   <b>POSIX Compatibility:</b>
-  Similar with the Unix interface of the same name.
+  Similar with the POSIX interface of the same name.
   There are, however, several compatibility issues as detailed in the description above.
 </p>
 
@@ -1035,7 +1031,7 @@ int execl(FAR const char *path, ...);
 </p>
 <p>
   <b>POSIX Compatibility:</b>
-  Similar with the Unix interface of the same name.
+  Similar with the POSIX interface of the same name.
   There are, however, several compatibility issues as detailed in the description of <a href="#execv">execv()</a>.
 </p>
 
@@ -1843,7 +1839,7 @@ int posix_spawn_file_actions_init(FAR posix_spawn_file_actions_t *file_actions);
 </p>
 <p>
   Optionally, a Nuttx task or thread can be configured with round-robin or <i>sporadic</i> scheduler.
-  The round-roben is similar to priority scheduling <i>except</i> that tasks with equal priority and share CPU time via <i>time-slicing</i>.
+  The round-robin is similar to priority scheduling <i>except</i> that tasks with equal priority and share CPU time via <i>time-slicing</i>.
   The time-slice interval is a constant determined by the configuration
   setting <code>CONFIG_RR_INTERVAL</code> to a positive, non-zero value.
   Sporadic scheduling scheduling is more complex, varying the priority of a thread over a <i>replenishment</i> period.
@@ -2221,7 +2217,7 @@ priority of the calling task is returned.
       <b>Task Exit Hooks</b>.
       <code>atexit()</code> and <code>on_exit()</code> may be use to register callback functions that are executed when a <i>task group</i> terminates.
       A task group is the functional analog of a process:
-      It is a group that consists of the main task thread and of all of the pthreads created by the main task thread or any of the other pthreads within the task broup.
+      It is a group that consists of the main task thread and of all of the pthreads created by the main task thread or any of the other pthreads within the task group.
       Members of a task group share certain resources such as environment variables, file descriptors, <code>FILE</code> streams, sockets, pthread keys and open message queues.
     </p>
     <blockquote><small>
@@ -5704,7 +5700,7 @@ be sent.
   NuttX only supports simple threads or tasks running within the same address space.
   However, NuttX does support the concept of a <i>task group</i>.
   A task group is the functional analog of a process:
-  It is a group that consists of the main task thread and of all of the pthreads created by the main thread or any of the other pthreads within the task broup.
+  It is a group that consists of the main task thread and of all of the pthreads created by the main thread or any of the other pthreads within the task group.
   Members of a task group share certain resources such as environment variables, file descriptors, <code>FILE</code> streams, sockets, pthread keys and open message queues.
 </p>
 <blockquote><small>

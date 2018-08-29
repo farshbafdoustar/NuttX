@@ -60,11 +60,11 @@
  *   tasks waiting on a count.  This kind of operation is sometimes required
  *   within the OS (only) for certain error handling conditions.
  *
- * Parameters:
+ * Input Parameters:
  *   sem   - Semaphore descriptor to be reset
  *   count - The requested semaphore count
  *
- * Return Value:
+ * Returned Value:
  *   This is an internal OS interface, not available to applications, and
  *   hence follows the NuttX internal error return policy:  Zero (OK) is
  *   returned on success.  A negated errno value is returned on failure.

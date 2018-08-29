@@ -85,6 +85,10 @@
 #include "up_internal.h"
 #include "up_arch.h"
 
+#include "stm32_dma.h"
+#include "stm32_spi.h"
+#include "stm32_rcc.h"
+
 #if defined(CONFIG_STM32_I2S2) || defined(CONFIG_STM32_I2S3)
 
 /****************************************************************************
@@ -706,7 +710,7 @@ static struct stm32_buffer_s *i2s_buf_allocate(struct stm32_i2s_s *priv)
 
   flags = enter_critical_section();
   bfcontainer = priv->freelist;
-  ASSERT(bfcontainer);
+  DEBUGASSERT(bfcontainer);
 
   /* Unlink the buffer from the freelist */
 
@@ -1764,7 +1768,7 @@ static int i2s_checkwidth(struct stm32_i2s_s *priv, int bits)
  * Description:
  *   Set the I2S RX sample rate.  NOTE:  This will have no effect if (1) the
  *   driver does not support an I2C receiver or if (2) the sample rate is
- *   driven by the I2C frame clock.  This may also have unexpected side-
+ *   driven by the I2S frame clock.  This may also have unexpected side-
  *   effects of the RX sample is coupled with the TX sample rate.
  *
  * Input Parameters:
@@ -1962,8 +1966,8 @@ static int roundf(float num)
  *
  * Description:
  *   Set the I2S TX sample rate.  NOTE:  This will have no effect if (1) the
- *   driver does not support an I2C transmitter or if (2) the sample rate is
- *   driven by the I2C frame clock.  This may also have unexpected side-
+ *   driver does not support an I2S transmitter or if (2) the sample rate is
+ *   driven by the I2S frame clock.  This may also have unexpected side-
  *   effects of the TX sample is coupled with the RX sample rate.
  *
  * Input Parameters:
@@ -2160,7 +2164,7 @@ errout_with_exclsem:
  *   Setup the MCK divider based on the currently selected data width and
  *   the sample rate
  *
- * Input Parameter:
+ * Input Parameters:
  *   priv - I2C device structure (only the sample rate and data length is
  *          needed at this point).
  *
@@ -2562,7 +2566,7 @@ static void i2s3_configure(struct stm32_i2s_s *priv)
  * Description:
  *   Initialize the selected i2S port
  *
- * Input Parameter:
+ * Input Parameters:
  *   Port number (for hardware that has mutiple I2S interfaces)
  *
  * Returned Value:

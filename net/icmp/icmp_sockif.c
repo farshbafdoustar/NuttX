@@ -66,6 +66,8 @@ static int        icmp_bind(FAR struct socket *psock,
                     FAR const struct sockaddr *addr, socklen_t addrlen);
 static int        icmp_getsockname(FAR struct socket *psock,
                     FAR struct sockaddr *addr, FAR socklen_t *addrlen);
+static int        icmp_getpeername(FAR struct socket *psock,
+                    FAR struct sockaddr *addr, FAR socklen_t *addrlen);
 static int        icmp_listen(FAR struct socket *psock, int backlog);
 static int        icmp_connect(FAR struct socket *psock,
                     FAR const struct sockaddr *addr, socklen_t addrlen);
@@ -91,6 +93,7 @@ const struct sock_intf_s g_icmp_sockif =
   icmp_addref,      /* si_addref */
   icmp_bind,        /* si_bind */
   icmp_getsockname, /* si_getsockname */
+  icmp_getpeername, /* si_getpeername */
   icmp_listen,      /* si_listen */
   icmp_connect,     /* si_connect */
   icmp_accept,      /* si_accept */
@@ -118,7 +121,7 @@ const struct sock_intf_s g_icmp_sockif =
  *   protocol are usable by this address family.  Perform any family-
  *   specific socket fields.
  *
- * Parameters:
+ * Input Parameters:
  *   psock    A pointer to a user allocated socket structure to be
  *            initialized.
  *   protocol (see sys/socket.h)
@@ -172,7 +175,7 @@ static int icmp_setup(FAR struct socket *psock, int protocol)
  * Description:
  *   Return the bit encoded capabilities of this socket.
  *
- * Parameters:
+ * Input Parameters:
  *   psock - Socket structure of the socket whose capabilities are being
  *           queried.
  *
@@ -192,7 +195,7 @@ static sockcaps_t icmp_sockcaps(FAR struct socket *psock)
  * Description:
  *   Increment the refernce count on the underlying connection structure.
  *
- * Parameters:
+ * Input Parameters:
  *   psock - Socket structure of the socket whose reference count will be
  *           incremented.
  *
@@ -233,7 +236,7 @@ static void icmp_addref(FAR struct socket *psock)
  *   Connectionless sockets may dissolve the association by connecting to
  *   an address with the sa_family member of sockaddr set to AF_UNSPEC.
  *
- * Parameters:
+ * Input Parameters:
  *   psock     Pointer to a socket structure initialized by psock_socket()
  *   addr      Server address (form depends on type of socket)
  *   addrlen   Length of actual 'addr'
@@ -278,7 +281,7 @@ static int icmp_connect(FAR struct socket *psock,
  *   pending connections are present on the queue, icmp_accept returns
  *   EAGAIN.
  *
- * Parameters:
+ * Input Parameters:
  *   psock    Reference to the listening socket structure
  *   addr     Receives the address of the connecting client
  *   addrlen  Input: allocated size of 'addr', Return: returned size of 'addr'
@@ -308,7 +311,7 @@ static int icmp_accept(FAR struct socket *psock, FAR struct sockaddr *addr,
  *   name to a socket."  When a socket is created with socket(), it exists
  *   in a name space (address family) but has no name assigned.
  *
- * Parameters:
+ * Input Parameters:
  *   psock    Socket structure of the socket to bind
  *   addr     Socket local address
  *   addrlen  Length of 'addr'
@@ -342,7 +345,7 @@ static int icmp_bind(FAR struct socket *psock, FAR const struct sockaddr *addr,
  *   If the socket has not been bound to a local name, the value stored in
  *   the object pointed to by address is unspecified.
  *
- * Parameters:
+ * Input Parameters:
  *   psock    Socket structure of the socket to be queried
  *   addr     sockaddr structure to receive data [out]
  *   addrlen  Length of sockaddr structure [in/out]
@@ -362,6 +365,40 @@ static int icmp_getsockname(FAR struct socket *psock,
 }
 
 /****************************************************************************
+ * Name: icmp_getpeername
+ *
+ * Description:
+ *   The icmp_getpeername() function retrieves the remote-connected name of the
+ *   specified packet socket, stores this address in the sockaddr structure
+ *   pointed to by the 'addr' argument, and stores the length of this
+ *   address in the object pointed to by the 'addrlen' argument.
+ *
+ *   If the actual length of the address is greater than the length of the
+ *   supplied sockaddr structure, the stored address will be truncated.
+ *
+ *   If the socket has not been bound to a local name, the value stored in
+ *   the object pointed to by address is unspecified.
+ *
+ * Parameters:
+ *   psock    Socket structure of the socket to be queried
+ *   addr     sockaddr structure to receive data [out]
+ *   addrlen  Length of sockaddr structure [in/out]
+ *
+ * Returned Value:
+ *   On success, 0 is returned, the 'addr' argument points to the address
+ *   of the socket, and the 'addrlen' argument points to the length of the
+ *   address.  Otherwise, a negated errno value is returned.  See
+ *   getpeername() for the list of appropriate error numbers.
+ *
+ ****************************************************************************/
+
+static int icmp_getpeername(FAR struct socket *psock,
+                           FAR struct sockaddr *addr, FAR socklen_t *addrlen)
+{
+  return -EAFNOSUPPORT;
+}
+
+/****************************************************************************
  * Name: icmp_listen
  *
  * Description:
@@ -372,7 +409,7 @@ static int icmp_getsockname(FAR struct socket *psock,
  *   packet sockets, psock_listen() calls this function.  The psock_listen()
  *   call applies only to sockets of type SOCK_STREAM or SOCK_SEQPACKET.
  *
- * Parameters:
+ * Input Parameters:
  *   psock    Reference to an internal, boound socket structure.
  *   backlog  The maximum length the queue of pending connections may grow.
  *            If a connection request arrives with the queue full, the client
@@ -440,7 +477,7 @@ static int icmp_netpoll(FAR struct socket *psock, FAR struct pollfd *fds,
  * Description:
  *   Socket send() method for the raw packet socket.
  *
- * Parameters:
+ * Input Parameters:
  *   psock    An instance of the internal socket structure.
  *   buf      Data to send
  *   len      Length of data to send
@@ -469,7 +506,7 @@ static ssize_t icmp_send(FAR struct socket *psock, FAR const void *buf,
  * Description:
  *   Performs the close operation on a raw packet socket instance
  *
- * Parameters:
+ * Input Parameters:
  *   psock   Socket instance
  *
  * Returned Value:

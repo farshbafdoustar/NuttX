@@ -1,7 +1,7 @@
 /****************************************************************************
  * sched/irq/irq_spinlock.c
  *
- *   Copyright (C) 2017 Sony Corporation. All rights reserved.
+ *   Copyright 2017,2018 Sony Video & Sound Products Inc.
  *   Author: Masayuki Ishikawa <Masayuki.Ishikawa@jp.sony.com>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,6 +44,9 @@
 #include <arch/irq.h>
 
 #include "sched/sched.h"
+
+#if defined(CONFIG_SMP) && defined (CONFIG_SPINLOCK_IRQ) && \
+    defined(CONFIG_ARCH_GLOBAL_IRQDISABLE)
 
 /****************************************************************************
  * Public Data
@@ -98,7 +101,7 @@ irqstate_t spin_lock_irqsave(void)
     }
 
   g_irq_spin_count[me]++;
-  ASSERT(0 != g_irq_spin_count[me]);
+  DEBUGASSERT(0 != g_irq_spin_count[me]);
   return ret;
 }
 
@@ -128,7 +131,7 @@ void spin_unlock_irqrestore(irqstate_t flags)
 {
   int me = this_cpu();
 
-  ASSERT(0 < g_irq_spin_count[me]);
+  DEBUGASSERT(0 < g_irq_spin_count[me]);
   g_irq_spin_count[me]--;
 
   if (0 == g_irq_spin_count[me])
@@ -138,3 +141,5 @@ void spin_unlock_irqrestore(irqstate_t flags)
 
   up_irq_restore(flags);
 }
+
+#endif /* CONFIG_SMP && CONFIG_SPINLOCK_IRQ && CONFIG_ARCH_GLOBAL_IRQDISABLE */

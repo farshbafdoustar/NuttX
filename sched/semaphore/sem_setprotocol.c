@@ -77,12 +77,12 @@
  *    the sem_init() call so that there will be no priority inheritance
  *    operations on this semaphore.
  *
- * Parameters:
+ * Input Parameters:
  *    sem      - A pointer to the semaphore whose attributes are to be
  *               modified
  *    protocol - The new protocol to use
  *
- * Return Value:
+ * Returned Value:
  *   This is an internal OS interface and should not be used by applications.
  *   It follows the NuttX internal error return policy:  Zero (OK) is
  *   returned on success.  A negated errno value is returned on failure.
@@ -148,12 +148,12 @@ int nxsem_setprotocol(FAR sem_t *sem, int protocol)
  *    the sem_init() call so that there will be no priority inheritance
  *    operations on this semaphore.
  *
- * Parameters:
+ * Input Parameters:
  *    sem      - A pointer to the semaphore whose attributes are to be
  *               modified
  *    protocol - The new protocol to use
  *
- * Return Value:
+ * Returned Value:
  *   This function is exposed as a non-standard application interface.  It
  *   returns zero (OK) if successful.  Otherwise, -1 (ERROR) is returned and
  *   the errno value is set appropriately.

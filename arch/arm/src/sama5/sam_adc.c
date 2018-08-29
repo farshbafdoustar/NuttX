@@ -591,7 +591,7 @@ static bool sam_adc_checkreg(struct sam_adc_s *priv, bool wr,
  *       thread sets ready when it has completed processing the last sample
  *       data.
  *
- * Input Parameters
+ * Input Parameters:
  *   arg - The ADC private data structure cast to (void *)
  *
  * Returned Value:
@@ -610,7 +610,7 @@ static void sam_adc_dmadone(void *arg)
   int i;
 
   ainfo("ready=%d enabled=%d\n", priv->enabled, priv->ready);
-  ASSERT(priv != NULL && !priv->ready);
+  DEBUGASSERT(priv != NULL && !priv->ready);
 
   /* If the DMA transfer is not enabled, just ignore the data (and do not start
    * the next DMA transfer).
@@ -838,7 +838,7 @@ static int sam_adc_dmasetup(FAR struct sam_adc_s *priv, FAR uint8_t *buffer,
  *   sam_adc_endconversion will re-enable EOC interrupts when it completes
  *   processing all pending EOC events.
  *
- * Input Parameters
+ * Input Parameters:
  *   arg - The ADC private data structure cast to (void *)
  *
  * Returned Value:
@@ -853,7 +853,7 @@ static void sam_adc_endconversion(void *arg)
   uint32_t pending;
   int chan;
 
-  ASSERT(priv != NULL);
+  DEBUGASSERT(priv != NULL);
   ainfo("pending=%08x\n", priv->pending);
 
   /* Get the set of unmasked, pending ADC interrupts */

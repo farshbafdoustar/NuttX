@@ -706,8 +706,7 @@ Selecting the GMAC peripheral
   Networking Support
     CONFIG_NET=y                         : Enable Neworking
     CONFIG_NET_SOCKOPTS=y                : Enable socket operations
-    CONFIG_NET_ETH_MTU=562               : Maximum packet size (MTU) 1518 is more standard
-    CONFIG_NET_ETH_TCP_RECVWNDO=562      : Should be the same as CONFIG_NET_ETH_MTU
+    CONFIG_NET_ETH_PKTSIZE=562           : Maximum packet size 1518 is more standard
     CONFIG_NET_ARP=y                     : ARP support should be enabled
     CONFIG_NET_ARP_SEND=y                : Use ARP to get peer address before sending
     CONFIG_NET_TCP=y                     : Enable TCP/IP networking
@@ -1231,7 +1230,6 @@ MXT Configuration Options
 
   Application Configuration -> Examples -> Touchscreen example
     CONFIG_EXAMPLES_TOUCHSCREEN=y          : Enables the example
-    CONFIG_EXAMPLES_TOUCHSCREEN_ARCHINIT=y : Have board-specific intialization
     CONFIG_EXAMPLES_TOUCHSCREEN_DEVPATH="/dev/input0"
     CONFIG_EXAMPLES_TOUCHSCREEN_MINOR=0
 
@@ -1660,9 +1658,11 @@ Information Common to All Configurations
 Each SAMV71-XULT configuration is maintained in a sub-directory and
 can be selected as follow:
 
-  cd tools
-  ./configure.sh samv71-xult/<subdir>
-  cd -
+   tools/configure.sh [OPTIONS] samv71-xult/<subdir>
+
+Where typical options are -l to configure to build on Linux or -c to
+configure for Cygwin under Linux.  'tools/configure.sh -h' will show
+you all of the options.
 
 Before building, make sure the PATH environment variable include the
 correct path to the directory than holds your toolchain binaries.
@@ -2389,14 +2389,11 @@ Configuration sub-directories
 
        a. Install the VNC nxwm configuration
 
-          $ cd HOME/nuttx/tools
-          $ ./configure.sh samv71-xult/vnc
+          $ tools/configure.sh samv71-xult/vnc
 
        b. Make the build context (only)
 
-          $ cd ..
           $ make context
-          ...
 
        c. Install the nxwm unit test
 
@@ -2486,7 +2483,7 @@ Configuration sub-directories
        configuration.  The CONFIG_VNCSERVER_UPDATE_BUFSIZE determines the
        size of update messages.  That is 1024 bytes in that configuration
        (the full message with the header will be a little larger).  The
-       MTU (CONFIG_NET_ETH_MTU) is set to 590 so that a full update will
+       CONFIG_NET_ETH_PKTSIZE is set to 590 so that a full update will
        require several packets.
 
        Write buffering also effects network performance.  This will break
@@ -2572,14 +2569,11 @@ Configuration sub-directories
 
        a. Install the nxwm configuration
 
-          $ cd HOME/nuttx/tools
-          $ ./configure.sh samv71-xult/nxwm
+          $ tools/configure.sh samv71-xult/nxwm
 
        b. Make the build context (only)
 
-          $ cd ..
           $ make context
-          ...
 
        c. Install the nxwm unit test
 
@@ -2638,7 +2632,7 @@ Configuration sub-directories
        configuration.  The CONFIG_VNCSERVER_UPDATE_BUFSIZE determines the
        size of update messages.  That is 1024 bytes in that configuration
        (the full message with the header will be a little larger).  The
-       MTU (CONFIG_NET_ETH_MTU) is set to 590 so that a full update will
+       CONFIG_NET_ETH_PKTSIZE is set to 590 so that a full update will
        require several packets.
 
        Write buffering also effects network performance.  This will break

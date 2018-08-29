@@ -66,7 +66,7 @@
  *   This function is a lighter weight version of sem_timedwait().  It is
  *   non-standard and intended only for use within the RTOS.
  *
- * Parameters:
+ * Input Parameters:
  *   sem     - Semaphore object
  *   start   - The system time that the delay is relative to.  If the
  *             current time is not the same as the start time, then the
@@ -76,7 +76,7 @@
  *             posted.  If ticks is zero, then this function is equivalent
  *             to nxsem_trywait().
  *
- * Return Value:
+ * Returned Value:
  *   This is an internal OS interface, not available to applications, and
  *   hence follows the NuttX internal error return policy:  Zero (OK) is
  *   returned on success.  A negated errno value is returned on failure.
@@ -84,11 +84,11 @@
  *
  ****************************************************************************/
 
-int nxsem_tickwait(FAR sem_t *sem, systime_t start, uint32_t delay)
+int nxsem_tickwait(FAR sem_t *sem, clock_t start, uint32_t delay)
 {
   FAR struct tcb_s *rtcb = this_task();
   irqstate_t flags;
-  systime_t elapsed;
+  clock_t elapsed;
   int ret;
 
   DEBUGASSERT(sem != NULL && up_interrupt_context() == false &&

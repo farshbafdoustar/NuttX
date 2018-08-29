@@ -1,7 +1,7 @@
 /****************************************************************************
  * net/icmpv6/icmpv6.h
  *
- *   Copyright (C) 2015, 2017 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2015, 2017-2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -101,10 +101,10 @@ struct icmpv6_conn_s
 
 struct icmpv6_notify_s
 {
-  FAR struct icmpv6_notify_s *nt_flink; /* Supports singly linked list */
-  net_ipv6addr_t nt_ipaddr;             /* Waited for IP address in the mapping */
-  sem_t nt_sem;                         /* Will wake up the waiter */
-  int nt_result;                        /* The result of the wait */
+  FAR struct icmpv6_notify_s *nt_flink;  /* Supports singly linked list */
+  net_ipv6addr_t nt_ipaddr;              /* Waited for IP address in the mapping */
+  sem_t nt_sem;                          /* Will wake up the waiter */
+  int nt_result;                         /* The result of the wait */
 };
 #endif
 
@@ -113,10 +113,10 @@ struct icmpv6_notify_s
 
 struct icmpv6_rnotify_s
 {
-  FAR struct icmpv6_notify_s *rn_flink; /* Supports singly linked list */
-  char rn_ifname[IFNAMSIZ];             /* Device name */
-  sem_t rn_sem;                         /* Will wake up the waiter */
-  int rn_result;                        /* The result of the wait */
+  FAR struct icmpv6_rnotify_s *rn_flink; /* Supports singly linked list */
+  char rn_ifname[IFNAMSIZ];              /* Device name */
+  sem_t rn_sem;                          /* Will wake up the waiter */
+  int rn_result;                         /* The result of the wait */
 };
 #endif
 
@@ -154,11 +154,11 @@ struct pollfd;       /* Forward reference */
  * Description:
  *   Handle incoming ICMPv6 input
  *
- * Parameters:
+ * Input Parameters:
  *   dev - The device driver structure containing the received ICMPv6
  *         packet
  *
- * Return:
+ * Returned Value:
  *   None
  *
  * Assumptions:
@@ -184,7 +184,7 @@ void icmpv6_input(FAR struct net_driver_s *dev);
  *   or (2) a configurable number of timeouts occur without receiving the
  *   ICMPv6 Neighbor Advertisement.
  *
- * Parameters:
+ * Input Parameters:
  *   ipaddr   The IPv6 address to be queried.
  *
  * Returned Value:
@@ -211,10 +211,10 @@ int icmpv6_neighbor(const net_ipv6addr_t ipaddr);
  * Description:
  *   Poll a UDP "connection" structure for availability of ICMPv6 TX data
  *
- * Parameters:
+ * Input Parameters:
  *   dev - The device driver structure to use in the send operation
  *
- * Return:
+ * Returned Value:
  *   None
  *
  * Assumptions:
@@ -232,11 +232,11 @@ void icmpv6_poll(FAR struct net_driver_s *dev);
  * Description:
  *   Set up to send an ICMPv6 Neighbor Solicitation message
  *
- * Parameters:
+ * Input Parameters:
  *   dev - Reference to an Ethernet device driver structure
  *   ipaddr - IP address of Neighbor to be solicited
  *
- * Return:
+ * Returned Value:
  *   None
  *
  ****************************************************************************/
@@ -258,10 +258,10 @@ void icmpv6_solicit(FAR struct net_driver_s *dev,
  *   The device IP address should have been set to the link local address
  *   prior to calling this function.
  *
- * Parameters:
+ * Input Parameters:
  *   dev - Reference to an Ethernet device driver structure
  *
- * Return:
+ * Returned Value:
  *   None
  *
  ****************************************************************************/
@@ -276,11 +276,11 @@ void icmpv6_rsolicit(FAR struct net_driver_s *dev);
  * Description:
  *   Send an ICMPv6 Neighbor Advertisement
  *
- * Parameters:
+ * Input Parameters:
  *   dev - The device driver structure containing the outgoing ICMPv6 packet
  *         buffer
  *
- * Return:
+ * Returned Value:
  *   None.
  *
  * Assumptions:
@@ -297,11 +297,11 @@ void icmpv6_advertise(FAR struct net_driver_s *dev,
  * Description:
  *   Send an ICMPv6 Router Advertisement
  *
- * Parameters:
+ * Input Parameters:
  *   dev - The device driver structure containing the outgoing ICMPv6 packet
  *         buffer
  *
- * Return:
+ * Returned Value:
  *   None
  *
  * Assumptions:
@@ -403,10 +403,10 @@ void icmpv6_notify(net_ipv6addr_t ipaddr);
  *   Perform IPv6 auto-configuration to assign an IPv6 address to this
  *   device.
  *
- * Parameters:
+ * Input Parameters:
  *   dev - The device driver structure to assign the address to
  *
- * Return:
+ * Returned Value:
  *   Zero (OK) is returned on success; A negated errno value is returned on
  *   any failure.
  *
@@ -589,7 +589,7 @@ FAR struct icmpv6_conn_s *icmpv6_nextconn(FAR struct icmpv6_conn_s *conn);
 
 #ifdef CONFIG_NET_ICMPv6_SOCKET
 FAR struct icmpv6_conn_s *icmpv6_findconn(FAR struct net_driver_s *dev,
-                                          uint8_t id);
+                                          uint16_t id);
 #endif
 
 /****************************************************************************

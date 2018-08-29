@@ -388,7 +388,7 @@ static int tsc2007_waitsample(FAR struct tsc2007_dev_s *priv,
            */
 
           ierr("ERROR: nxsem_wait failed: %d\n", ret);
-          DEBUGASSERT(ret == -EINTR);
+          DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
           goto errout;
         }
     }
@@ -571,7 +571,7 @@ static void tsc2007_worker(FAR void *arg)
   uint16_t                     z2;       /* Z2 position */
   uint32_t                     pressure; /* Measured pressure */
 
-  ASSERT(priv != NULL);
+  DEBUGASSERT(priv != NULL);
 
   /* Get a pointer the callbacks for convenience (and so the code is not so
    * ugly).
@@ -764,7 +764,7 @@ static int tsc2007_interrupt(int irq, FAR void *context)
        priv && priv->configs->irq != irq;
        priv = priv->flink);
 
-  ASSERT(priv != NULL);
+  DEBUGASSERT(priv != NULL);
 #endif
 
   /* Get a pointer the callbacks for convenience (and so the code is not so
@@ -822,7 +822,7 @@ static int tsc2007_open(FAR struct file *filep)
       /* This should only happen if the wait was cancelled by an signal */
 
       ierr("ERROR: nxsem_wait failed: %d\n", ret);
-      DEBUGASSERT(ret == -EINTR);
+      DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
       return ret;
     }
 
@@ -878,7 +878,7 @@ static int tsc2007_close(FAR struct file *filep)
       /* This should only happen if the wait was cancelled by an signal */
 
       ierr("ERROR: nxsem_wait failed: %d\n", ret);
-      DEBUGASSERT(ret == -EINTR);
+      DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
       return ret;
     }
 
@@ -936,7 +936,7 @@ static ssize_t tsc2007_read(FAR struct file *filep, FAR char *buffer, size_t len
       /* This should only happen if the wait was cancelled by an signal */
 
       ierr("ERROR: nxsem_wait failed: %d\n", ret);
-      DEBUGASSERT(ret == -EINTR);
+      DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
       return ret;
     }
 
@@ -1029,7 +1029,7 @@ errout:
 }
 
 /****************************************************************************
- * Name:tsc2007_ioctl
+ * Name: tsc2007_ioctl
  ****************************************************************************/
 
 static int tsc2007_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
@@ -1053,7 +1053,7 @@ static int tsc2007_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
       /* This should only happen if the wait was cancelled by an signal */
 
       ierr("ERROR: nxsem_wait failed: %d\n", ret);
-      DEBUGASSERT(ret == -EINTR);
+      DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
       return ret;
     }
 
@@ -1130,7 +1130,7 @@ static int tsc2007_poll(FAR struct file *filep, FAR struct pollfd *fds,
       /* This should only happen if the wait was cancelled by an signal */
 
       ierr("ERROR: nxsem_wait failed: %d\n", ret);
-      DEBUGASSERT(ret == -EINTR);
+      DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
       return ret;
     }
 

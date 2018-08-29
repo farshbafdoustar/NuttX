@@ -62,10 +62,10 @@
  *   currently not locked.  Otherwise, it locks the semaphore.  In either
  *   case, the call returns without blocking.
  *
- * Parameters:
+ * Input Parameters:
  *   sem - the semaphore descriptor
  *
- * Return Value:
+ * Returned Value:
  *   This is an internal OS interface and should not be used by applications.
  *   It follows the NuttX internal error return policy:  Zero (OK) is
  *   returned on success.  A negated errno value is returned on failure.
@@ -133,10 +133,10 @@ int nxsem_trywait(FAR sem_t *sem)
  *   currently not locked.  Otherwise, it locks the semaphore.  In either
  *   case, the call returns without blocking.
  *
- * Parameters:
+ * Input Parameters:
  *   sem - the semaphore descriptor
  *
- * Return Value:
+ * Returned Value:
  *   Zero (OK) on success or -1 (ERROR) if unsuccessful. If this function
  *   returns -1(ERROR), then the cause of the failure will be reported in
  *   errno variable as:

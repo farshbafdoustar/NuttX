@@ -1,7 +1,7 @@
 /****************************************************************************
  * arch/arm/src/stm32f7/stm32_ethernet.c
  *
- *   Copyright (C) 2015-2017 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2015-2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -201,7 +201,7 @@
  * will use the 16-byte alignment in all cases.
  */
 
-#define OPTIMAL_ETH_BUFSIZE ((CONFIG_NET_ETH_MTU + 4 + 15) & ~15)
+#define OPTIMAL_ETH_BUFSIZE ((CONFIG_NET_ETH_PKTSIZE + 4 + 15) & ~15)
 
 #ifdef CONFIG_STM32F7_ETH_BUFSIZE
 #  define ETH_BUFSIZE CONFIG_STM32F7_ETH_BUFSIZE
@@ -732,7 +732,7 @@ static int  stm32_addmac(struct net_driver_s *dev, const uint8_t *mac);
 #ifdef CONFIG_NET_IGMP
 static int  stm32_rmmac(struct net_driver_s *dev, const uint8_t *mac);
 #endif
-#ifdef CONFIG_NETDEV_PHY_IOCTL
+#ifdef CONFIG_NETDEV_IOCTL
 static int  stm32_ioctl(struct net_driver_s *dev, int cmd,
               unsigned long arg);
 #endif
@@ -906,7 +906,7 @@ static void stm32_checksetup(void)
  * Description:
  *   Initialize the free buffer list.
  *
- * Parameters:
+ * Input Parameters:
  *   priv     - Reference to the driver state structure
  *   txbuffer - DMA memory allocated for TX buffers.
  *
@@ -944,7 +944,7 @@ static void stm32_initbuffer(struct stm32_ethmac_s *priv, uint8_t *txbuffer)
  * Description:
  *   Allocate one buffer from the free buffer list.
  *
- * Parameters:
+ * Input Parameters:
  *   priv  - Reference to the driver state structure
  *
  * Returned Value:
@@ -970,7 +970,7 @@ static inline uint8_t *stm32_allocbuffer(struct stm32_ethmac_s *priv)
  * Description:
  *   Return a buffer to the free buffer list.
  *
- * Parameters:
+ * Input Parameters:
  *   priv  - Reference to the driver state structure
  *   buffer - A pointer to the buffer to be freed
  *
@@ -997,7 +997,7 @@ static inline void stm32_freebuffer(struct stm32_ethmac_s *priv, uint8_t *buffer
  * Description:
  *   Return TRUE if the free buffer list is not empty.
  *
- * Parameters:
+ * Input Parameters:
  *   priv  - Reference to the driver state structure
  *
  * Returned Value:
@@ -1023,7 +1023,7 @@ static inline bool stm32_isfreebuffer(struct stm32_ethmac_s *priv)
  *   Start hardware transmission.  Called either from the txdone interrupt
  *   handling or from watchdog based polling.
  *
- * Parameters:
+ * Input Parameters:
  *   priv  - Reference to the driver state structure
  *
  * Returned Value:
@@ -1159,7 +1159,7 @@ static int stm32_transmit(struct stm32_ethmac_s *priv)
 
       /* Set frame size */
 
-      DEBUGASSERT(priv->dev.d_len <= CONFIG_NET_ETH_MTU);
+      DEBUGASSERT(priv->dev.d_len <= CONFIG_NET_ETH_PKTSIZE);
       txdesc->tdes1 = priv->dev.d_len;
 
       /* Set the Buffer1 address pointer */
@@ -1258,7 +1258,7 @@ static int stm32_transmit(struct stm32_ethmac_s *priv)
  *   2. When the preceding TX packet send timesout and the interface is reset
  *   3. During normal TX polling
  *
- * Parameters:
+ * Input Parameters:
  *   dev  - Reference to the NuttX driver state structure
  *
  * Returned Value:
@@ -1305,44 +1305,47 @@ static int stm32_txpoll(struct net_driver_s *dev)
         }
 #endif /* CONFIG_NET_IPv6 */
 
-      /* Send the packet */
-
-      stm32_transmit(priv);
-      DEBUGASSERT(dev->d_len == 0 && dev->d_buf == NULL);
-
-      /* Check if the next TX descriptor is owned by the Ethernet DMA or CPU.  We
-       * cannot perform the TX poll if we are unable to accept another packet for
-       * transmission.
-       *
-       * In a race condition, ETH_TDES0_OWN may be cleared BUT still not available
-       * because stm32_freeframe() has not yet run.  If stm32_freeframe() has run,
-       * the buffer1 pointer (tdes2) will be nullified (and inflight should be <
-       * CONFIG_STM32F7_ETH_NTXDESC).
-       */
-
-      if ((priv->txhead->tdes0 & ETH_TDES0_OWN) != 0 ||
-           priv->txhead->tdes2 != 0)
+      if (!devif_loopback(&priv->dev))
         {
-          /* We have to terminate the poll if we have no more descriptors
-           * available for another transfer.
+          /* Send the packet */
+
+          stm32_transmit(priv);
+          DEBUGASSERT(dev->d_len == 0 && dev->d_buf == NULL);
+
+          /* Check if the next TX descriptor is owned by the Ethernet DMA or CPU.  We
+           * cannot perform the TX poll if we are unable to accept another packet for
+           * transmission.
+           *
+           * In a race condition, ETH_TDES0_OWN may be cleared BUT still not available
+           * because stm32_freeframe() has not yet run.  If stm32_freeframe() has run,
+           * the buffer1 pointer (tdes2) will be nullified (and inflight should be <
+           * CONFIG_STM32F7_ETH_NTXDESC).
            */
 
-          return -EBUSY;
-        }
+          if ((priv->txhead->tdes0 & ETH_TDES0_OWN) != 0 ||
+               priv->txhead->tdes2 != 0)
+            {
+              /* We have to terminate the poll if we have no more descriptors
+               * available for another transfer.
+               */
 
-      /* We have the descriptor, we can continue the poll. Allocate a new
-       * buffer for the poll.
-       */
+              return -EBUSY;
+            }
 
-      dev->d_buf = stm32_allocbuffer(priv);
+          /* We have the descriptor, we can continue the poll. Allocate a new
+           * buffer for the poll.
+           */
 
-      /* We can't continue the poll if we have no buffers */
+          dev->d_buf = stm32_allocbuffer(priv);
 
-      if (dev->d_buf == NULL)
-        {
-          /* Terminate the poll. */
+          /* We can't continue the poll if we have no buffers */
 
-          return -ENOMEM;
+          if (dev->d_buf == NULL)
+            {
+              /* Terminate the poll. */
+
+              return -ENOMEM;
+            }
         }
     }
 
@@ -1365,7 +1368,7 @@ static int stm32_txpoll(struct net_driver_s *dev)
  *   3. After a TX timeout to restart the sending process
  *      (stm32_txtimeout_process).
  *
- * Parameters:
+ * Input Parameters:
  *   priv  - Reference to the driver state structure
  *
  * Returned Value:
@@ -1426,7 +1429,7 @@ static void stm32_dopoll(struct stm32_ethmac_s *priv)
  * Description:
  *   Enable a "normal" interrupt
  *
- * Parameters:
+ * Input Parameters:
  *   priv  - Reference to the driver state structure
  *
  * Returned Value:
@@ -1454,7 +1457,7 @@ static void stm32_enableint(struct stm32_ethmac_s *priv, uint32_t ierbit)
  * Description:
  *   Disable a normal interrupt.
  *
- * Parameters:
+ * Input Parameters:
  *   priv  - Reference to the driver state structure
  *
  * Returned Value:
@@ -1493,7 +1496,7 @@ static void stm32_disableint(struct stm32_ethmac_s *priv, uint32_t ierbit)
  *   The function is called when a frame is received using the DMA receive
  *   interrupt.  It scans the RX descriptors to the received frame.
  *
- * Parameters:
+ * Input Parameters:
  *   priv  - Reference to the driver state structure
  *
  * Returned Value:
@@ -1563,7 +1566,7 @@ static void stm32_freesegment(struct stm32_ethmac_s *priv,
  *
  *   NOTE: This function will silently discard any packets containing errors.
  *
- * Parameters:
+ * Input Parameters:
  *   priv  - Reference to the driver state structure
  *
  * Returned Value:
@@ -1753,7 +1756,7 @@ static int stm32_recvframe(struct stm32_ethmac_s *priv)
  * Description:
  *   An interrupt was received indicating the availability of a new RX packet
  *
- * Parameters:
+ * Input Parameters:
  *   priv  - Reference to the driver state structure
  *
  * Returned Value:
@@ -1784,7 +1787,7 @@ static void stm32_receive(struct stm32_ethmac_s *priv)
        * (this should not happen)
        */
 
-      if (dev->d_len > CONFIG_NET_ETH_MTU)
+      if (dev->d_len > CONFIG_NET_ETH_PKTSIZE)
         {
           nwarn("WARNING: DROPPED Too big: %d\n", dev->d_len);
           continue;
@@ -1915,7 +1918,7 @@ static void stm32_receive(struct stm32_ethmac_s *priv)
  * Description:
  *   Scans the TX descriptors and frees the buffers of completed TX transfers.
  *
- * Parameters:
+ * Input Parameters:
  *   priv  - Reference to the driver state structure
  *
  * Returned Value:
@@ -2028,7 +2031,7 @@ static void stm32_freeframe(struct stm32_ethmac_s *priv)
  * Description:
  *   An interrupt was received indicating that the last TX packet(s) is done
  *
- * Parameters:
+ * Input Parameters:
  *   priv  - Reference to the driver state structure
  *
  * Returned Value:
@@ -2071,7 +2074,7 @@ static void stm32_txdone(struct stm32_ethmac_s *priv)
  * Description:
  *   Perform interrupt related work from the worker thread
  *
- * Parameters:
+ * Input Parameters:
  *   arg - The argument passed when work_queue() was called.
  *
  * Returned Value:
@@ -2177,7 +2180,7 @@ static void stm32_interrupt_work(void *arg)
  * Description:
  *   Hardware interrupt handler
  *
- * Parameters:
+ * Input Parameters:
  *   irq     - Number of the IRQ that generated the interrupt
  *   context - Interrupt register state save info (architecture-specific)
  *
@@ -2233,7 +2236,7 @@ static int stm32_interrupt(int irq, void *context, FAR void *arg)
  * Description:
  *   Perform TX timeout related work from the worker thread
  *
- * Parameters:
+ * Input Parameters:
  *   arg - The argument passed when work_queue() as called.
  *
  * Returned Value:
@@ -2267,7 +2270,7 @@ static void stm32_txtimeout_work(void *arg)
  *   Our TX watchdog timed out.  Called from the timer interrupt handler.
  *   The last TX never completed.  Reset the hardware and start again.
  *
- * Parameters:
+ * Input Parameters:
  *   argc - The number of available arguments
  *   arg  - The first argument
  *
@@ -2307,7 +2310,7 @@ static void stm32_txtimeout_expiry(int argc, uint32_t arg, ...)
  * Description:
  *   Perform periodic polling from the worker thread
  *
- * Parameters:
+ * Input Parameters:
  *   arg - The argument passed when work_queue() as called.
  *
  * Returned Value:
@@ -2379,7 +2382,7 @@ static void stm32_poll_work(void *arg)
  * Description:
  *   Periodic timer handler.  Called from the timer interrupt handler.
  *
- * Parameters:
+ * Input Parameters:
  *   argc - The number of available arguments
  *   arg  - The first argument
  *
@@ -2414,7 +2417,7 @@ static void stm32_poll_expiry(int argc, uint32_t arg, ...)
  *   NuttX Callback: Bring up the Ethernet interface when an IP address is
  *   provided
  *
- * Parameters:
+ * Input Parameters:
  *   dev  - Reference to the NuttX driver state structure
  *
  * Returned Value:
@@ -2468,7 +2471,7 @@ static int stm32_ifup(struct net_driver_s *dev)
  * Description:
  *   NuttX Callback: Stop the interface.
  *
- * Parameters:
+ * Input Parameters:
  *   dev  - Reference to the NuttX driver state structure
  *
  * Returned Value:
@@ -2515,7 +2518,7 @@ static int stm32_ifdown(struct net_driver_s *dev)
  * Description:
  *   Perform an out-of-cycle poll on the worker thread.
  *
- * Parameters:
+ * Input Parameters:
  *   arg  - Reference to the NuttX driver state structure (cast to void*)
  *
  * Returned Value:
@@ -2553,7 +2556,7 @@ static void stm32_txavail_work(void *arg)
  *   stimulus perform an out-of-cycle poll and, thereby, reduce the TX
  *   latency.
  *
- * Parameters:
+ * Input Parameters:
  *   dev  - Reference to the NuttX driver state structure
  *
  * Returned Value:
@@ -2589,7 +2592,7 @@ static int stm32_txavail(struct net_driver_s *dev)
  * Description:
  *   Function to calculate the CRC used by STM32 to check an ethernet frame
  *
- * Parameters:
+ * Input Parameters:
  *   data   - the data to be checked
  *   length - length of the data
  *
@@ -2634,7 +2637,7 @@ static uint32_t stm32_calcethcrc(const uint8_t *data, size_t length)
  *   NuttX Callback: Add the specified MAC address to the hardware multicast
  *   address filtering
  *
- * Parameters:
+ * Input Parameters:
  *   dev  - Reference to the NuttX driver state structure
  *   mac  - The MAC address to be added
  *
@@ -2691,7 +2694,7 @@ static int stm32_addmac(struct net_driver_s *dev, const uint8_t *mac)
  *   NuttX Callback: Remove the specified MAC address from the hardware multicast
  *   address filtering
  *
- * Parameters:
+ * Input Parameters:
  *   dev  - Reference to the NuttX driver state structure
  *   mac  - The MAC address to be removed
  *
@@ -2753,7 +2756,7 @@ static int stm32_rmmac(struct net_driver_s *dev, const uint8_t *mac)
  * Description:
  *   Initializes the DMA TX descriptors in chain mode.
  *
- * Parameters:
+ * Input Parameters:
  *   priv     - Reference to the driver state structure
  *   txtable  - List of pre-allocated TX descriptors for the Ethernet
  *              interface
@@ -2845,7 +2848,7 @@ static void stm32_txdescinit(struct stm32_ethmac_s *priv,
  * Description:
  *   Initializes the DMA RX descriptors in chain mode.
  *
- * Parameters:
+ * Input Parameters:
  *   priv  - Reference to the driver state structure
  *   rxtable  - List of pre-allocated RX descriptors for the Ethernet
  *              interface
@@ -2947,7 +2950,7 @@ static void stm32_rxdescinit(struct stm32_ethmac_s *priv,
  *  is specified using the req->reg_no struct field and use req->val_in as
  *  its input.
  *
- * Parameters:
+ * Input Parameters:
  *   dev - Ethernet device structure
  *   cmd - SIOCxMIIxxx command code
  *   arg - Request structure also used to return values
@@ -2958,16 +2961,17 @@ static void stm32_rxdescinit(struct stm32_ethmac_s *priv,
  *
  ****************************************************************************/
 
-#ifdef CONFIG_NETDEV_PHY_IOCTL
+#ifdef CONFIG_NETDEV_IOCTL
 static int stm32_ioctl(struct net_driver_s *dev, int cmd, unsigned long arg)
 {
-#ifdef CONFIG_ARCH_PHY_INTERRUPT
+#if defined(CONFIG_NETDEV_PHY_IOCTL) && defined(CONFIG_ARCH_PHY_INTERRUPT)
   struct stm32_ethmac_s *priv = (struct stm32_ethmac_s *)dev->d_private;
 #endif
   int ret;
 
   switch (cmd)
   {
+#ifdef CONFIG_NETDEV_PHY_IOCTL
 #ifdef CONFIG_ARCH_PHY_INTERRUPT
   case SIOCMIINOTIFY: /* Set up for PHY event notifications */
     {
@@ -3005,6 +3009,7 @@ static int stm32_ioctl(struct net_driver_s *dev, int cmd, unsigned long arg)
       ret = stm32_phywrite(req->phy_id, req->reg_num, req->val_in);
     }
     break;
+#endif /* CONFIG_NETDEV_PHY_IOCTL */
 
   default:
     ret = -ENOTTY;
@@ -3013,7 +3018,7 @@ static int stm32_ioctl(struct net_driver_s *dev, int cmd, unsigned long arg)
 
   return ret;
 }
-#endif /* CONFIG_NETDEV_PHY_IOCTL */
+#endif /* CONFIG_NETDEV_IOCTL */
 
 /****************************************************************************
  * Function: stm32_phyintenable
@@ -3026,7 +3031,7 @@ static int stm32_ioctl(struct net_driver_s *dev, int cmd, unsigned long arg)
  *    is received.
  *  - Interrupt status is cleared when the interrupt is re-enabled.
  *
- * Parameters:
+ * Input Parameters:
  *   priv - A reference to the private driver state structure
  *
  * Returned Value:
@@ -3048,7 +3053,7 @@ static int stm32_phyintenable(struct stm32_ethmac_s *priv)
  * Description:
  *  Read a PHY register.
  *
- * Parameters:
+ * Input Parameters:
  *   phydevaddr - The PHY device address
  *   phyregaddr - The PHY register address
  *   value - The location to return the 16-bit PHY register value.
@@ -3103,7 +3108,7 @@ static int stm32_phyread(uint16_t phydevaddr, uint16_t phyregaddr, uint16_t *val
  * Description:
  *  Write to a PHY register.
  *
- * Parameters:
+ * Input Parameters:
  *   phydevaddr - The PHY device address
  *   phyregaddr - The PHY register address
  *   value - The 16-bit value to write to the PHY register value.
@@ -3166,7 +3171,7 @@ static int stm32_phywrite(uint16_t phydevaddr, uint16_t phyregaddr, uint16_t val
  *   fundamental issue with the PHY clocking initialization, but the
  *   root cause has not been studied (nor will it be with this workaround).
  *
- * Parameters:
+ * Input Parameters:
  *   priv - A reference to the private driver state structure
  *
  * Returned Value:
@@ -3228,7 +3233,7 @@ static inline int stm32_dm9161(struct stm32_ethmac_s *priv)
  * Description:
  *  Configure the PHY and determine the link speed/duplex.
  *
- * Parameters:
+ * Input Parameters:
  *   priv - A reference to the private driver state structure
  *
  * Returned Value:
@@ -3500,7 +3505,7 @@ static inline void stm32_selectrmii(void)
  * Description:
  *  Configure GPIOs for the Ethernet interface.
  *
- * Parameters:
+ * Input Parameters:
  *   priv - A reference to the private driver state structure
  *
  * Returned Value:
@@ -3653,7 +3658,7 @@ static inline void stm32_ethgpioconfig(struct stm32_ethmac_s *priv)
  * Description:
  *  Reset the Ethernet block.
  *
- * Parameters:
+ * Input Parameters:
  *   priv - A reference to the private driver state structure
  *
  * Returned Value:
@@ -3700,7 +3705,7 @@ static void stm32_ethreset(struct stm32_ethmac_s *priv)
  * Description:
  *  Configure the Ethernet MAC for DMA operation.
  *
- * Parameters:
+ * Input Parameters:
  *   priv - A reference to the private driver state structure
  *
  * Returned Value:
@@ -3783,7 +3788,7 @@ static int stm32_macconfig(struct stm32_ethmac_s *priv)
  * Description:
  *   Configure the selected MAC address.
  *
- * Parameters:
+ * Input Parameters:
  *   priv - A reference to the private driver state structure
  *
  * Returned Value:
@@ -3825,7 +3830,7 @@ static void stm32_macaddress(struct stm32_ethmac_s *priv)
  * Description:
  *   Configure the IPv6 multicast MAC address.
  *
- * Parameters:
+ * Input Parameters:
  *   priv - A reference to the private driver state structure
  *
  * Returned Value:
@@ -3898,7 +3903,7 @@ static void stm32_ipv6multicast(struct stm32_ethmac_s *priv)
  * Description:
  *  Enable normal MAC operation.
  *
- * Parameters:
+ * Input Parameters:
  *   priv - A reference to the private driver state structure
  *
  * Returned Value:
@@ -3984,7 +3989,7 @@ static int stm32_macenable(struct stm32_ethmac_s *priv)
  * Description:
  *  Configure the Ethernet interface for DMA operation.
  *
- * Parameters:
+ * Input Parameters:
  *   priv - A reference to the private driver state structure
  *
  * Returned Value:
@@ -4059,7 +4064,7 @@ static int stm32_ethconfig(struct stm32_ethmac_s *priv)
  *   must implement up_netinitialize() and call this function to initialize
  *   the desired interfaces.
  *
- * Parameters:
+ * Input Parameters:
  *   intf - In the case where there are multiple EMACs, this value
  *          identifies which EMAC is to be initialized.
  *
@@ -4095,7 +4100,7 @@ int stm32_ethinitialize(int intf)
   priv->dev.d_addmac  = stm32_addmac;   /* Add multicast MAC address */
   priv->dev.d_rmmac   = stm32_rmmac;    /* Remove multicast MAC address */
 #endif
-#ifdef CONFIG_NETDEV_PHY_IOCTL
+#ifdef CONFIG_NETDEV_IOCTL
   priv->dev.d_ioctl   = stm32_ioctl;    /* Support PHY ioctl() calls */
 #endif
   priv->dev.d_private = (void *)g_stm32ethmac; /* Used to recover private state from dev */
@@ -4139,7 +4144,7 @@ int stm32_ethinitialize(int intf)
  *   version of up_netinitialize() that calls stm32_ethinitialize() with
  *   the appropriate interface number.
  *
- * Parameters:
+ * Input Parameters:
  *   None.
  *
  * Returned Value:

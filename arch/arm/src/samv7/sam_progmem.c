@@ -67,7 +67,7 @@
 /* All sectors are 128KB and are uniform in size.
  * The only execption is sector 0 which is subdivided into two small sectors
  * of 8KB and one larger sector of 112KB.
- * The page size is 515 bytes.  However, the smallest thing that can be
+ * The page size is 512 bytes.  However, the smallest thing that can be
  * erased is four pages.  We will refer to this as a "cluster".
  */
 
@@ -410,6 +410,19 @@ size_t up_progmem_pagesize(size_t cluster)
 }
 
 /****************************************************************************
+ * Name: up_progmem_erasesize
+ *
+ * Description:
+ *   Return cluster size
+ *
+ ****************************************************************************/
+
+size_t up_progmem_erasesize(size_t cluster)
+{
+  return SAMV7_CLUSTER_SIZE;
+}
+
+/****************************************************************************
  * Name: up_progmem_getpage
  *
  * Description:
@@ -577,7 +590,7 @@ ssize_t up_progmem_ispageerased(size_t cluster)
       return -EFAULT;
     }
 
-  /* Flush and invalidate nvalidate D-Cache for this address range */
+  /* Flush and invalidate D-Cache for this address range */
 
   address = (cluster << SAMV7_CLUSTER_SHIFT) + SAMV7_PROGMEM_START;
   arch_flush_dcache(address, address + SAMV7_CLUSTER_SIZE);

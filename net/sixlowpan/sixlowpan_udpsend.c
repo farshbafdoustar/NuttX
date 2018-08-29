@@ -95,7 +95,7 @@ static uint16_t sixlowpan_udp_chksum(FAR const struct ipv6udp_hdr_s *ipv6udp,
 
   /* Verify some minimal assumptions */
 
-  if (upperlen > CONFIG_NET_6LOWPAN_MTU)
+  if (upperlen > CONFIG_NET_6LOWPAN_PKTSIZE)
     {
       return 0;
     }
@@ -136,7 +136,7 @@ static uint16_t sixlowpan_udp_chksum(FAR const struct ipv6udp_hdr_s *ipv6udp,
  *   may be returned when they are not NULL and 0), and the error ENOTCONN is
  *   returned when the socket was not actually connected.
  *
- * Input Parmeters
+ * Input Parameters:
  *   psock    A pointer to a NuttX-specific, internal socket structure
  *   buf      Data to send
  *   buflen   Length of data to send
@@ -255,7 +255,7 @@ ssize_t psock_6lowpan_udp_sendto(FAR struct socket *psock,
   /* Copy the source and destination addresses */
 
   net_ipv6addr_hdrcopy(ipv6udp.ipv6.destipaddr, to6->sin6_addr.in6_u.u6_addr16);
-  if (!net_ipv6addr_cmp(conn->u.ipv6.laddr, g_ipv6_allzeroaddr))
+  if (!net_ipv6addr_cmp(conn->u.ipv6.laddr, g_ipv6_unspecaddr))
     {
       net_ipv6addr_hdrcopy(ipv6udp.ipv6.srcipaddr, conn->u.ipv6.laddr);
     }
@@ -337,7 +337,7 @@ ssize_t psock_6lowpan_udp_sendto(FAR struct socket *psock,
  *   psock_6lowpan_udp_send() call may be used with connectionlesss UDP
  *   sockets.
  *
- * Input Parmeters
+ * Input Parameters:
  *   psock  - An instance of the internal socket structure.
  *   buf    - Data to send
  *   buflen - Length of data to send
@@ -413,7 +413,7 @@ ssize_t psock_6lowpan_udp_send(FAR struct socket *psock, FAR const void *buf,
  *   Handles forwarding a UDP packet via 6LoWPAN.  This is currently only
  *   used by the IPv6 forwarding logic.
  *
- * Input Parmeters
+ * Input Parameters:
  *   dev    - An instance of nework device state structure
  *   fwddev - The network device used to send the data.  This will be the
  *            same device except for the IP forwarding case where packets

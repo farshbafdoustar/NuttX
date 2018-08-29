@@ -240,7 +240,7 @@
 #define LED_PANIC        4 /* The system has crashed  2Hz N/C N/C N/C N/C */
 #undef  LED_IDLE           /* MCU is is sleep mode    ---- Not used ----- */
 
-/* Thus if LED L is glowing on and all other LEDs are off (except LED D which
+/* Thus if LED L is faintly glowing and all other LEDs are off (except LED D which
  * was left on but is no longer controlled by NuttX and so may be in any state),
  * NuttX has successfully booted and is, apparently, running normally and taking
  * interrupts.  If any of LEDs A-D are statically set, then NuttX failed to boot
@@ -302,6 +302,52 @@
 
 #define BOARD_U5RX_PPS  U5RXR_RPD14
 #define BOARD_U5TX_PPS  U5TX_RPD15R
+
+/* SPI **********************************************************************/
+/* SPI3 is available on pins D10-D13 of the Arduino Shield connectors where
+ * you would expect then.  The SPI connector is configured as follows:
+ *
+ *   Pin J1 Board Signal PIC32MZ
+ *   --- -- ------------ -------
+ *   D10 8  SPI3_SCK     RB14
+ *   D11 7  SPI3_MISO    RB9
+ *   D12 6  SPI3_MOSI    RB10
+ *   D13 5  SPI3_SS      RB9
+ *
+ * SPI1 and SPI2 are also available on the mikroBUS Click connectors (in
+ * addition to 5V and GND).  The connectivity between connectors A and B and
+ * between C and D differs only in the chip select pin:
+ *
+ *   MikroBUS A:                 MikroBUS B:
+ *   Pin  Board Signal PIC32MZ  Pin  Board Signal PIC32MZ
+ *   ---- ------------ -------  ---- ------------ -------
+ *   CS   SPI2_SS1     RA0      CS   SPI2_SS0     RE4
+ *   SCK  SPI2_SCK     RG6      SCK  SPI2_SCK     RG6
+ *   MISO SPI2_MISO    RC4      MISO SPI2_MISO    RC4
+ *   MOSI SPI2_MOSI    RB5      MOSI SPI2_MOSI    RB5
+ *
+ *   MikroBUS C:                 MikroBUS D:
+ *   Pin  Board Signal PIC32MZ  Pin  Board Signal PIC32MZ
+ *   ---- ------------ -------  ---- ------------ -------
+ *   CS   SPI1_SS0     RD12     CS   SPI1_SS1     RD13
+ *   SCK  SPI1_SCK     RD1      SCK  SPI1_SCK     RD1
+ *   MISO SPI1_MISO    RD2      MISO SPI1_MISO    RD2
+ *   MOSI SPI1_MOSI    RD3      MOSI SPI1_MOSI    RD3
+ *
+ * Chip select pin definitions are provided in
+ * configs/flipnclick-pic32mz/src/flipnclick-pic32mz.h.
+ *
+ * CLK (output) pins have no alternative pin configurations.
+ */
+
+#define BOARD_SDI1_PPS  SDI1R_RPD2
+#define BOARD_SDO1_PPS  SDO1_RPD3R
+
+#define BOARD_SDI2_PPS  SDI2R_RPC4
+#define BOARD_SDO2_PPS  SDO2_RPB5R
+
+#define BOARD_SDI3_PPS  SDI3R_RPB9
+#define BOARD_SDO3_PPS  SDO3_RPB9R
 
 /****************************************************************************
  * Public Types

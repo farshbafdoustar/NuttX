@@ -80,7 +80,7 @@
  *   This is an internal OS interface.  It is functionally equivalent to
  *   sigprocmask() except that it does not modify the errno value.
  *
- * Parameters:
+ * Input Parameters:
  *   how - How the signal mast will be changed:
  *         SIG_BLOCK   - The resulting set is the union of the current set
  *                       and the signal set pointed to by 'set'.
@@ -92,7 +92,7 @@
  *   set  - Location of the new signal mask
  *   oset - Location to store the old signal mask
  *
- * Return Value:
+ * Returned Value:
  *   This is an internal OS interface and should not be used by applications.
  *   It follows the NuttX internal error return policy:  Zero (OK) is
  *   returned on success.  A negated errno value is returned on failure.
@@ -113,7 +113,7 @@ int nxsig_procmask(int how, FAR const sigset_t *set, FAR sigset_t *oset)
   /* Return the old signal mask if requested */
 
   oldsigprocmask = rtcb->sigprocmask;
-  if (oset)
+  if (oset != NULL)
     {
       *oset = oldsigprocmask;
     }
@@ -185,7 +185,7 @@ int nxsig_procmask(int how, FAR const sigset_t *set, FAR sigset_t *oset)
  *   If sigprocmask() fails, the signal mask of the process is not changed
  *   by this function call.
  *
- * Parameters:
+ * Input Parameters:
  *   how - How the signal mast will be changed:
  *         SIG_BLOCK   - The resulting set is the union of the current set
  *                       and the signal set pointed to by 'set'.
@@ -197,7 +197,7 @@ int nxsig_procmask(int how, FAR const sigset_t *set, FAR sigset_t *oset)
  *   set  - Location of the new signal mask
  *   oset - Location to store the old signal mask
  *
- * Return Value:
+ * Returned Value:
  *   This function will return 0 (OK) on success or -1 (ERROR) if how is
  *   invalid.  In the latter case, the errno variable will be set to EINVAL.
  *

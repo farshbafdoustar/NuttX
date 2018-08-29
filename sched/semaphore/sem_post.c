@@ -71,10 +71,10 @@
  *   then one of the tasks blocked waiting for the semaphore shall be
  *   allowed to return successfully from its call to nxsem_wait().
  *
- * Parameters:
+ * Input Parameters:
  *   sem - Semaphore descriptor
  *
- * Return Value:
+ * Returned Value:
  *   This is an internal OS interface and should not be used by applications.
  *   It follows the NuttX internal error return policy:  Zero (OK) is
  *   returned on success.  A negated errno value is returned on failure.
@@ -118,7 +118,7 @@ int nxsem_post(FAR sem_t *sem)
        * initialixed if the semaphore is to used for signaling purposes.
        */
 
-      ASSERT(sem->semcount < SEM_VALUE_MAX);
+      DEBUGASSERT(sem->semcount < SEM_VALUE_MAX);
       nxsem_releaseholder(sem);
       sem->semcount++;
 
@@ -165,6 +165,12 @@ int nxsem_post(FAR sem_t *sem)
 
               up_unblock_task(stcb);
             }
+          else
+            {
+              /* This should not happen. */
+
+              DEBUGPANIC();
+            }
         }
 
       /* Check if we need to drop the priority of any threads holding
@@ -202,10 +208,10 @@ int nxsem_post(FAR sem_t *sem)
  *   then one of the tasks blocked waiting for the semaphore shall be
  *   allowed to return successfully from its call to nxsem_wait().
  *
- * Parameters:
+ * Input Parameters:
  *   sem - Semaphore descriptor
  *
- * Return Value:
+ * Returned Value:
  *   This function is a standard, POSIX application interface.  It will
  *   return zero (OK) if successful.  Otherwise, -1 (ERROR) is returned and
  *   the errno value is set appropriately.

@@ -1,7 +1,8 @@
 /****************************************************************************
  * include/sys/socket.h
  *
- *   Copyright (C) 2007, 2009, 2011, 2015-2016 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2007, 2009, 2011, 2015-2016, 2018 Gregory Nutt. All
+ *     rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -58,8 +59,10 @@
 #define PF_INET        2 /* IPv4 Internet protocols */
 #define PF_INET6       3 /* IPv6 Internet protocols */
 #define PF_PACKET      4 /* Low level packet interface */
-#define PF_IEEE802154  5 /* Low level IEEE 802.15.4 radio frame interface */
-#define PF_PKTRADIO    6 /* Low level packet radio interface */
+#define PF_BLUETOOTH   5 /* Bluetooth sockets */
+#define PF_IEEE802154  6 /* Low level IEEE 802.15.4 radio frame interface */
+#define PF_PKTRADIO    7 /* Low level packet radio interface */
+#define PF_NETLINK     8 /* Netlink IPC socket */
 
 /* Supported Address Families. Opengroup.org requires only AF_UNSPEC,
  * AF_UNIX, AF_INET and AF_INET6.
@@ -71,22 +74,32 @@
 #define AF_INET        PF_INET
 #define AF_INET6       PF_INET6
 #define AF_PACKET      PF_PACKET
+#define AF_BLUETOOTH   PF_BLUETOOTH
 #define AF_IEEE802154  PF_IEEE802154
 #define AF_PKTRADIO    PF_PKTRADIO
+#define AF_NETLINK     PF_NETLINK
 
 /* The socket created by socket() has the indicated type, which specifies
  * the communication semantics.
  */
 
-#define SOCK_STREAM    0 /* Provides sequenced, reliable, two-way, connection-based byte streams.
-                          * An  out-of-band data transmission mechanism may be supported. */
-#define SOCK_DGRAM     1 /* Supports  datagrams (connectionless, unreliable messages of a fixed
-                          * maximum length). */
-#define SOCK_SEQPACKET 2 /* Provides a sequenced, reliable, two-way connection-based data
-                          * transmission path for datagrams of fixed maximum length; a consumer
-                          * is required to read an entire packet with each read system call. */
+#define SOCK_STREAM    0 /* Provides sequenced, reliable, two-way,
+                          * connection-based byte streams. An out-of-band data
+                          * transmission mechanism may be supported.
+                          */
+#define SOCK_DGRAM     1 /* Supports  datagrams (connectionless, unreliable
+                          * messages of a fixed maximum length).
+                          */
+#define SOCK_SEQPACKET 2 /* Provides a sequenced, reliable, two-way
+                          * connection-based data transmission path for
+                          * datagrams of fixed maximum length; a consumer is
+                          * required to read an entire packet with each read
+                          * system call.
+                          */
 #define SOCK_RAW       3 /* Provides raw network protocol access. */
-#define SOCK_RDM       4 /* Provides a reliable datagram layer that does not guarantee ordering. */
+#define SOCK_RDM       4 /* Provides a reliable datagram layer that does not
+                          * guarantee ordering.
+                          */
 #define SOCK_PACKET    5 /* Obsolete and should not be used in new programs */
 
 /* Bits in the FLAGS argument to `send', `recv', et al. These are the bits
@@ -116,38 +129,83 @@
 
 /* Socket-level options */
 
-#define SO_ACCEPTCONN   0 /* Reports whether socket listening is enabled (get only).
-                           * arg: pointer to integer containing a boolean value */
-#define SO_BROADCAST    1 /* Permits sending of broadcast messages (get/set).
-                           * arg: pointer to integer containing a boolean value */
-#define SO_DEBUG        2 /* Enables recording of debugging information (get/set).
-                           * arg: pointer to integer containing a boolean value */
-#define SO_DONTROUTE    3 /* Requests that outgoing messages bypass standard routing (get/set)
-                           * arg: pointer to integer containing a boolean value */
-#define SO_ERROR        4 /* Reports and clears error status (get only).  arg: returns
-                           * an integer value */
-#define SO_KEEPALIVE    5 /* Keeps connections active by enabling the periodic transmission
-                           * of messages (get/set).
-                           * arg: pointer to integer containing a boolean value */
-#define SO_LINGER       6 /* Lingers on a close() if data is present (get/set)
-                           * arg: struct linger */
-#define SO_OOBINLINE    7 /* Leaves received out-of-band data (data marked urgent) inline
-                           * (get/set) arg: pointer to integer containing a boolean value */
-#define SO_RCVBUF       8 /* Sets receive buffer size. arg: integer value (get/set). */
-#define SO_RCVLOWAT     9 /* Sets the minimum number of bytes to process for socket input
-                           * (get/set). arg: integer value */
-#define SO_RCVTIMEO    10 /* Sets the timeout value that specifies the maximum amount of time
-                           * an input function waits until it completes (get/set).
-                           * arg: struct timeval */
-#define SO_REUSEADDR   11 /* Allow reuse of local addresses (get/set)
-                           * arg: pointer to integer containing a boolean value */
-#define SO_SNDBUF      12 /* Sets send buffer size. arg: integer value (get/set). */
-#define SO_SNDLOWAT    13 /* Sets the minimum number of bytes to process for socket output
-                           * (get/set). arg: integer value */
-#define SO_SNDTIMEO    14 /* Sets the timeout value specifying the amount of time that an
-                           * output function blocks because flow control prevents data from
-                           * being sent(get/set). arg: struct timeval */
-#define SO_TYPE        15 /* Reports the socket type (get only). return: int */
+#define SO_ACCEPTCONN    0 /* Reports whether socket listening is enabled
+                            * (get only).
+                            * arg: pointer to integer containing a boolean
+                            * value
+                            */
+#define SO_BROADCAST     1 /* Permits sending of broadcast messages (get/set).
+                            * arg: pointer to integer containing a boolean
+                            * value
+                            */
+#define SO_DEBUG         2 /* Enables recording of debugging information
+                            * (get/set).
+                            * arg: pointer to integer containing a boolean
+                            * value
+                            */
+#define SO_DONTROUTE     3 /* Requests that outgoing messages bypass standard
+                            * routing (get/set)
+                            * arg: pointer to integer containing a boolean
+                            * value
+                            */
+#define SO_ERROR         4 /* Reports and clears error status (get only).
+                            * arg: returns an integer value
+                            */
+#define SO_KEEPALIVE     5 /* Keeps connections active by enabling the periodic
+                            * transmission of messages (get/set).
+                            * arg:  pointer to integer containing a boolean int
+                            * value
+                            */
+#define SO_LINGER        6 /* Lingers on a close() if data is present (get/set)
+                            * arg: struct linger
+                            */
+#define SO_OOBINLINE     7 /* Leaves received out-of-band data (data marked
+                            * urgent) inline
+                            * (get/set) arg: pointer to integer containing a
+                            * boolean value
+                            */
+#define SO_RCVBUF        8 /* Sets receive buffer size.
+                            * arg: integer value (get/set).
+                            */
+#define SO_RCVLOWAT      9 /* Sets the minimum number of bytes to process for
+                            * socket input (get/set).
+                            * arg: integer value
+                            */
+#define SO_RCVTIMEO     10 /* Sets the timeout value that specifies the maximum
+                            * amount of time an input function waits until it
+                            * completes (get/set).
+                            * arg: struct timeval
+                            */
+#define SO_REUSEADDR    11 /* Allow reuse of local addresses (get/set)
+                            * arg: pointer to integer containing a boolean
+                            * value
+                            */
+#define SO_SNDBUF       12 /* Sets send buffer size (get/set).
+                            * arg: integer value
+                            */
+#define SO_SNDLOWAT     13 /* Sets the minimum number of bytes to process for
+                            * socket output (get/set).
+                            * arg: integer value
+                            */
+#define SO_SNDTIMEO     14 /* Sets the timeout value specifying the amount of
+                            * time that an output function blocks because flow
+                            * control prevents data from being sent(get/set).
+                            * arg: struct timeval
+                            */
+#define SO_TYPE         15 /* Reports the socket type (get only).
+                            * return: int
+                            */
+
+/* Protocol-level socket operations. */
+
+#define SOL_IP          1 /* See options in include/netinet/ip.h */
+#define SOL_IPV6        2 /* See options in include/netinet/ip6.h */
+#define SOL_TCP         3 /* See options in include/netinet/tcp.h */
+#define SOL_UDP         4 /* See options in include/netinit/udp.h */
+#define SOL_HCI         5 /* See options in include/netpacket/bluetooth.h */
+#define SOL_L2CAP       6 /* See options in include/netpacket/bluetooth.h */
+#define SOL_SCO         7 /* See options in include/netpacket/bluetooth.h */
+#define SOL_RFCOMM      8 /* See options in include/netpacket/bluetooth.h */
 
 /* Protocol-level socket options may begin with this value */
 
@@ -155,9 +213,11 @@
 
 /* Values for the 'how' argument of shutdown() */
 
-#define SHUT_RD        1  /* Bit 0: Disables further receive operations */
-#define SHUT_WR        2  /* Bit 1: Disables further send operations */
-#define SHUT_RDWR      3  /* Bits 0+1: Disables further send and receive operations */
+#define SHUT_RD         1 /* Bit 0: Disables further receive operations */
+#define SHUT_WR         2 /* Bit 1: Disables further send operations */
+#define SHUT_RDWR       3 /* Bits 0+1: Disables further send and receive
+                           * operations
+                           */
 
 /****************************************************************************
  * Type Definitions
@@ -239,6 +299,8 @@ int getsockopt(int sockfd, int level, int option,
                FAR void *value, FAR socklen_t *value_len);
 
 int getsockname(int sockfd, FAR struct sockaddr *addr,
+                FAR socklen_t *addrlen);
+int getpeername(int sockfd, FAR struct sockaddr *addr,
                 FAR socklen_t *addrlen);
 
 #undef EXTERN

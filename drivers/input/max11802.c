@@ -166,7 +166,7 @@ static struct max11802_dev_s *g_max11802list;
  *   to assure: (1) exclusive access to the SPI bus, and (2) to assure that
  *   the shared bus is properly configured for the touchscreen controller.
  *
- * Parameters:
+ * Input Parameters:
  *   spi  - Reference to the SPI driver structure
  *
  * Returned Value:
@@ -202,7 +202,7 @@ static void max11802_lock(FAR struct spi_dev_s *spi)
  *   Un-lock the SPI bus after each transfer, possibly losing the current
  *   configuration if we are sharing the SPI bus with other devices
  *
- * Parameters:
+ * Input Parameters:
  *   spi  - Reference to the SPI driver structure
  *
  * Returned Value:
@@ -395,7 +395,7 @@ static int max11802_waitsample(FAR struct max11802_dev_s *priv,
            */
 
           ierr("ERROR: nxsem_wait: %d\n", ret);
-          DEBUGASSERT(ret == -EINTR);
+          DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
           goto errout;
         }
     }
@@ -496,7 +496,7 @@ static void max11802_worker(FAR void *arg)
   int                           ret;
   int                           tags, tags2;
 
-  ASSERT(priv != NULL);
+  DEBUGASSERT(priv != NULL);
 
   /* Get a pointer the callbacks for convenience (and so the code is not so
    * ugly).
@@ -592,8 +592,8 @@ static void max11802_worker(FAR void *arg)
 
        iinfo("Previous pen up event still in buffer\n");
        max11802_notify(priv);
-       wd_start(priv->wdog, MAX11802_WDOG_DELAY, max11802_wdog, 1,
-                (uint32_t)priv);
+       (void)wd_start(priv->wdog, MAX11802_WDOG_DELAY, max11802_wdog, 1,
+                      (uint32_t)priv);
        goto ignored;
     }
   else
@@ -632,8 +632,8 @@ static void max11802_worker(FAR void *arg)
 
       /* Continue to sample the position while the pen is down */
 
-      wd_start(priv->wdog, MAX11802_WDOG_DELAY, max11802_wdog, 1,
-               (uint32_t)priv);
+      (void)wd_start(priv->wdog, MAX11802_WDOG_DELAY, max11802_wdog, 1,
+i                    (uint32_t)priv);
 
       /* Check if data is valid */
 
@@ -726,7 +726,7 @@ static int max11802_interrupt(int irq, FAR void *context)
        priv && priv->configs->irq != irq;
        priv = priv->flink);
 
-  ASSERT(priv != NULL);
+  DEBUGASSERT(priv != NULL);
 #endif
 
   /* Get a pointer the callbacks for convenience (and so the code is not so
@@ -773,7 +773,7 @@ static int max11802_open(FAR struct file *filep)
     {
       /* This should only happen if the wait was canceled by an signal */
 
-      DEBUGASSERT(ret == -EINTR);
+      DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
       return ret;
     }
 
@@ -830,7 +830,7 @@ static int max11802_close(FAR struct file *filep)
     {
       /* This should only happen if the wait was canceled by an signal */
 
-      DEBUGASSERT(ret == -EINTR);
+      DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
       return ret;
     }
 
@@ -892,7 +892,7 @@ static ssize_t max11802_read(FAR struct file *filep, FAR char *buffer,
       /* This should only happen if the wait was cancelled by an signal */
 
       ierr("ERROR: nxsem_wait: %d\n", ret);
-      DEBUGASSERT(ret == -EINTR);
+      DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
       return ret;
     }
 
@@ -981,7 +981,7 @@ errout:
 }
 
 /****************************************************************************
- * Name:max11802_ioctl
+ * Name: max11802_ioctl
  ****************************************************************************/
 
 static int max11802_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
@@ -1004,7 +1004,7 @@ static int max11802_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
     {
       /* This should only happen if the wait was canceled by an signal */
 
-      DEBUGASSERT(ret == -EINTR);
+      DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
       return ret;
     }
 
@@ -1064,7 +1064,7 @@ static int max11802_poll(FAR struct file *filep, FAR struct pollfd *fds,
     {
       /* This should only happen if the wait was canceled by an signal */
 
-      DEBUGASSERT(ret == -EINTR);
+      DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
       return ret;
     }
 

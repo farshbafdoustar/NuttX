@@ -56,10 +56,7 @@
  * Pre-processor Definitions
  ****************************************************************************/
 /* IOCTL Commands ***********************************************************/
-/* The Audio module uses a standard character driver framework.  However, a
- * lot of the Audio driver functionality is configured via a device control
- * interface, such as sampling rate, volume, data format, etc.
- * The Audio ioctl commands are lised below:
+/* IOCTL Commands to store and read configuration for user application.
  *
  * CFGDIOC_GETCONFIG - Get a specified Config Data item.
  *
@@ -117,7 +114,7 @@ extern "C"
  *   When this function is called, the MTD device pass in should already
  *   be initialized appropriately to access the physical device or partition.
  *
- * Input parameters:
+ * Input Parameters:
  *   mtd - Pointer to the MTD device to bind with the /dev/config device
  *
  * Returned Value:

@@ -1,7 +1,7 @@
 /****************************************************************************
  * arch/x86/src/common/up_assert.c
  *
- *   Copyright (C) 2011-2016 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2011-2016, 2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,6 +48,7 @@
 #include <nuttx/arch.h>
 #include <nuttx/board.h>
 #include <arch/arch.h>
+#include <nuttx/syslog/syslog.h>
 #include <nuttx/usb/usbdev_trace.h>
 
 #include <arch/board/board.h>
@@ -63,6 +64,10 @@
 
 #ifndef CONFIG_USBDEV_TRACE
 #  undef CONFIG_ARCH_USBDUMP
+#endif
+
+#ifndef CONFIG_BOARD_RESET_ON_ASSERT
+#  define CONFIG_BOARD_RESET_ON_ASSERT 0
 #endif
 
 /****************************************************************************
@@ -100,10 +105,10 @@ static int usbtrace_syslog(FAR const char *fmt, ...)
   va_list ap;
   int ret;
 
-  /* Let vsyslog do the real work */
+  /* Let nx_vsyslog do the real work */
 
   va_start(ap, fmt);
-  ret = vsyslog(LOG_EMERG, fmt, ap);
+  ret = nx_vsyslog(LOG_EMERG, fmt, &ap);
   va_end(ap);
   return ret;
 }
@@ -225,6 +230,10 @@ static void up_dumpstate(void)
 static void _up_assert(int errorcode) noreturn_function;
 static void _up_assert(int errorcode)
 {
+  /* Flush any buffered SYSLOG data */
+
+  (void)syslog_flush();
+
   /* Are we in an interrupt handler or the idle task? */
 
   if (g_current_regs || (this_task())->pid == 0)
@@ -232,6 +241,9 @@ static void _up_assert(int errorcode)
        (void)up_irq_save();
         for (;;)
           {
+#if CONFIG_BOARD_RESET_ON_ASSERT >= 1
+            board_reset(0);
+#endif
 #ifdef CONFIG_ARCH_LEDS
             board_autoled_on(LED_PANIC);
             up_mdelay(250);
@@ -242,6 +254,9 @@ static void _up_assert(int errorcode)
     }
   else
     {
+#if CONFIG_BOARD_RESET_ON_ASSERT >= 2
+      board_reset(0);
+#endif
       exit(errorcode);
     }
 }
@@ -262,6 +277,10 @@ void up_assert(const uint8_t *filename, int lineno)
 
   board_autoled_on(LED_ASSERTION);
 
+  /* Flush any buffered SYSLOG data (from prior to the assertion) */
+
+  (void)syslog_flush();
+
 #if CONFIG_TASK_NAME_SIZE > 0
   _alert("Assertion failed at file:%s line: %d task: %s\n",
         filename, lineno, rtcb->name);
@@ -271,6 +290,10 @@ void up_assert(const uint8_t *filename, int lineno)
 #endif
 
   up_dumpstate();
+
+  /* Flush any buffered SYSLOG data (from the above) */
+
+  (void)syslog_flush();
 
 #ifdef CONFIG_BOARD_CRASHDUMP
   board_crashdump(up_getsp(), this_task(), filename, lineno);

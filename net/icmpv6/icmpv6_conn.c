@@ -118,9 +118,7 @@ FAR struct icmpv6_conn_s *icmpv6_alloc(void)
   FAR struct icmpv6_conn_s *conn = NULL;
   int ret;
 
-  /* The free list is only accessed from user, non-interrupt level and
-   * is protected by a semaphore (that behaves like a mutex).
-   */
+  /* The free list is protected by a semaphore (that behaves like a mutex). */
 
   ret = net_lockedwait(&g_free_sem);
   if (ret >= 0)
@@ -156,9 +154,7 @@ void icmpv6_free(FAR struct icmpv6_conn_s *conn)
 {
   int ret;
 
-  /* The free list is only accessed from user, non-interrupt level and
-   * is protected by a semaphore (that behaves like a mutex).
-   */
+  /* The free list is protected by a semaphore (that behaves like a mutex). */
 
   DEBUGASSERT(conn->crefs == 0);
 
@@ -170,7 +166,7 @@ void icmpv6_free(FAR struct icmpv6_conn_s *conn)
        * the wait was awakened by a signal.
        */
 
-      DEBUGASSERT(ret == -EINTR);
+      DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
     }
 
   UNUSED(ret);
@@ -269,7 +265,8 @@ FAR struct icmpv6_conn_s *icmpv6_nextconn(FAR struct icmpv6_conn_s *conn)
  *
  ****************************************************************************/
 
-FAR struct icmpv6_conn_s *icmpv6_findconn(FAR struct net_driver_s *dev, uint8_t id)
+FAR struct icmpv6_conn_s *icmpv6_findconn(FAR struct net_driver_s *dev,
+                                          uint16_t id)
 {
   FAR struct icmpv6_conn_s *conn;
 

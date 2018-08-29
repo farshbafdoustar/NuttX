@@ -104,13 +104,13 @@ extern "C"
  *
  *   ioctl() is a non-standard UNIX-like API
  *
- * Parameters:
+ * Input Parameters:
  *   fd       File/socket descriptor of device
  *   req      The ioctl command
  *   arg      The argument of the ioctl cmd, OR
  *   ...      A third argument of type unsigned long is still expected.
  *
- * Return:
+ * Returned Value:
  *   >=0 on success (positive non-zero values are cmd-specific)
  *   -1 on failure with errno set properly:
  *

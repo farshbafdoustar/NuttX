@@ -1,7 +1,8 @@
 /****************************************************************************
  * include/nuttx/wqueue.h
  *
- *   Copyright (C) 2009, 2011-2014, 2017 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2009, 2011-2014, 2017-2018 Gregory Nutt. All rights
+ *     reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -65,13 +66,10 @@
  *   (which runs at the lowest of priority and may not be appropriate
  *   if memory reclamation is of high priority).  If CONFIG_SCHED_HPWORK
  *   is enabled, then the following options can also be used:
+ * CONFIG_SCHED_HPNTHREADS - The number of thread in the high-priority queue's
+ *   thread pool.  Default: 1
  * CONFIG_SCHED_HPWORKPRIORITY - The execution priority of the high-
  *   priority worker thread.  Default: 224
- * CONFIG_SCHED_HPWORKPERIOD - How often the worker thread checks for
- *   work in units of microseconds.  If the high priority worker thread is
- *   performing garbage collection, then the default is 50*1000 (50 MS).
- *   Otherwise, if the lower priority worker thread is performing garbage
- *   collection, the default is 100*1000.
  * CONFIG_SCHED_HPWORKSTACKSIZE - The stack size allocated for the worker
  *   thread.  Default: 2048.
  * CONFIG_SIG_SIGWORK - The signal number that will be used to wake-up
@@ -87,8 +85,6 @@
  *   priority worker thread.  Default: 50
  * CONFIG_SCHED_LPWORKPRIOMAX - The maximum execution priority of the lower
  *   priority worker thread.  Default: 176
- * CONFIG_SCHED_LPWORKPERIOD - How often the lower priority worker thread
- *  checks for work in units of microseconds.  Default: 50*1000 (50 MS).
  * CONFIG_SCHED_LPWORKSTACKSIZE - The stack size allocated for the lower
  *   priority worker thread.  Default: 2048.
  *
@@ -100,8 +96,6 @@
  *   user-mode work queue will be created.
  * CONFIG_LIB_USRWORKPRIORITY - The minimum execution priority of the lower
  *   priority worker thread.  Default: 100
- * CONFIG_LIB_USRWORKPERIOD - How often the lower priority worker thread
- *  checks for work in units of microseconds.  Default: 100*1000 (100 MS).
  * CONFIG_LIB_USRWORKSTACKSIZE - The stack size allocated for the lower
  *   priority worker thread.  Default: 2048.
  */
@@ -146,16 +140,12 @@
 
 #ifdef CONFIG_SCHED_HPWORK
 
-#  ifndef CONFIG_SCHED_HPWORKPRIORITY
-#    define CONFIG_SCHED_HPWORKPRIORITY 224
+#  ifndef CONFIG_SCHED_HPNTHREADS
+#    define CONFIG_SCHED_HPNTHREADS 1
 #  endif
 
-#  ifndef CONFIG_SCHED_HPWORKPERIOD
-#    ifdef CONFIG_SCHED_LPWORK
-#      define CONFIG_SCHED_HPWORKPERIOD (100*1000) /* 100 milliseconds */
-#    else
-#      define CONFIG_SCHED_HPWORKPERIOD (50*1000)  /* 50 milliseconds */
-#    endif
+#  ifndef CONFIG_SCHED_HPWORKPRIORITY
+#    define CONFIG_SCHED_HPWORKPRIORITY 224
 #  endif
 
 #  ifndef CONFIG_SCHED_HPWORKSTACKSIZE
@@ -197,10 +187,6 @@
 #    error CONFIG_SCHED_LPWORKPRIORITY > CONFIG_SCHED_LPWORKPRIOMAX
 #  endif
 
-#  ifndef CONFIG_SCHED_LPWORKPERIOD
-#    define CONFIG_SCHED_LPWORKPERIOD (50*1000) /* 50 milliseconds */
-#  endif
-
 #  ifndef CONFIG_SCHED_LPWORKSTACKSIZE
 #    define CONFIG_SCHED_LPWORKSTACKSIZE CONFIG_IDLETHREAD_STACKSIZE
 #  endif
@@ -223,10 +209,6 @@
 
 #  ifndef CONFIG_LIB_USRWORKPRIORITY
 #    define CONFIG_LIB_USRWORKPRIORITY 100
-#  endif
-
-#  ifndef CONFIG_LIB_USRWORKPERIOD
-#    define CONFIG_LIB_USRWORKPERIOD (100*1000) /* 100 milliseconds */
 #  endif
 
 #  ifndef CONFIG_LIB_USRWORKSTACKSIZE
@@ -292,8 +274,8 @@ struct work_s
   struct dq_entry_s dq;  /* Implements a doubly linked list */
   worker_t  worker;      /* Work callback */
   FAR void *arg;         /* Callback argument */
-  systime_t qtime;       /* Time work queued */
-  systime_t delay;       /* Delay until work performed */
+  clock_t qtime;         /* Time work queued */
+  clock_t delay;         /* Delay until work performed */
 };
 
 /****************************************************************************
@@ -318,7 +300,7 @@ extern "C"
  * Description:
  *   Start the user mode work queue.
  *
- * Input parameters:
+ * Input Parameters:
  *   None
  *
  * Returned Value:
@@ -345,7 +327,7 @@ int work_usrstart(void);
  *   previous work as been performed and removed from the queue, then any
  *   pending work will be canceled and lost.
  *
- * Input parameters:
+ * Input Parameters:
  *   qid    - The work queue ID
  *   work   - The work structure to queue
  *   worker - The worker callback to be invoked.  The callback will invoked
@@ -361,7 +343,7 @@ int work_usrstart(void);
  ****************************************************************************/
 
 int work_queue(int qid, FAR struct work_s *work, worker_t worker,
-               FAR void *arg, systime_t delay);
+               FAR void *arg, clock_t delay);
 
 /****************************************************************************
  * Name: work_cancel
@@ -371,7 +353,7 @@ int work_queue(int qid, FAR struct work_s *work, worker_t worker,
  *   After work has been cancelled, it may be re-queue by calling work_queue()
  *   again.
  *
- * Input parameters:
+ * Input Parameters:
  *   qid    - The work queue ID
  *   work   - The previously queue work structure to cancel
  *
@@ -393,7 +375,7 @@ int work_cancel(int qid, FAR struct work_s *work);
  *   is used internally by the work logic but could also be used by the
  *   user to force an immediate re-assessment of pending work.
  *
- * Input parameters:
+ * Input Parameters:
  *   qid    - The work queue ID
  *
  * Returned Value:
@@ -409,7 +391,7 @@ int work_signal(int qid);
  * Description:
  *   Check if the work structure is available.
  *
- * Input parameters:
+ * Input Parameters:
  *   work - The work queue structure to check.
  *   None
  *
@@ -428,10 +410,10 @@ int work_signal(int qid);
  *   priority worker thread is at least at the requested level, reqprio. This
  *   function would normally be called just before calling work_queue().
  *
- * Parameters:
+ * Input Parameters:
  *   reqprio - Requested minimum worker thread priority
  *
- * Return Value:
+ * Returned Value:
  *   None
  *
  ****************************************************************************/
@@ -449,11 +431,11 @@ void lpwork_boostpriority(uint8_t reqprio);
  *   the scheduled work completes.  It will check if we need to drop the
  *   priority of the worker thread.
  *
- * Parameters:
+ * Input Parameters:
  *   reqprio - Previously requested minimum worker thread priority to be
  *     "unboosted"
  *
- * Return Value:
+ * Returned Value:
  *   None
  *
  ****************************************************************************/

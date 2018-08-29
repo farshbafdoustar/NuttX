@@ -596,7 +596,7 @@ static int lis2dh_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
           ret = -EIO;
         }
 
-      lis2dh_clear_interrupts(priv, LIS2DH_INT2);
+      lis2dh_clear_interrupts(priv, LIS2DH_INT1);
     }
     break;
 
@@ -1552,7 +1552,7 @@ static int lis2dh_access(FAR struct lis2dh_dev_s *dev, uint8_t subaddr,
     }
   else
     {
-      flags = I2C_M_NORESTART;
+      flags = I2C_M_NOSTART;
       length = -length;
     }
 
@@ -1664,7 +1664,13 @@ static int lis2dh_reboot(FAR struct lis2dh_dev_s *dev)
   int32_t diff_msec;
   uint8_t value;
 
+  /* Prefer monotonic for timeout calculation when enabled. */
+
+#ifdef CONFIG_CLOCK_MONOTONIC
   (void)clock_gettime(CLOCK_MONOTONIC, &start);
+#else
+  (void)clock_gettime(CLOCK_REALTIME, &start);
+#endif
 
   /* Reboot to reset chip. */
 
@@ -1689,7 +1695,11 @@ static int lis2dh_reboot(FAR struct lis2dh_dev_s *dev)
           break;
         }
 
+#ifdef CONFIG_CLOCK_MONOTONIC
       (void)clock_gettime(CLOCK_MONOTONIC, &curr);
+#else
+      (void)clock_gettime(CLOCK_REALTIME, &curr);
+#endif
 
       diff_msec = (curr.tv_sec - start.tv_sec) * 1000;
       diff_msec += (curr.tv_nsec - start.tv_nsec) / (1000 * 1000);

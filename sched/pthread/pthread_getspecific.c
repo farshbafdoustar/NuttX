@@ -62,10 +62,10 @@
  *   not obtained from pthread_create() or after a key has been deleted
  *   with pthread_key_delete() is undefined.
  *
- * Parameters:
+ * Input Parameters:
  *   key = The data key to get or set
  *
- * Return Value:
+ * Returned Value:
  *   The function pthread_getspecific() returns the thread-specific data
  *   associated with the given key.  If no thread specific data is
  *   associated with the key, then the value NULL is returned.

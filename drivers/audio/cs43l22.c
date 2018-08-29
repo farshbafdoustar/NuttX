@@ -2,7 +2,7 @@
  * drivers/audio/cs43l22.c
  * Audio device driver for Cirrus logic CS43L22 Audio codec.
  *
- *   Copyright (C) 2017 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2017-2018 Gregory Nutt. All rights reserved.
  *   Author: Taras Drozdovskiy <t.drozdovskiy@gmail.com>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -209,7 +209,7 @@ static const struct audio_ops_s g_audioops =
 /****************************************************************************
  * Name: cs43l22_readreg
  *
- * Description
+ * Description:
  *    Read the specified 16-bit register from the CS43L22 device.
  *
  ****************************************************************************/
@@ -726,12 +726,10 @@ cs43l22_configure(FAR struct audio_lowerhalf_s *dev,
                   FAR const struct audio_caps_s *caps)
 #endif
 {
-#if !defined(CONFIG_AUDIO_EXCLUDE_VOLUME) || !defined(CONFIG_AUDIO_EXCLUDE_TONE)
   FAR struct cs43l22_dev_s *priv = (FAR struct cs43l22_dev_s *)dev;
-#endif
   int ret = OK;
 
-  DEBUGASSERT(priv && caps);
+  DEBUGASSERT(priv != NULL && caps != NULL);
   audinfo("ac_type: %d\n", caps->ac_type);
 
   /* Process the configure operation */
@@ -1206,8 +1204,8 @@ static int cs43l22_start(FAR struct audio_lowerhalf_s *dev)
 /****************************************************************************
  * Name: cs43l22_stop
  *
- * Description: Stop the configured operation (audio streaming, volume
- *              disabled, etc.).
+ * Description:
+ *   Stop the configured operation (audio streaming, volume disabled, etc.).
  *
  ****************************************************************************/
 
@@ -1244,7 +1242,8 @@ static int cs43l22_stop(FAR struct audio_lowerhalf_s *dev)
 /****************************************************************************
  * Name: cs43l22_pause
  *
- * Description: Pauses the playback.
+ * Description:
+ *   Pauses the playback.
  *
  ****************************************************************************/
 
@@ -1273,7 +1272,8 @@ static int cs43l22_pause(FAR struct audio_lowerhalf_s *dev)
 /****************************************************************************
  * Name: cs43l22_resume
  *
- * Description: Resumes the playback.
+ * Description:
+ *   Resumes the playback.
  *
  ****************************************************************************/
 
@@ -1306,7 +1306,8 @@ static int cs43l22_resume(FAR struct audio_lowerhalf_s *dev)
 /****************************************************************************
  * Name: cs43l22_enqueuebuffer
  *
- * Description: Enqueue an Audio Pipeline Buffer for playback/ processing.
+ * Description:
+ *   Enqueue an Audio Pipeline Buffer for playback/ processing.
  *
  ****************************************************************************/
 
@@ -1356,7 +1357,8 @@ static int cs43l22_enqueuebuffer(FAR struct audio_lowerhalf_s *dev,
 /****************************************************************************
  * Name: cs43l22_cancelbuffer
  *
- * Description: Called when an enqueued buffer is being cancelled.
+ * Description:
+ *   Called when an enqueued buffer is being cancelled.
  *
  ****************************************************************************/
 
@@ -1370,7 +1372,8 @@ static int cs43l22_cancelbuffer(FAR struct audio_lowerhalf_s *dev,
 /****************************************************************************
  * Name: cs43l22_ioctl
  *
- * Description: Perform a device ioctl
+ * Description:
+ *   Perform a device ioctl
  *
  ****************************************************************************/
 
@@ -1424,7 +1427,8 @@ static int cs43l22_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd,
 /****************************************************************************
  * Name: cs43l22_reserve
  *
- * Description: Reserves a session (the only one we have).
+ * Description:
+ *   Reserves a session (the only one we have).
  *
  ****************************************************************************/
 
@@ -1469,7 +1473,8 @@ static int cs43l22_reserve(FAR struct audio_lowerhalf_s *dev)
 /****************************************************************************
  * Name: cs43l22_release
  *
- * Description: Releases the session (the only one we have).
+ * Description:
+ *   Releases the session (the only one we have).
  *
  ****************************************************************************/
 

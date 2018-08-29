@@ -90,10 +90,10 @@ extern uint16_t g_wdnfree;
  * Description:
  * This function initializes the watchdog data structures
  *
- * Parameters:
+ * Input Parameters:
  *   None
  *
- * Return Value:
+ * Returned Value:
  *   None
  *
  * Assumptions:
@@ -114,13 +114,13 @@ void weak_function wd_initialize(void);
  *   function will be executed in the context of the timer interrupt
  *   handler.
  *
- * Parameters:
+ * Input Parameters:
  *   ticks - If CONFIG_SCHED_TICKLESS is defined then the number of ticks
  *     in the interval that just expired is provided.  Otherwise,
  *     this function is called on each timer interrupt and a value of one
  *     is implicit.
  *
- * Return Value:
+ * Returned Value:
  *   If CONFIG_SCHED_TICKLESS is defined then the number of ticks for the
  *   next delay is provided (zero if no delay).  Otherwise, this function
  *   has no returned value.
@@ -144,10 +144,10 @@ void wd_timer(void);
  *   task_delete() or via pthread_cancel(). It checks if the deleted task
  *   is waiting for a timed event and if so cancels the timeout
  *
- * Inputs:
+ * Input Parameters:
  *   tcb - The TCB of the terminated task or thread
  *
- * Return Value:
+ * Returned Value:
  *   None.
  *
  * Assumptions:

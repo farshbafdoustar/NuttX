@@ -194,8 +194,7 @@ Networking Support
     CONFIG_NET=y                        : Enable Neworking
     CONFIG_NET_ETHERNET=y               : Support Ethernet data link
     CONFIG_NET_SOCKOPTS=y               : Enable socket operations
-    CONFIG_NET_ETH_MTU=590              : Maximum packet size (MTU) 1518 is more standard
-    CONFIG_NET_ETH_TCP_RECVWNDO=536     : Should be the same as CONFIG_NET_ETH_MTU
+    CONFIG_NET_ETH_PKTSIZE=590          : Maximum packet size 1518 is more standard
     CONFIG_NET_ARP=y                    : Enable ARP
     CONFIG_NET_ARPTAB_SIZE=16           : ARP table size
     CONFIG_NET_ARP_IPIN=y               : Enable ARP address harvesting
@@ -618,7 +617,7 @@ GNU Toolchain Options
 =====================
 
   The NuttX make system supports several GNU-based toolchains under Linux,
-  Cygwin under Windows, and Windoes native.  To select a toolchain:
+  Cygwin under Windows, and Windows native.  To select a toolchain:
 
   1. Use 'make menuconfig' and select the toolchain that you are using
      under the System Type menu.
@@ -710,13 +709,6 @@ Freedom K64F Configuration Options
 
     CONFIG_ARCH_LEDS -  Use LEDs to show state. Unique to board architecture.
 
-    CONFIG_ARCH_CALIBRATION - Enables some build in instrumentation that
-       cause a 100 second delay during boot-up.  This 100 second delay
-       serves no purpose other than it allows you to calibratre
-       CONFIG_ARCH_LOOPSPERMSEC.  You simply use a stop watch to measure
-       the 100 second delay then adjust CONFIG_ARCH_LOOPSPERMSEC until
-       the delay actually is 100 seconds.
-
   Individual subsystems can be enabled:
 
     CONFIG_KINETIS_TRACE    -- Enable trace clocking on power up.
@@ -747,7 +739,7 @@ Freedom K64F Configuration Options
     CONFIG_KINETIS_FTM0     -- Support FlexTimer 0
     CONFIG_KINETIS_FTM1     -- Support FlexTimer 1
     CONFIG_KINETIS_FTM2     -- Support FlexTimer 2
-    CONFIG_KINETIS_LPTIMER  -- Support the low power timer
+    CONFIG_KINETIS_LPTMR0   -- Support the low power timer 0
     CONFIG_KINETIS_RTC      -- Support RTC
     CONFIG_KINETIS_SLCD     -- Support the segment LCD (K3x, K4x, and K5x only)
     CONFIG_KINETIS_EWM      -- Support the external watchdog
@@ -806,9 +798,9 @@ Freedom K64F Configuration Options
   Kenetis ethernet controller settings
 
     CONFIG_ENET_NRXBUFFERS - Number of RX buffers.  The size of one
-        buffer is determined by CONFIG_NET_ETH_MTU.  Default: 6
+        buffer is determined by CONFIG_NET_ETH_PKTSIZE.  Default: 6
     CONFIG_ENET_NTXBUFFERS - Number of TX buffers.  The size of one
-        buffer is determined by CONFIG_NET_ETH_MTU.  Default: 2
+        buffer is determined by CONFIG_NET_ETH_PKTSIZE.  Default: 2
     CONFIG_ENET_USEMII - Use MII mode.  Default: RMII mode.
     CONFIG_ENET_PHYADDR - PHY address
 
@@ -818,9 +810,7 @@ Configurations
 Each Freedom K64F configuration is maintained in a sub-directory and
 can be selected as follow:
 
-    cd tools
-    ./configure.sh freedom-k64f/<subdir>
-    cd -
+    tools/configure.sh freedom-k64f/<subdir>
 
 Where <subdir> is one of the following:
 

@@ -297,7 +297,7 @@ static void nrf24l01_lock(FAR struct spi_dev_s *spi)
  *   Un-lock the SPI bus after each transfer, possibly losing the current
  *   configuration if we are sharing the SPI bus with other devices.
  *
- * Parameters:
+ * Input Parameters:
  *   spi  - Reference to the SPI driver structure
  *
  * Returned Value:
@@ -320,7 +320,7 @@ static void nrf24l01_unlock(FAR struct spi_dev_s *spi)
  * Description:
  *   Configure the SPI for use with the NRF24L01.
  *
- * Parameters:
+ * Input Parameters:
  *   spi  - Reference to the SPI driver structure
  *
  * Returned Value:
@@ -974,7 +974,7 @@ static int nrf24l01_open(FAR struct file *filep)
     {
       /* This should only happen if the wait was canceled by an signal */
 
-      DEBUGASSERT(ret == -EINTR);
+      DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
       return ret;
     }
 
@@ -1021,7 +1021,7 @@ static int nrf24l01_close(FAR struct file *filep)
     {
       /* This should only happen if the wait was canceled by an signal */
 
-      DEBUGASSERT(ret == -EINTR);
+      DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
       return ret;
     }
 
@@ -1057,7 +1057,7 @@ static ssize_t nrf24l01_read(FAR struct file *filep, FAR char *buffer,
     {
       /* This should only happen if the wait was canceled by an signal */
 
-      DEBUGASSERT(ret == -EINTR);
+      DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
       return ret;
     }
 
@@ -1089,7 +1089,7 @@ static ssize_t nrf24l01_write(FAR struct file *filep, FAR const char *buffer,
     {
       /* This should only happen if the wait was canceled by an signal */
 
-      DEBUGASSERT(ret == -EINTR);
+      DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
       return ret;
     }
 
@@ -1123,7 +1123,7 @@ static int nrf24l01_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
     {
       /* This should only happen if the wait was canceled by an signal */
 
-      DEBUGASSERT(ret == -EINTR);
+      DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
       return ret;
     }
 
@@ -1368,7 +1368,7 @@ static int nrf24l01_poll(FAR struct file *filep, FAR struct pollfd *fds,
     {
       /* This should only happen if the wait was canceled by an signal */
 
-      DEBUGASSERT(ret == -EINTR);
+      DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
       return ret;
     }
 
@@ -1462,7 +1462,7 @@ int nrf24l01_register(FAR struct spi_dev_s *spi,
   uint8_t *rx_fifo;
 #endif
 
-  ASSERT((spi != NULL) & (cfg != NULL));
+  DEBUGASSERT((spi != NULL) & (cfg != NULL));
 
   if ((dev = kmm_malloc(sizeof(struct nrf24l01_dev_s))) == NULL)
     {
@@ -2041,7 +2041,7 @@ ssize_t nrf24l01_recv(struct nrf24l01_dev_s *dev, uint8_t *buffer,
     {
       /* This should only happen if the wait was canceled by an signal */
 
-      DEBUGASSERT(ret == -EINTR);
+      DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
       return ret;
     }
 

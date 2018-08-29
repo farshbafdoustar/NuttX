@@ -1,7 +1,7 @@
 /****************************************************************************
  * arch/arm/src/lc823450/lc823450_syscontrol.c
  *
- *   Copyright (C) 2014-2017 Sony Corporation. All rights reserved.
+ *   Copyright 2014,2015,2016,2017,2018 Sony Video & Sound Products Inc.
  *   Author: Masatoshi Tateishi <Masatoshi.Tateishi@jp.sony.com>
  *   Author: Masayuki Ishikawa <Masayuki.Ishikawa@jp.sony.com>
  *   Author: Nobutaka Toyoshima <Nobutaka.Toyoshima@jp.sony.com>
@@ -102,7 +102,7 @@ uint32_t get_cpu_ver(void)
 /****************************************************************************
  * Name: mod_stby_regs
  *
- * Input parameters:
+ * Input Parameters:
  *   enabits : specify regions to be enabled
  *   disbits : specify regions to be disabled
  *
@@ -146,7 +146,7 @@ void up_enable_clk(enum clock_e clk)
   irqstate_t flags;
   flags = spin_lock_irqsave();
 
-  ASSERT(clk < LC823450_CLOCK_NUM);
+  DEBUGASSERT(clk < LC823450_CLOCK_NUM);
 
   if (lc823450_clocks[clk].count++ == 0)
     {
@@ -166,7 +166,7 @@ void up_disable_clk(enum clock_e clk)
   irqstate_t flags;
   flags = spin_lock_irqsave();
 
-  ASSERT(clk < LC823450_CLOCK_NUM);
+  DEBUGASSERT(clk < LC823450_CLOCK_NUM);
 
   if (--lc823450_clocks[clk].count == 0)
     {
@@ -174,7 +174,7 @@ void up_disable_clk(enum clock_e clk)
                   lc823450_clocks[clk].regmask, 0);
     }
 
-  /*  ASSERT(lc823450_clocks[clk].count >= 0); */
+  /*  DEBUGASSERT(lc823450_clocks[clk].count >= 0); */
 
   if (lc823450_clocks[clk].count < 0)
     {

@@ -1,7 +1,7 @@
 /****************************************************************************
  * configs/lc823450-xgevk/src/lc823450_bringup.c
  *
- *   Copyright (C) 2017 Sony Corporation. All rights reserved.
+ *   Copyright 2017,2018 Sony Video & Sound Products Inc.
  *   Author: Masayuki Ishikawa <Masayuki.Ishikawa@jp.sony.com>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,6 +48,8 @@
 #ifdef CONFIG_SMP
 #  include <sched.h>
 #endif
+
+#include <nuttx/sched.h>
 
 #ifdef CONFIG_RNDIS
 #  include <nuttx/usb/rndis.h>
@@ -132,7 +134,7 @@ int lc823450_bringup(void)
 
   /* NOTE: pid=4 is assumed to be lpwork */
 
-  sched_setaffinity(4, sizeof(cpu_set_t), &cpuset);
+  (void)nxsched_setaffinity(4, sizeof(cpu_set_t), &cpuset);
 #endif
 
   /* If we got here then perhaps not all initialization was successful, but

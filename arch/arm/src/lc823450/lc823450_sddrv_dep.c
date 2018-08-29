@@ -2,7 +2,7 @@
  * arch/arm/src/lc823450/lc823450_sddrv_dep.c
  *
  *   Copyright (C) 2014-2015 ON Semiconductor. All rights reserved.
- *   Copyright (C) 2014-2017 Sony Corporation. All rights reserved.
+ *   Copyright 2014,2015,2016,2017,2018 Sony Video & Sound Products Inc.
  *   Author: Masayuki Ishikawa <Masayuki.Ishikawa@jp.sony.com>
  *   Author: Masatoshi Tateishi <Masatoshi.Tateishi@jp.sony.com>
  *   Author: Nobutaka Toyoshima <Nobutaka.Toyoshima@jp.sony.com>
@@ -59,6 +59,7 @@
 #include "lc823450_dma.h"
 #include "lc823450_gpio.h"
 #include "lc823450_syscontrol.h"
+#include "lc823450_timer.h"
 
 #ifdef CONFIG_LC823450_SDC_DMA
 #  include <semaphore.h>
@@ -109,7 +110,7 @@ static int _get_ch_from_cfg(struct SdDrCfg_s *cfg)
         break;
 
       default:
-        ASSERT(false);
+        DEBUGASSERT(false);
     }
 
   return ch;
@@ -372,12 +373,12 @@ uint64_t sddep_set_timeout(uint64_t t)
 SINT_T sddep_wait_status(UI_32 req_status, UI_32 *status,
                          struct SdDrCfg_s *cfg)
 {
-  systime_t tick0 = clock_systimer();
+  clock_t tick0 = clock_systimer();
   int ret = 0;
 
   while (1)
     {
-      systime_t tick1 = clock_systimer();
+      clock_t tick1 = clock_systimer();
       *status = sdif_get_status(cfg->regbase);
       if (req_status & (*status))
         {

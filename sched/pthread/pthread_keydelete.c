@@ -57,10 +57,10 @@
  *   previously returned by pthread_key_create().  However, this function
  *   does nothing in the present implementation.
  *
- * Parameters:
+ * Input Parameters:
  *   key = the key to delete
  *
- * Return Value:
+ * Returned Value:
  *   Always returns ENOSYS.
  *
  * Assumptions:

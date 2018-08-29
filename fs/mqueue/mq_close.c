@@ -63,11 +63,11 @@
  *   deallocates any system resources allocated by the system for use by
  *   this task for its message queue.
  *
- * Parameters:
+ * Input Parameters:
  *   mqdes - Message queue descriptor.
  *   group - Group that has the open descriptor.
  *
- * Return Value:
+ * Returned Value:
  *   Zero (OK) if the message queue is closed successfully.  Otherwise, a
  *   negated errno value is returned.
  *
@@ -122,10 +122,10 @@ int nxmq_close_group(mqd_t mqdes, FAR struct task_group_s *group)
  *   via this mqdes, this attachment will be removed and the message queue
  *   is available for another process to attach a notification.
  *
- * Parameters:
+ * Input Parameters:
  *   mqdes - Message queue descriptor.
  *
- * Return Value:
+ * Returned Value:
  *   0 (OK) if the message queue is closed successfully,
  *   otherwise, -1 (ERROR).
  *
@@ -173,10 +173,10 @@ int mq_close(mqd_t mqdes)
  * Description:
  *   Release a reference count on a message queue inode.
  *
- * Parameters:
+ * Input Parameters:
  *   inode - The message queue inode
  *
- * Return Value:
+ * Returned Value:
  *   None
  *
  ****************************************************************************/

@@ -105,7 +105,7 @@ int psock_socket(int domain, int type, int protocol, FAR struct socket *psock)
   psock->s_domain = domain;
   psock->s_type   = type;
   psock->s_conn   = NULL;
-#ifdef CONFIG_NET_TCP_WRITE_BUFFERS
+#if defined(CONFIG_NET_TCP_WRITE_BUFFERS) || defined(CONFIG_NET_UDP_WRITE_BUFFERS)
   psock->s_sndcb  = NULL;
 #endif
 
@@ -169,7 +169,7 @@ int psock_socket(int domain, int type, int protocol, FAR struct socket *psock)
  * Description:
  *   socket() creates an endpoint for communication and returns a descriptor.
  *
- * Parameters:
+ * Input Parameters:
  *   domain   (see sys/socket.h)
  *   type     (see sys/socket.h)
  *   protocol (see sys/socket.h)
@@ -212,7 +212,7 @@ int socket(int domain, int type, int protocol)
   sockfd = sockfd_allocate(0);
   if (sockfd < 0)
     {
-      nerr("ERROR: Failed to allodate a socket descriptor\n");
+      nerr("ERROR: Failed to allocate a socket descriptor\n");
       errcode = ENFILE;
       goto errout;
     }

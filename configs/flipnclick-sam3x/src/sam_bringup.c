@@ -84,6 +84,15 @@ int sam_bringup(void)
     }
 #endif
 
+#if defined(HAVE_SSD1306) && !defined(CONFIG_NXSTART_EXTERNINIT)
+  /* Configure the SSD1306 OLED */
+
+  if (sam_graphics_setup(0) == NULL)
+    {
+      syslog(LOG_ERR,"ERROR: Failed to configure the SSD1306 OLED\n");
+    }
+#endif
+
   UNUSED(ret);
   return OK;
 }

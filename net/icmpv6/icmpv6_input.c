@@ -99,7 +99,7 @@
  *     buffers
  *   buflen - The number of bytes to copy to the read-ahead buffer.
  *
- * Returned value:
+ * Returned Value:
  *   The number of bytes actually buffered is returned.  This will be either
  *   zero or equal to buflen; partial packets are not buffered.
  *
@@ -217,11 +217,11 @@ drop:
  * Description:
  *   Handle incoming ICMPv6 input
  *
- * Parameters:
+ * Input Parameters:
  *   dev - The device driver structure containing the received ICMPv6
  *         packet
  *
- * Return:
+ * Returned Value:
  *   None
  *
  * Assumptions:

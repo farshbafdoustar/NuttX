@@ -491,7 +491,8 @@ static int twi_wait(struct twi_dev_s *priv, unsigned int size)
    * TWIHS transfer stalls.
    */
 
-  wd_start(priv->timeout, (timeout * size), twi_timeout, 1, (uint32_t)priv);
+  (void)wd_start(priv->timeout, (timeout * size), twi_timeout, 1,
+                 (uint32_t)priv);
 
   /* Wait for either the TWIHS transfer or the timeout to complete */
 
@@ -600,7 +601,7 @@ static int twi_interrupt(int irq, FAR void *context, FAR void *arg)
            * restart?
            */
 
-          if (priv->msgc <= 1 || (next->flags & I2C_M_NORESTART) == 0)
+          if (priv->msgc <= 1 || (next->flags & I2C_M_NOSTART) == 0)
             {
               /* The transfer is complete.  Disable the RXRDY interrupt and
                * enable the TXCOMP interrupt
@@ -633,7 +634,7 @@ static int twi_interrupt(int irq, FAR void *context, FAR void *arg)
            * restart?
            */
 
-          if (priv->msgc <= 1 || (next->flags & I2C_M_NORESTART) == 0)
+          if (priv->msgc <= 1 || (next->flags & I2C_M_NOSTART) == 0)
             {
               /* This is the last message OR a restart is required before
                * the next mesage.  Send the stop signal.
@@ -687,7 +688,7 @@ static int twi_interrupt(int irq, FAR void *context, FAR void *arg)
            * restart?
            */
 
-          if (priv->msgc <= 1 || (next->flags & I2C_M_NORESTART) == 0)
+          if (priv->msgc <= 1 || (next->flags & I2C_M_NOSTART) == 0)
             {
               /* The transfer is complete.  Disable the TXRDY interrupt and
                * enable the TXCOMP interrupt

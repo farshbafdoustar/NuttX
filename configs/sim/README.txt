@@ -422,9 +422,7 @@ Common Configuration Information
   1. Each configuration is maintained in a sub-directory and can be selected
      as follow:
 
-       cd <nuttx-directory>/tools
-       ./configure.sh sim/<subdir>
-       cd -
+       tools/configure.sh sim/<subdir>
 
      Where <subdir> is one of the following sub-directories.
 
@@ -492,6 +490,12 @@ Common Configuration Information
 Configuration Sub-Directories
 -----------------------------
 
+bluetooth
+
+  Supports some very limited, primitive, low-level debug of the Bluetoot
+  stack using the Bluetooth "Swiss Army Knife" at apps/wireless/bluetooth/btsak
+  and the NULL Bluetooth device at drivers/wireless/bluetooth/bt_null.c
+
 configdata
 
   A unit test for the MTD configuration data driver.
@@ -557,6 +561,12 @@ ipforward
   Additional required settings will also be selected when you manually
   select the above via 'make menuconfig'.
 
+loadable
+
+  This configuration provides an example of loadable apps.  It cannot used
+  with any Windows configuration, however, because Windows does not use
+  the ELF format.
+
 minibasic
 
   This configuration was used to test the Mini Basic port at
@@ -615,7 +625,7 @@ nsh
   2. This version has password protection enable.  Here is the login:
 
        USERNAME:  admin
-       PASSWORD:  Adminstrator
+       PASSWORD:  Administrator
 
      The encrypted password is retained in /etc/passwd.  I am sure that
      you will find this annoying.  You can disable the password protection
@@ -681,7 +691,7 @@ nx
 
      This version has NO DISPLAY and is only useful for debugging NX
      internals in environments where X11 is not supported.  There is
-     and additonal configuration that may be added to include an X11-
+     and additional configuration that may be added to include an X11-
      based simulated framebuffer driver:
 
        CONFIG_SIM_X11FB    - Use X11 window for framebuffer
@@ -728,10 +738,6 @@ nx11
 
        CONFIG_INPUT=y
        CONFIG_SIM_TOUCHSCREEN=y
-
-     Then you must also have some application logic that will call
-     board_tsc_setup(0) to register the touchscreen driver.  See
-     also configuration "touchscreen"
 
      NOTES:
 

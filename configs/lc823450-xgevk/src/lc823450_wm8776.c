@@ -1,7 +1,7 @@
 /****************************************************************************
  * configs/lc823450-xgevk/src/lc823450_wm8776.c
  *
- *   Copyright (C) 2017 Sony Corporation. All rights reserved.
+ *   Copyright 2017 Sony Video & Sound Products Inc.
  *   Author: Masayuki Ishikawa <Masayuki.Ishikawa@jp.sony.com>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -99,6 +99,10 @@ int lc823450_wm8776initialize(int minor)
     }
 
   i2s = lc823450_i2sdev_initialize();
+
+#ifdef CONFIG_AUDIO_I2SCHAR
+  i2schar_register(i2s, 0);
+#endif
 
   wm8776 = wm8776_initialize(i2c, i2s, &g_wm8776info);
 

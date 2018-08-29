@@ -1,7 +1,7 @@
 /****************************************************************************
  * drivers/audio/wm8776.c
  *
- *   Copyright (C) 2017 Sony Corporation. All rights reserved.
+ *   Copyright 2017, 2018 Sony Video & Sound Products Inc.
  *   Author: Masayuki Ishikawa <Masayuki.Ishikawa@jp.sony.com>
  *
  * Based on drivers/audio/wm8904.c
@@ -49,6 +49,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <errno.h>
+#include <fixedmath.h>
 #include <queue.h>
 #include <debug.h>
 
@@ -397,12 +398,10 @@ static int wm8776_configure(FAR struct audio_lowerhalf_s *dev,
                             FAR const struct audio_caps_s *caps)
 #endif
 {
-#if !defined(CONFIG_AUDIO_EXCLUDE_VOLUME) || !defined(CONFIG_AUDIO_EXCLUDE_TONE)
   FAR struct wm8776_dev_s *priv = (FAR struct wm8776_dev_s *)dev;
-#endif
   int ret = OK;
 
-  DEBUGASSERT(priv && caps);
+  DEBUGASSERT(priv != NULL && caps != NULL);
   audinfo("ac_type: %d\n", caps->ac_type);
 
   /* Process the configure operation */
@@ -566,7 +565,7 @@ static void  wm8776_senddone(FAR struct i2s_dev_s *i2s,
                 CONFIG_WM8776_MSG_PRIO);
   if (ret < 0)
     {
-      auderr("ERROR: mq_send failed: %d\n", errno);
+      auderr("ERROR: mq_send failed: %d\n", get_errno());
     }
 }
 
@@ -913,7 +912,7 @@ static int wm8776_enqueuebuffer(FAR struct audio_lowerhalf_s *dev,
                     CONFIG_WM8776_MSG_PRIO);
       if (ret < 0)
         {
-          int errcode = errno;
+          int errcode = get_errno();
           DEBUGASSERT(errcode > 0);
 
           auderr("ERROR: mq_send failed: %d\n", errcode);

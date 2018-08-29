@@ -63,12 +63,12 @@
  * Description:
  *   Perform device specific operations.
  *
- * Parameters:
+ * Input Parameters:
  *   file     File structure instance
  *   req      The ioctl command
  *   arg      The argument of the ioctl cmd
  *
- * Return:
+ * Returned Value:
  *   Returns a non-negative number on success;  A negated errno value is
  *   returned on any failure (see comments ioctl() for a list of appropriate
  *   errno values).
@@ -109,12 +109,12 @@ int file_ioctl(FAR struct file *filep, int req, unsigned long arg)
  * Description:
  *   Perform device specific operations.
  *
- * Parameters:
+ * Input Parameters:
  *   fd       File/socket descriptor of device
  *   req      The ioctl command
  *   arg      The argument of the ioctl cmd
  *
- * Return:
+ * Returned Value:
  *   >=0 on success (positive non-zero values are cmd-specific)
  *   -1 on failure with errno set properly:
  *

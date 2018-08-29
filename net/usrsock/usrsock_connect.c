@@ -141,7 +141,7 @@ static int do_connect_request(FAR struct usrsock_conn_s *conn,
  * Description:
  *   Perform a usrsock connection
  *
- * Parameters:
+ * Input Parameters:
  *   psock - A reference to the socket structure of the socket to be connected
  *   addr    The address of the remote server to connect to
  *   addrlen Length of address buffer
@@ -229,7 +229,7 @@ int usrsock_connect(FAR struct socket *psock,
       ret = net_lockedwait(&state.recvsem);
       if (ret < 0)
         {
-          DEBUGASSERT(ret == -EINTR);
+          DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
 
           /* Wait interrupted, exit early. */
 

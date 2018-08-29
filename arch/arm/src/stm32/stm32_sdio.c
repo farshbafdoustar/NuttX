@@ -1,7 +1,7 @@
 /****************************************************************************
  * arch/arm/src/stm32/stm32_sdio.c
  *
- *   Copyright (C) 2009, 2011-2014, 2016-2017 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2009, 2011-2014, 2016-2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -149,6 +149,14 @@
 
 #ifndef CONFIG_DEBUG_MEMCARD_INFO
 #  undef CONFIG_SDIO_XFRDEBUG
+#endif
+
+/* Enable the SDIO pull-up resistors if needed */
+
+#ifdef CONFIG_STM32_SDIO_PULLUP
+#  define SDIO_PULLUP_ENABLE GPIO_PULLUP
+#else
+#  define SDIO_PULLUP_ENABLE 0
 #endif
 
 /* Friendly CLKCR bit re-definitions ****************************************/
@@ -335,6 +343,14 @@ struct stm32_dev_s
   size_t             remaining;  /* Number of bytes remaining in the transfer */
   uint32_t           xfrmask;    /* Interrupt enables for data transfer */
 
+#ifdef CONFIG_STM32_SDIO_CARD
+  /* Interrupt at SDIO_D1 pin, only for SDIO cards */
+
+  uint32_t           sdiointmask;            /* STM32 SDIO register mask */
+  int               (*do_sdio_card)(void *); /* SDIO card ISR */
+  void               *do_sdio_arg;           /* arg for SDIO card ISR */
+#endif
+
   /* Fixed transfer block size support */
 
 #ifdef CONFIG_SDIO_BLOCKSETUP
@@ -483,7 +499,7 @@ static int  stm32_registercallback(FAR struct sdio_dev_s *dev,
 /* DMA */
 
 #ifdef CONFIG_STM32_SDIO_DMA
-#ifdef CONFIG_SDIO_PREFLIGHT
+#ifdef CONFIG_ARCH_HAVE_SDIO_PREFLIGHT
 static int  stm32_dmapreflight(FAR struct sdio_dev_s *dev,
               FAR const uint8_t *buffer, size_t buflen);
 #endif
@@ -536,13 +552,13 @@ struct stm32_dev_s g_sdiodev =
     .registercallback = stm32_registercallback,
 #ifdef CONFIG_SDIO_DMA
 #ifdef CONFIG_STM32_SDIO_DMA
-#ifdef CONFIG_SDIO_PREFLIGHT
+#ifdef CONFIG_ARCH_HAVE_SDIO_PREFLIGHT
     .dmapreflight     = stm32_dmapreflight,
 #endif
     .dmarecvsetup     = stm32_dmarecvsetup,
     .dmasendsetup     = stm32_dmasendsetup,
 #else
-#ifdef CONFIG_SDIO_PREFLIGHT
+#ifdef CONFIG_ARCH_HAVE_SDIO_PREFLIGHT
     .dmapreflight     = NULL,
 #endif
     .dmarecvsetup     = stm32_recvsetup,
@@ -703,7 +719,14 @@ static void stm32_configwaitints(struct stm32_dev_s *priv, uint32_t waitmask,
 #ifdef CONFIG_STM32_SDIO_DMA
   priv->xfrflags   = 0;
 #endif
+
+#ifdef CONFIG_STM32_SDIO_CARD
+  putreg32(priv->xfrmask | priv->waitmask | priv->sdiointmask,
+           STM32_SDIO_MASK);
+#else
   putreg32(priv->xfrmask | priv->waitmask, STM32_SDIO_MASK);
+#endif
+
   leave_critical_section(flags);
 }
 
@@ -725,9 +748,15 @@ static void stm32_configwaitints(struct stm32_dev_s *priv, uint32_t waitmask,
 static void stm32_configxfrints(struct stm32_dev_s *priv, uint32_t xfrmask)
 {
   irqstate_t flags;
+
   flags = enter_critical_section();
   priv->xfrmask = xfrmask;
+#ifdef CONFIG_STM32_SDIO_CARD
+  putreg32(priv->xfrmask | priv->waitmask | priv->sdiointmask,
+           STM32_SDIO_MASK);
+#else
   putreg32(priv->xfrmask | priv->waitmask, STM32_SDIO_MASK);
+#endif
   leave_critical_section(flags);
 }
 
@@ -1534,6 +1563,23 @@ static int stm32_interrupt(int irq, void *context, FAR void *arg)
                 }
             }
         }
+
+#ifdef CONFIG_STM32_SDIO_CARD
+      /* Handle SDIO card interrupt */
+
+      pending = enabled & priv->sdiointmask;
+      if (pending != 0)
+        {
+          putreg32(SDIO_STA_SDIOIT, STM32_SDIO_ICR);
+
+          /* Perform callback */
+
+          if (priv->do_sdio_card)
+            {
+              priv->do_sdio_card(priv->do_sdio_arg);
+            }
+        }
+#endif
     }
 
   return OK;
@@ -1616,6 +1662,10 @@ static void stm32_reset(FAR struct sdio_dev_s *dev)
   priv->buffer     = 0;      /* Address of current R/W buffer */
   priv->remaining  = 0;      /* Number of bytes remaining in the transfer */
   priv->xfrmask    = 0;      /* Interrupt enables for data transfer */
+
+#ifdef CONFIG_STM32_SDIO_CARD
+  priv->sdiointmask = 0;     /* SDIO card in-band interrupt mask */
+#endif
 
   /* DMA data transfer support */
 
@@ -2500,7 +2550,7 @@ static sdio_eventset_t stm32_eventwait(FAR struct sdio_dev_s *dev,
       delay = MSEC2TICK(timeout);
       ret   = wd_start(priv->waitwdog, delay, (wdentry_t)stm32_eventtimeout,
                        1, (uint32_t)priv);
-      if (ret != OK)
+      if (ret < 0)
         {
           mcerr("ERROR: wd_start failed: %d\n", ret);
         }
@@ -2650,7 +2700,7 @@ static int stm32_registercallback(FAR struct sdio_dev_s *dev,
  *   OK on success; a negated errno on failure
  ****************************************************************************/
 
-#if defined(CONFIG_STM32_SDIO_DMA) && defined(CONFIG_SDIO_PREFLIGHT)
+#if defined(CONFIG_STM32_SDIO_DMA) && defined(CONFIG_ARCH_HAVE_SDIO_PREFLIGHT)
 static int stm32_dmapreflight(FAR struct sdio_dev_s *dev,
                               FAR const uint8_t *buffer, size_t buflen)
 {
@@ -2705,7 +2755,7 @@ static int stm32_dmarecvsetup(FAR struct sdio_dev_s *dev, FAR uint8_t *buffer,
   uint32_t dblocksize;
 
   DEBUGASSERT(priv != NULL && buffer != NULL && buflen > 0);
-#ifdef CONFIG_SDIO_PREFLIGHT
+#ifdef CONFIG_ARCH_HAVE_SDIO_PREFLIGHT
   DEBUGASSERT(stm32_dmapreflight(dev, buffer, buflen) == 0);
 #endif
 
@@ -2784,7 +2834,7 @@ static int stm32_dmasendsetup(FAR struct sdio_dev_s *dev,
   uint32_t dblocksize;
 
   DEBUGASSERT(priv != NULL && buffer != NULL && buflen > 0);
-#ifdef CONFIG_SDIO_PREFLIGHT
+#ifdef CONFIG_ARCH_HAVE_SDIO_PREFLIGHT
   DEBUGASSERT(stm32_dmapreflight(dev, buffer, buflen) == 0);
 #endif
 
@@ -2954,7 +3004,7 @@ static void stm32_default(void)
  * Input Parameters:
  *   slotno - Not used.
  *
- * Returned Values:
+ * Returned Value:
  *   A reference to an SDIO interface structure.  NULL is returned on failures.
  *
  ****************************************************************************/
@@ -2996,14 +3046,14 @@ FAR struct sdio_dev_s *sdio_initialize(int slotno)
    */
 
 #ifndef CONFIG_SDIO_MUXBUS
-  stm32_configgpio(GPIO_SDIO_D0);
+  stm32_configgpio(GPIO_SDIO_D0 | SDIO_PULLUP_ENABLE);
 #ifndef CONFIG_STM32_SDIO_WIDTH_D1_ONLY
-  stm32_configgpio(GPIO_SDIO_D1);
-  stm32_configgpio(GPIO_SDIO_D2);
-  stm32_configgpio(GPIO_SDIO_D3);
+  stm32_configgpio(GPIO_SDIO_D1 | SDIO_PULLUP_ENABLE);
+  stm32_configgpio(GPIO_SDIO_D2 | SDIO_PULLUP_ENABLE);
+  stm32_configgpio(GPIO_SDIO_D3 | SDIO_PULLUP_ENABLE);
 #endif
-  stm32_configgpio(GPIO_SDIO_CK);
-  stm32_configgpio(GPIO_SDIO_CMD);
+  stm32_configgpio(GPIO_SDIO_CK | SDIO_PULLUP_ENABLE);
+  stm32_configgpio(GPIO_SDIO_CMD | SDIO_PULLUP_ENABLE);
 #endif
 
   /* Reset the card and assure that it is in the initial, unconfigured
@@ -3028,7 +3078,7 @@ FAR struct sdio_dev_s *sdio_initialize(int slotno)
  *                card has been removed from the slot.  Only transitions
  *                (inserted->removed or removed->inserted should be reported)
  *
- * Returned Values:
+ * Returned Value:
  *   None
  *
  ****************************************************************************/
@@ -3075,7 +3125,7 @@ void sdio_mediachange(FAR struct sdio_dev_s *dev, bool cardinslot)
  *   dev       - An instance of the SDIO driver device state structure.
  *   wrprotect - true is a card is writeprotected.
  *
- * Returned Values:
+ * Returned Value:
  *   None
  *
  ****************************************************************************/
@@ -3100,4 +3150,44 @@ void sdio_wrprotect(FAR struct sdio_dev_s *dev, bool wrprotect)
   mcinfo("cdstatus: %02x\n", priv->cdstatus);
   leave_critical_section(flags);
 }
+
+/****************************************************************************
+ * Name: sdio_set_sdio_card_isr
+ *
+ * Description:
+ *   SDIO card generates interrupt via SDIO_DATA_1 pin.
+ *   Called by board-specific logic to register an ISR for SDIO card.
+ *
+ * Input Parameters:
+ *   func      - callback function.
+ *   arg       - arg to be passed to the function.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_STM32_SDIO_CARD
+void sdio_set_sdio_card_isr(FAR struct sdio_dev_s *dev,
+                            int (*func)(void *), void *arg)
+{
+  struct stm32_dev_s *priv = (struct stm32_dev_s *)dev;
+
+  priv->do_sdio_card = func;
+
+  if (func != NULL)
+    {
+      priv->sdiointmask = SDIO_STA_SDIOIT;
+      priv->do_sdio_arg = arg;
+    }
+  else
+    {
+      priv->sdiointmask = 0;
+    }
+
+  putreg32(priv->xfrmask | priv->waitmask | priv->sdiointmask,
+           STM32_SDIO_MASK);
+}
+#endif
+
 #endif /* CONFIG_STM32_SDIO */

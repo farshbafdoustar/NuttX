@@ -1,7 +1,8 @@
 /****************************************************************************
  * net/net_initialize.c
  *
- *   Copyright (C) 2007-2009, 2011-2015, 2017 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2007-2009, 2011-2015, 2017-2018 Gregory Nutt. All rights
+ *     reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,8 +57,10 @@
 #include "tcp/tcp.h"
 #include "udp/udp.h"
 #include "pkt/pkt.h"
+#include "bluetooth/bluetooth.h"
 #include "ieee802154/ieee802154.h"
 #include "local/local.h"
+#include "netlink/netlink.h"
 #include "igmp/igmp.h"
 #include "route/route.h"
 #include "usrsock/usrsock.h"
@@ -140,6 +143,12 @@ void net_setup(void)
   icmpv6_sock_initialize();
 #endif
 
+#ifdef CONFIG_NET_BLUETOOTH
+  /* Initialize Bluetooth  socket support */
+
+  bluetooth_initialize();
+#endif
+
 #ifdef CONFIG_NET_IEEE802154
   /* Initialize IEEE 802.15.4  socket support */
 
@@ -150,6 +159,12 @@ void net_setup(void)
   /* Initialize the local, "Unix domain" socket support */
 
   local_initialize();
+#endif
+
+#ifdef CONFIG_NET_NETLINK
+  /* Initialize the Netlink IPC support */
+
+  netlink_initialize();
 #endif
 
 #ifdef NET_TCP_HAVE_STACK
@@ -172,6 +187,10 @@ void net_setup(void)
   /* Initialize the UDP connection structures */
 
   udp_initialize();
+
+#ifdef CONFIG_NET_UDP_WRITE_BUFFERS
+  udp_wrbuffer_initialize();
+#endif
 #endif
 
 #ifdef CONFIG_NET_IGMP

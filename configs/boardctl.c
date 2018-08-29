@@ -1,7 +1,7 @@
 /****************************************************************************
  * configs/boardctl.c
  *
- *   Copyright (C) 2015-2017 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2015-2017, 2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -276,6 +276,22 @@ int boardctl(unsigned int cmd, uintptr_t arg)
         }
         break;
 
+#ifdef CONFIG_BOARDCTL_FINALINIT
+      /* CMD:           BOARDIOC_FINALINIT
+       * DESCRIPTION:   Perform one-time application initialization after
+       *                start-up script.
+       * ARG:           The argument has no meaning
+       * CONFIGURATION: CONFIG_BOARDCTL_FINALINIT
+       * DEPENDENCIES:  Board logic must provide board_app_finalinitialize
+       */
+
+      case BOARDIOC_FINALINIT:
+        {
+          ret = board_app_finalinitialize(arg);
+        }
+        break;
+#endif
+
 #ifdef CONFIG_BOARDCTL_POWEROFF
       /* CMD:           BOARDIOC_POWEROFF
        * DESCRIPTION:   Power off the board
@@ -397,35 +413,6 @@ int boardctl(unsigned int cmd, uintptr_t arg)
       case BOARDIOC_NX_START:
         {
           ret = nx_start();
-        }
-        break;
-#endif
-
-#ifdef CONFIG_BOARDCTL_TSCTEST
-      /* CMD:           BOARDIOC_TSCTEST_SETUP
-       * DESCRIPTION:   Touchscreen controller test configuration
-       * ARG:           Touch controller device minor number
-       * CONFIGURATION: CONFIG_LIB_BOARDCTL && CONFIG_BOARDCTL_TSCTEST
-       * DEPENDENCIES:  Board logic must provide board_tsc_setup()
-       */
-
-      case BOARDIOC_TSCTEST_SETUP:
-        {
-          ret = board_tsc_setup((int)arg);
-        }
-        break;
-
-      /* CMD:           BOARDIOC_TSCTEST_TEARDOWN
-       * DESCRIPTION:   Touchscreen controller test configuration
-       * ARG:           None
-       * CONFIGURATION: CONFIG_LIB_BOARDCTL && CONFIG_BOARDCTL_TSCTEST
-       * DEPENDENCIES:  Board logic must provide board_tsc_teardown()
-       */
-
-      case BOARDIOC_TSCTEST_TEARDOWN:
-        {
-          board_tsc_teardown();
-          ret = OK;
         }
         break;
 #endif

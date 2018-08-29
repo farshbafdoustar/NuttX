@@ -131,7 +131,7 @@ int nxmq_verify_send(mqd_t mqdes, FAR const char *msg, size_t msglen,
  *   the g_msgfreeirq list.  If this is unsuccessful, the calling interrupt
  *   handler will be notified.
  *
- * Inputs:
+ * Input Parameters:
  *   None
  *
  * Returned Value:
@@ -454,7 +454,7 @@ int nxmq_do_send(mqd_t mqdes, FAR struct mqueue_msg_s *mqmsg,
 
       /* If one was found, unblock it */
 
-      ASSERT(btcb);
+      DEBUGASSERT(btcb);
 
       btcb->msgwaitq = NULL;
       msgq->nwaitnotempty--;

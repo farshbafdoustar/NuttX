@@ -202,13 +202,6 @@ KwikStik-K40-specific Configuration Options
 
     CONFIG_ARCH_STACKDUMP - Do stack dumps after assertions
 
-    CONFIG_ARCH_CALIBRATION - Enables some build in instrumentation that
-       cause a 100 second delay during boot-up.  This 100 second delay
-       serves no purpose other than it allows you to calibrate
-       CONFIG_ARCH_LOOPSPERMSEC.  You simply use a stop watch to measure
-       the 100 second delay then adjust CONFIG_ARCH_LOOPSPERMSEC until
-       the delay actually is 100 seconds.
-
   Individual subsystems can be enabled:
 
     CONFIG_KINETIS_TRACE    -- Enable trace clocking on power up.
@@ -239,7 +232,7 @@ KwikStik-K40-specific Configuration Options
     CONFIG_KINETIS_FTM0     -- Support FlexTimer 0
     CONFIG_KINETIS_FTM1     -- Support FlexTimer 1
     CONFIG_KINETIS_FTM2     -- Support FlexTimer 2
-    CONFIG_KINETIS_LPTIMER  -- Support the low power timer
+    CONFIG_KINETIS_LPTMR0   -- Support the low power timer 0
     CONFIG_KINETIS_RTC      -- Support RTC
     CONFIG_KINETIS_SLCD     -- Support the segment LCD (K40 only)
     CONFIG_KINETIS_EWM      -- Support the external watchdog
@@ -313,9 +306,7 @@ Configurations
 Each KwikStik-K40 configuration is maintained in a sub-directory and
 can be selected as follow:
 
-    cd tools
-    ./configure.sh kwikstik-k40/<subdir>
-    cd -
+    tools/configure.sh kwikstik-k40/<subdir>
 
 Where <subdir> is one of the following:
 
