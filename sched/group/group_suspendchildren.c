@@ -1,7 +1,7 @@
 /****************************************************************************
- *  sched/group/group_killchildren.c
+ *  sched/group/group_suspendchildren.c
  *
- *   Copyright (C) 2013, 2018 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,13 +56,13 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: group_killchildren_handler
+ * Name: group_suspendchildren_handler
  *
  * Description:
  *   Callback from group_foreachchild that handles one member of the group.
  *
  * Input Parameters:
- *   pid - The ID of the group member that may be signaled.
+ *   pid - The ID of the group member that may be suspended.
  *   arg - The PID of the thread to be retained.
  *
  * Returned Value:
@@ -70,48 +70,24 @@
  *
  ****************************************************************************/
 
-static int group_killchildren_handler(pid_t pid, FAR void *arg)
+static int group_suspendchildren_handler(pid_t pid, FAR void *arg)
 {
   FAR struct tcb_s *rtcb;
   int ret;
 
-  /* Cancel all threads except for the one specified by the argument */
+  /* Suspend all threads except for the one specified by the argument */
 
   if (pid != (pid_t)((uintptr_t)arg))
     {
-      /* Cancel this thread.  This is a forced cancellation.  Make sure that
-       * cancellation is not disabled by the task/thread.  That bit will
-       * prevent pthread_cancel() or task_delete() from doing what they need
-       * to do.
-       */
+      /* Suspend this thread if it is still alive. */
 
       rtcb = sched_gettcb(pid);
       if (rtcb != NULL)
         {
-          /* This is a forced cancellation.  Make sure that cancellation is
-           * not disabled by the task/thread.  That bit would prevent
-           * pthread_cancel() or task_delete() from doing what they need
-           * to do.
-           */
-
-          rtcb->flags &= ~TCB_FLAG_NONCANCELABLE;
-
-          /* 'pid' could refer to the main task of the thread.  That pid
-           * will appear in the group member list as well!
-           */
-
-          if ((rtcb->flags & TCB_FLAG_TTYPE_MASK) == TCB_FLAG_TTYPE_PTHREAD)
-            {
-              ret = pthread_cancel(pid);
-            }
-          else
-            {
-              ret = task_delete(pid);
-            }
-
+          ret = sched_suspend(rtcb);
           if (ret < 0)
             {
-              serr("ERROR: Failed to kill %d: %d\n", ret, pid);
+              serr("ERROR: Failed to suspend %d: %d\n", ret, pid);
             }
         }
     }
@@ -126,13 +102,12 @@ static int group_killchildren_handler(pid_t pid, FAR void *arg)
  ****************************************************************************/
 
 /****************************************************************************
- * Name: group_killchildren
+ * Name: group_suspendchildren
  *
  * Description:
- *   Delete all children of a task except for the specified task.  This is
- *   used by the task restart logic and by the default signal handling
- *   abnormal termination logic.  When the main task is restarted or killed,
- *   all of its child pthreads must be terminated.
+ *   Suspend all children of a task except for the specified task.  This is
+ *   SIGSTP/SIGSTOP default signal action logic.  When the main task is
+ *   suspended, all of its child pthreads must also be suspended.
  *
  * Input Parameters:
  *   tcb - TCB of the task to be retained.
@@ -142,7 +117,7 @@ static int group_killchildren_handler(pid_t pid, FAR void *arg)
  *
  ****************************************************************************/
 
-int group_killchildren(FAR struct task_tcb_s *tcb)
+int group_suspendchildren(FAR struct task_tcb_s *tcb)
 {
   int ret;
 
@@ -151,7 +126,7 @@ int group_killchildren(FAR struct task_tcb_s *tcb)
    */
 
   sched_lock();
-  ret = group_foreachchild(tcb->cmn.group, group_killchildren_handler,
+  ret = group_foreachchild(tcb->cmn.group, group_suspendchildren_handler,
                           (FAR void *)((uintptr_t)tcb->cmn.pid));
   sched_unlock();
   return ret;

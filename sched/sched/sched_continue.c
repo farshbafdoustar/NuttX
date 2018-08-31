@@ -1,7 +1,7 @@
 /****************************************************************************
- * arch/arm/src/lpc43xx/lpc43_wdt.h
+ * sched/sched/sched_continue.c
  *
- *   Copyright (C) 2012, 2017 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,65 +33,49 @@
  *
  ****************************************************************************/
 
-#ifndef __ARCH_ARM_SRC_LPC43XX_CHIP_LPC43_WDT_H
-#define __ARCH_ARM_SRC_LPC43XX_CHIP_LPC43_WDT_H
-
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <nuttx/config.h>
 
-#include "chip.h"
-#include "chip/lpc43_wwdt.h"
+#include <sys/types.h>
+#include <sched.h>
+#include <assert.h>
 
-#ifdef CONFIG_WATCHDOG
+#include <nuttx/irq.h>
+#include <nuttx/sched.h>
+#include <nuttx/arch.h>
 
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-#ifndef __ASSEMBLY__
-
-#undef EXTERN
-#if defined(__cplusplus)
-#define EXTERN extern "C"
-extern "C"
-{
-#else
-#define EXTERN extern
-#endif
+#include "sched/sched.h"
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: lpc43_wwdtinitialize
+ * Name: sched_continue
  *
  * Description:
- *   Initialize the WWDT watchdog timer.  The watchdog timer is initializeed and
- *   registers as 'devpath.  The initial state of the watchdog time is
- *   disabled.
- *
- * Input Parameters:
- *   devpath - The full path to the watchdog.  This should be of the form
- *     /dev/watchdog0
- *
- * Returned Value:
- *   None
+ *   Resume the specified thread.  This is normally calling indirectly
+ *   via group_continue();
  *
  ****************************************************************************/
 
-#ifdef CONFIG_LPC43_WWDT
-void lpc43_wwdtinitialize(FAR const char *devpath);
-#endif
+void sched_continue(FAR struct tcb_s *tcb)
+{
+  irqstate_t flags;
 
-#undef EXTERN
-#if defined(__cplusplus)
+  DEBUGASSERT(tcb != NULL && tcb->task_state == TSTATE_TASK_STOPPED);
+
+  flags = enter_critical_section();
+
+  /* Simply restart the thread.  If is was blocked before, it will awaken
+   * with pterrno = EINTR and will appears as if it were awakened by a
+   * signal.  If pre-emption is not disabled this action could block this
+   * task here!
+   */
+
+  up_unblock_task(tcb);
+  leave_critical_section(flags);
 }
-#endif
-
-#endif /* __ASSEMBLY__ */
-#endif /* CONFIG_WATCHDOG */
-#endif /* __ARCH_ARM_SRC_LPC43XX_CHIP_LPC43_WDT_H */
