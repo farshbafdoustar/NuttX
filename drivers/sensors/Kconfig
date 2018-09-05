@@ -56,6 +56,13 @@ config SENSORS_HIH6130
 	---help---
 		Enable driver support for the HIH-6130 humidity/temperature sensor.
 
+config SENSORS_DHTXX
+	bool "DHTxx humidity/temperature Sensor support"
+	default n
+	---help---
+		Enable driver support for the DHTxx humidity/temperature sensor.
+
+
 config SENSORS_HCSR04
 	bool "HC-SR04 Distance Measurement Sensor"
 	default n

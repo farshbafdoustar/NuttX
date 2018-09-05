@@ -1,9 +1,8 @@
 /****************************************************************************
- * arch/arm/src/stm32/stm32_pmsleep.c
+ * include/nuttx/sensors/dhtxx.h
  *
- *   Copyright (C) 2012 Gregory Nutt. All rights reserved.
- *   Authors: Gregory Nutt <gnutt@nuttx.org>
- *            Diego Sanchez <dsanchez@nx-engineering.com>
+ *   Copyright (C) 2018 Abdelatif GUETTOUCHE. All rights reserved.
+ *   Author: Abdelatif GUETTOUCHE <abdelatif.guettouche@gmail.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,83 +31,87 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- *
  ****************************************************************************/
+
+#ifndef __INCLUDE_NUTTX_SENSORS_DHTXX_H
+#define __INCLUDE_NUTTX_SENSORS_DHTXX_H
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <nuttx/config.h>
-
-#include <stdbool.h>
-
-#include "up_arch.h"
-#include "nvic.h"
-#include "stm32_pwr.h"
-#include "stm32_pm.h"
+#include <nuttx/sensors/ioctl.h>
 
 /****************************************************************************
- * Pre-processor Definitions
+ * Public Types
+ ****************************************************************************/
+
+enum dhtxx_type_e
+{
+  DHTXX_DHT11,
+  DHTXX_DHT12,
+  DHTXX_DHT21,
+  DHTXX_DHT22,
+  DHTXX_DHT33,
+  DHTXX_DHT44
+};
+
+struct dhtxx_config_s
+{
+  CODE void (*config_data_pin)(FAR struct dhtxx_config_s *state, bool mode);
+  CODE void (*set_data_pin)(FAR struct dhtxx_config_s *state, bool value);
+  CODE bool (*read_data_pin)(FAR struct dhtxx_config_s *state);
+  CODE int64_t (*get_clock)(FAR struct dhtxx_config_s *state);
+  enum dhtxx_type_e type;
+};
+
+enum dhtxx_status_e
+{
+  /* Timeout accured waiting for data. */ 
+
+  DHTXX_TIMEOUT,
+
+  /* Checksum sent and calculated differ. */
+
+  DHTXX_CHECKSUM_ERROR,
+
+  /* Data read exceeds the sensor's measurement range. */
+
+  DHTXX_READ_ERROR,
+
+  /* Data read successfully. */
+
+  DHTXX_SUCCESS
+};
+
+struct dhtxx_sensor_data_s
+{
+  float hum;
+  float temp;
+  enum dhtxx_status_e status;
+};
+
+/****************************************************************************
+ * Public Function Prototypes
  ****************************************************************************/
 
 /****************************************************************************
- * Private Data
- ****************************************************************************/
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Name: stm32_pmsleep
+ * Name: dhtxx_register
  *
  * Description:
- *   Enter SLEEP mode.
+ *   Register the Dhtxx character device as 'devpath'
  *
  * Input Parameters:
- *   sleeponexit - true:  SLEEPONEXIT bit is set when the WFI instruction is
- *                        executed, the MCU enters Sleep mode as soon as it
- *                        exits the lowest priority ISR.
- *               - false: SLEEPONEXIT bit is cleared, the MCU enters Sleep mode
- *                        as soon as WFI or WFE instruction is executed.
+ *   devpath - The full path to the driver to register. E.g., "/dev/dht0"
+ *   config  - The dhtxx config.
+ *
  * Returned Value:
- *   None
+ *   Zero (OK) on success; a negated errno value on failure.
  *
  ****************************************************************************/
 
-void stm32_pmsleep(bool sleeponexit)
-{
-  uint32_t regval;
+int dhtxx_register(FAR const char *devpath,
+                   FAR struct dhtxx_config_s *config);
 
-  /* Clear SLEEPDEEP bit of Cortex System Control Register */
-
-  regval  = getreg32(NVIC_SYSCON);
-  regval &= ~NVIC_SYSCON_SLEEPDEEP;
-  if (sleeponexit)
-    {
-      regval |= NVIC_SYSCON_SLEEPONEXIT;
-    }
-  else
-    {
-      regval &= ~NVIC_SYSCON_SLEEPONEXIT;
-    }
-
-  putreg32(regval, NVIC_SYSCON);
-
-  /* Sleep until the wakeup interrupt or event occurs */
-
-#ifdef CONFIG_PM_WFE
-  /* Mode: SLEEP + Entry with WFE */
-
-  asm("wfe");
-#else
-  /* Mode: SLEEP + Entry with WFI */
-
-  asm("wfi");
-#endif
-}
+#endif /* __INCLUDE_NUTTX_SENSORS_DHTXX_H */
