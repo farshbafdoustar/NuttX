@@ -88,6 +88,8 @@ include userfs/Make.defs
 include wchar/Make.defs
 include wctype/Make.defs
 include wqueue/Make.defs
+include micro-xrce-dds/Make.defs
+include microcdr/Make.defs
 
 # REVISIT: Backslash causes problems in $(COBJS) target
 DELIM := $(strip /)

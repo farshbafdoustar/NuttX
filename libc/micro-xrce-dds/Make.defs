@@ -1,0 +1,21 @@
+ifeq ($(CONFIG_LIB_MICRO_XRCE_DDS),y)
+CFLAGS += -std=c99
+
+#communication
+CSRCS += serial_protocol.c
+#serialization
+CSRCS += xrce_header.c xrce_protocol.c  xrce_subheader.c
+#session
+CSRCS += input_best_effort_stream.c input_reliable_stream.c object_id.c output_best_effort_stream.c
+CSRCS += output_reliable_stream.c seq_num.c session.c session_info.c stream_id.c
+CSRCS += stream_storage.c submessage.c message.c time.c
+#session profile
+CSRCS += common_create_entities.c create_entities_ref.c create_entities_xml.c read_access.c
+#communication profile
+CSRCS += serial_transport_linux.c
+
+
+DEPPATH += --dep-path micro-xrce-dds
+VPATH += : micro-xrce-dds
+
+endif

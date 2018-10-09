@@ -1,0 +1,10 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config LIB_MICRO_XRCE_DDS
+	bool "Micro-XRCE-DDS for NuttX"
+	default n
+	---help---
+		Port of Micro-XRCE-DDS for NuttX

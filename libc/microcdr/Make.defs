@@ -1,0 +1,8 @@
+ifeq ($(CONFIG_LIB_MICRO_XRCE_DDS),y)
+CFLAGS += -std=c99
+
+CSRCS += microcdr.c
+DEPPATH += --dep-path microcdr
+VPATH += :microcdr
+
+endif
